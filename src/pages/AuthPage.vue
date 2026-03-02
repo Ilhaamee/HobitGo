@@ -80,30 +80,11 @@ async function handleGoogleLogin() {
     const { error: googleError } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
-        redirectTo: window.location.origin
+        redirectTo: `${window.location.origin}/auth/callback`
       }
     })
     
     if (googleError) throw googleError
-  } catch (err) {
-    error.value = err.message
-    loading.value = false
-  }
-}
-
-async function handleAppleLogin() {
-  loading.value = true
-  error.value = ''
-  
-  try {
-    const { error: appleError } = await supabase.auth.signInWithOAuth({
-      provider: 'apple',
-      options: {
-        redirectTo: window.location.origin
-      }
-    })
-    
-    if (appleError) throw appleError
   } catch (err) {
     error.value = err.message
     loading.value = false
@@ -164,7 +145,6 @@ async function handleAppleLogin() {
       <div class="divider"><span>- o -</span></div>
 
       <button class="btn-google" @click="handleGoogleLogin" :disabled="loading">Continuar con Google</button>
-      <button class="btn-apple" @click="handleAppleLogin" :disabled="loading">Continuar con Apple</button>
 
       <p class="terms">
         Al hacer click en continuar estás aceptando nuestros<br />

@@ -1,6 +1,7 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import HomePage from '../pages/HomePage.vue'
 import AuthPage from '../pages/AuthPage.vue'
+import AuthCallback from '../pages/AuthCallback.vue'
 import DashboardLayout from '../components/DashboardLayout.vue'
 import DashboardHome from '../pages/DashboardHome.vue'
 import DashboardHobbies from '../pages/DashboardHobbies.vue'
@@ -18,6 +19,11 @@ const routes = [
     path: '/auth',
     name: 'Auth',
     component: AuthPage
+  },
+  {
+    path: '/auth/callback',
+    name: 'AuthCallback',
+    component: AuthCallback
   },
   {
     path: '/dashboard',

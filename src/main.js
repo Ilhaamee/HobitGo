@@ -20,7 +20,7 @@ app.provide('supabase', supabase)
 supabase.auth.onAuthStateChange((event, session) => {
   app.config.globalProperties.$user = session?.user || null
   if (event === 'SIGNED_IN' && session?.user) {
-    router.push('/')
+    router.push('/dashboard')
   }
   if (event === 'SIGNED_OUT') {
     app.config.globalProperties.$user = null
