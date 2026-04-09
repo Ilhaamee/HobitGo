@@ -375,6 +375,19 @@ async function loadData() {
     weeklyData.value = buildWeeklyData([])
   }
 
+  const { count: hobbiesCount } = await supabase
+    .from('hobbies')
+    .select('*', { count: 'exact', head: true })
+    .eq('user_id', user.id)
+  stats.value.hobbies = hobbiesCount || 0
+
+  const { count: goalsCount } = await supabase
+    .from('goals')
+    .select('*', { count: 'exact', head: true })
+    .eq('user_id', user.id)
+    .eq('completed', false)
+  stats.value.challenges = goalsCount || 0
+
   await loadGoals()
 }
 
