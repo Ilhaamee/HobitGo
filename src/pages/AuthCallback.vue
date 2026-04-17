@@ -6,22 +6,15 @@ import { supabase } from '../lib/supabase'
 const router = useRouter()
 
 onMounted(async () => {
-  // Get the session from URL hash (OAuth callback)
-  const { data, error } = await supabase.auth.getSession()
+  const { data: { session }, error } = await supabase.auth.getSession()
   
-  if (error) {
-    console.error('Auth callback error:', error)
+  if (error || !session) {
     router.push('/')
     return
   }
   
-  if (data.session) {
-    // Successfully authenticated, redirect to dashboard
-    router.push('/dashboard')
-  } else {
-    // No session, redirect to home
-    router.push('/')
-  }
+  // El trigger ya creó el usuario automáticamente, ir directo al dashboard
+  router.push('/dashboard')
 })
 </script>
 

@@ -1,4 +1,4 @@
-<script setup>
+ <script setup>
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import Titulo from '../components/Titulo.vue'
@@ -44,13 +44,14 @@ async function handleSubmit() {
       })
       
       if (signUpError) {
-        // Check if user already exists
+        console.error('Signup error:', signUpError)
         if (signUpError.message.includes('already been registered') || signUpError.message.includes('already exists')) {
           error.value = 'Ya existe una cuenta con este email. Prueba a iniciar sesión.'
         } else {
-          throw signUpError
+          error.value = 'No se pudo crear la cuenta: ' + signUpError.message
         }
       } else if (data?.user) {
+        // El trigger handle_new_user ya crea el usuario en la tabla public
         message.value = '¡Revisa tu email para confirmar tu cuenta!'
       }
     } else {
