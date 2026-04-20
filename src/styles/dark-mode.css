@@ -1,0 +1,278 @@
+/* Variables globales */
+:root {
+    --bg-primary: #ffffff;
+    --bg-secondary: #f5f7fa;
+    --bg-card: #ffffff;
+    --bg-hover: #f9f9f9;
+    --text-primary: #1a1a2e;
+    --text-secondary: #666666;
+    --text-muted: #888888;
+    --border-color: #eeeeee;
+    --input-border: #dddddd;
+    --shadow: rgba(0, 0, 0, 0.05);
+}
+
+[data-theme="dark"] {
+    --bg-primary: #0f0f0f;
+    --bg-secondary: #1a1a1a;
+    --bg-card: #1e1e1e;
+    --bg-hover: #2a2a2a;
+    --text-primary: #f0f0f0;
+    --text-secondary: #aaaaaa;
+    --text-muted: #666666;
+    --border-color: #2a2a2a;
+    --input-border: #333333;
+    --shadow: rgba(0, 0, 0, 0.3);
+}
+
+/* Aplicar a body */
+body {
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+    transition: background 0.3s ease, color 0.3s ease;
+}
+
+/* Tarjetas y contenedores */
+[data-theme="dark"] .dashboard-home,
+[data-theme="dark"] .dashboard-hobbies,
+[data-theme="dark"] .dashboard-calendar,
+[data-theme="dark"] .dashboard-chat,
+[data-theme="dark"] .dashboard-leaderboard,
+[data-theme="dark"] .dashboard-profile {
+    color: var(--text-primary);
+}
+
+/* Todos los h1, h2, h3, h4 */
+[data-theme="dark"] h1,
+[data-theme="dark"] h2,
+[data-theme="dark"] h3,
+[data-theme="dark"] h4 {
+    color: var(--text-primary) !important;
+    -webkit-text-fill-color: var(--text-primary) !important;
+}
+
+/* Subtítulos y párrafos */
+[data-theme="dark"] .subtitle,
+[data-theme="dark"] p {
+    color: var(--text-secondary);
+}
+
+/* Tarjetas blancas */
+[data-theme="dark"] .stat-card,
+[data-theme="dark"] .section-card,
+[data-theme="dark"] .calendar-card,
+[data-theme="dark"] .hobby-card,
+[data-theme="dark"] .leaderboard-card,
+[data-theme="dark"] .chat-list,
+[data-theme="dark"] .chat-room,
+[data-theme="dark"] .modal,
+[data-theme="dark"] .overlay .modal,
+[data-theme="dark"] .form-card,
+[data-theme="dark"] .top3~.list .list-item {
+    background: var(--bg-card) !important;
+    color: var(--text-primary);
+}
+
+/* Fondos secundarios */
+[data-theme="dark"] .f9f9f9,
+[data-theme="dark"] .event-item,
+[data-theme="dark"] .activity-item,
+[data-theme="dark"] .goal-item,
+[data-theme="dark"] .event-item,
+[data-theme="dark"] .hobby-stats,
+[data-theme="dark"] .sessions-list,
+[data-theme="dark"] .session-item,
+[data-theme="dark"] .events-list .event-item,
+[data-theme="dark"] .faq-item,
+[data-theme="dark"] .search-result-item,
+[data-theme="dark"] .stat-box:not(.highlight) {
+    background: var(--bg-hover) !important;
+}
+
+/* Textos específicos */
+[data-theme="dark"] .stat-value,
+[data-theme="dark"] .stat-val,
+[data-theme="dark"] .event-title,
+[data-theme="dark"] .goal-title,
+[data-theme="dark"] .hobby-info h3,
+[data-theme="dark"] .activity-title,
+[data-theme="dark"] .session-time,
+[data-theme="dark"] .user-name,
+[data-theme="dark"] .points-val,
+[data-theme="dark"] .top-name,
+[data-theme="dark"] .progress-days,
+[data-theme="dark"] .day-number,
+[data-theme="dark"] .event-day {
+    color: var(--text-primary) !important;
+}
+
+[data-theme="dark"] .stat-label,
+[data-theme="dark"] .stat-lbl,
+[data-theme="dark"] .event-time,
+[data-theme="dark"] .activity-time,
+[data-theme="dark"] .session-note,
+[data-theme="dark"] .session-date,
+[data-theme="dark"] .event-desc,
+[data-theme="dark"] .user-stats,
+[data-theme="dark"] .points-lbl,
+[data-theme="dark"] .bar-label,
+[data-theme="dark"] .streak-label,
+[data-theme="dark"] .streak-msg,
+[data-theme="dark"] .no-events,
+[data-theme="dark"] .no-messages,
+[data-theme="dark"] .empty-text,
+[data-theme="dark"] .chat-info p,
+[data-theme="dark"] .chat-list-header {
+    color: var(--text-muted) !important;
+}
+
+/* Inputs */
+[data-theme="dark"] input,
+[data-theme="dark"] textarea,
+[data-theme="dark"] .input,
+[data-theme="dark"] .message-input input {
+    background: var(--bg-secondary) !important;
+    color: var(--text-primary) !important;
+    border-color: var(--input-border) !important;
+}
+
+[data-theme="dark"] input::placeholder,
+[data-theme="dark"] textarea::placeholder {
+    color: var(--text-muted) !important;
+}
+
+/* Bordes */
+[data-theme="dark"] .chat-header,
+[data-theme="dark"] .message-input,
+[data-theme="dark"] .sessions-list,
+[data-theme="dark"] .sidebar-footer,
+[data-theme="dark"] .goals-summary,
+[data-theme="dark"] .new-chat {
+    border-color: var(--border-color) !important;
+}
+
+/* Días del calendario */
+[data-theme="dark"] .calendar-day:hover:not(.other-month) {
+    background: var(--bg-hover) !important;
+}
+
+[data-theme="dark"] .calendar-day.other-month {
+    color: var(--text-muted) !important;
+}
+
+/* Mensajes del chat */
+[data-theme="dark"] .message.received {
+    background: var(--bg-hover) !important;
+    color: var(--text-primary) !important;
+}
+
+[data-theme="dark"] .message p {
+    color: inherit !important;
+}
+
+/* Nav items del chat */
+[data-theme="dark"] .chat-item:hover,
+[data-theme="dark"] .chat-item.active {
+    background: var(--bg-hover) !important;
+}
+
+[data-theme="dark"] .chat-info h4 {
+    color: var(--text-primary) !important;
+}
+
+/* Leaderboard lista */
+[data-theme="dark"] .list-item {
+    background: transparent !important;
+}
+
+[data-theme="dark"] .list-item:hover {
+    background: var(--bg-hover) !important;
+}
+
+[data-theme="dark"] .list-item.is-me {
+    background: rgba(224, 142, 107, 0.1) !important;
+}
+
+/* Faq */
+[data-theme="dark"] .faq-item {
+    background: var(--bg-hover) !important;
+}
+
+[data-theme="dark"] .faq-item.active {
+    background: var(--bg-card) !important;
+    box-shadow: 0 4px 20px var(--shadow) !important;
+}
+
+[data-theme="dark"] .faq-question {
+    color: var(--text-primary) !important;
+}
+
+[data-theme="dark"] .faq-answer p {
+    color: var(--text-secondary) !important;
+}
+
+/* Botones cancelar */
+[data-theme="dark"] .btn-cancel {
+    background: var(--bg-hover) !important;
+    color: var(--text-secondary) !important;
+}
+
+/* Nav buttons del sidebar (mantener oscuro) */
+[data-theme="dark"] .sidebar {
+    background: linear-gradient(180deg, #22284E 0%, #1a1a2e 100%) !important;
+}
+
+/* Streak dots */
+[data-theme="dark"] .streak-dot {
+    background: var(--bg-hover) !important;
+}
+
+[data-theme="dark"] .streak-day.active .streak-dot {
+    background: #E08E6B !important;
+}
+
+/* Progress bars */
+[data-theme="dark"] .progress-bar,
+[data-theme="dark"] .goals-progress-bar {
+    background: var(--bg-hover) !important;
+}
+
+/* Day dots en retos */
+[data-theme="dark"] .day-dot {
+    background: var(--bg-hover) !important;
+}
+
+[data-theme="dark"] .day-dot.done {
+    background: #E08E6B !important;
+}
+
+/* Barra gráfica */
+[data-theme="dark"] .bar {
+    background: var(--bg-hover) !important;
+}
+
+[data-theme="dark"] .bar.active {
+    background: #E08E6B !important;
+}
+
+[data-theme="dark"] .bar.today {
+    background: #22284E !important;
+}
+
+/* Edit/delete buttons */
+[data-theme="dark"] .edit-btn,
+[data-theme="dark"] .delete-btn {
+    color: var(--text-muted) !important;
+}
+
+/* Nav buttons */
+[data-theme="dark"] .nav-btn {
+    background: var(--bg-hover) !important;
+    color: var(--text-primary) !important;
+}
+
+/* Search results */
+[data-theme="dark"] .search-results {
+    background: var(--bg-card) !important;
+    border-color: var(--border-color) !important;
+}

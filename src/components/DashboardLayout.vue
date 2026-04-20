@@ -27,7 +27,7 @@
       </div>
     </aside>
 
-    <!-- Notificación toast -->
+    <!-- Toast notificación -->
     <div v-if="notification" class="toast" @click="goToChat">
       <div class="toast-avatar">
         <img v-if="notification.avatar" :src="notification.avatar" />
@@ -50,9 +50,11 @@
 import { ref, onMounted, onUnmounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { supabase } from '../lib/supabase'
+import { useTheme } from '../composables/useTheme'
 
 const route = useRoute()
 const router = useRouter()
+const { loadTheme } = useTheme()
 
 const menuItems = [
   { name: 'Home', icon: 'home', path: '/dashboard' },
@@ -81,7 +83,6 @@ function goToChat() {
   router.push('/dashboard/chat')
 }
 
-// Limpiar badge cuando entramos al chat
 watch(() => route.path, (path) => {
   if (path === '/dashboard/chat') unreadCount.value = 0
 })
@@ -96,27 +97,24 @@ async function setupNotifications() {
       const msg = payload.new
       if (msg.receiver_id !== currentUserId.value) return
       if (route.path === '/dashboard/chat') return
-
-      // Incrementar badge
       unreadCount.value++
-
-      // Cargar info del remitente
       const { data: profile } = await supabase.from('profiles').select('username, avatar_url').eq('id', msg.sender_id).single()
-
       notification.value = {
         username: profile?.username || 'Alguien',
         avatar: profile?.avatar_url || null,
         message: msg.content.length > 40 ? msg.content.slice(0, 40) + '...' : msg.content
       }
-
-      // Auto-ocultar después de 4 segundos
       if (notifTimeout) clearTimeout(notifTimeout)
       notifTimeout = setTimeout(() => notification.value = null, 4000)
     })
     .subscribe()
 }
 
-onMounted(setupNotifications)
+onMounted(async () => {
+  await loadTheme()
+  await setupNotifications()
+})
+
 onUnmounted(() => {
   if (notifSubscription) supabase.removeChannel(notifSubscription)
   if (notifTimeout) clearTimeout(notifTimeout)
@@ -124,7 +122,7 @@ onUnmounted(() => {
 </script>
 
 <style scoped>
-.dashboard-layout { display: flex; min-height: 100vh; background: #f5f7fa; }
+.dashboard-layout { display: flex; min-height: 100vh; background: var(--bg-secondary); }
 
 .sidebar { width: 260px; background: linear-gradient(180deg, #22284E 0%, #1a1a2e 100%); color: #fff; display: flex; flex-direction: column; transition: width 0.3s ease; position: fixed; height: 100vh; z-index: 100; }
 .sidebar.collapsed { width: 70px; }
@@ -151,40 +149,15 @@ onUnmounted(() => {
 .main-content { flex: 1; margin-left: 260px; padding: 24px; transition: margin-left 0.3s ease; }
 .main-content.expanded { margin-left: 70px; }
 
-/* Toast notificación */
-.toast {
-  position: fixed;
-  bottom: 24px;
-  right: 24px;
-  background: #fff;
-  border-radius: 16px;
-  padding: 14px 16px;
-  box-shadow: 0 8px 30px rgba(0,0,0,0.15);
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  z-index: 9999;
-  cursor: pointer;
-  max-width: 320px;
-  animation: slideIn 0.3s ease;
-  border-left: 4px solid #E08E6B;
-}
-
-@keyframes slideIn {
-  from { transform: translateX(100px); opacity: 0; }
-  to { transform: translateX(0); opacity: 1; }
-}
-
+.toast { position: fixed; bottom: 24px; right: 24px; background: var(--bg-card); border-radius: 16px; padding: 14px 16px; box-shadow: 0 8px 30px rgba(0,0,0,0.15); display: flex; align-items: center; gap: 12px; z-index: 9999; cursor: pointer; max-width: 320px; animation: slideIn 0.3s ease; border-left: 4px solid #E08E6B; }
+@keyframes slideIn { from{transform:translateX(100px);opacity:0} to{transform:translateX(0);opacity:1} }
 .toast-avatar { width: 40px; height: 40px; border-radius: 12px; overflow: hidden; flex-shrink: 0; }
 .toast-avatar img { width: 100%; height: 100%; object-fit: cover; }
 .toast-avatar-placeholder { width: 100%; height: 100%; background: #E08E6B; color: #fff; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 16px; }
-
 .toast-content { flex: 1; display: flex; flex-direction: column; gap: 2px; }
-.toast-name { font-size: 13px; font-weight: 700; color: #1a1a2e; }
-.toast-msg { font-size: 12px; color: #888; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 200px; }
-
-.toast-close { background: none; border: none; color: #ccc; cursor: pointer; font-size: 16px; padding: 2px; flex-shrink: 0; }
-.toast-close:hover { color: #888; }
+.toast-name { font-size: 13px; font-weight: 700; color: var(--text-primary); }
+.toast-msg { font-size: 12px; color: var(--text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 200px; }
+.toast-close { background: none; border: none; color: var(--text-muted); cursor: pointer; font-size: 16px; padding: 2px; flex-shrink: 0; }
 
 @media (max-width: 768px) {
   .sidebar { width: 70px; }

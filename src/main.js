@@ -6,6 +6,7 @@ import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome'
 import App from './App.vue'
 import router from './router'
 import { supabase } from './lib/supabase'
+import './styles/dark-mode.css'
 
 library.add(faApple, faAndroid, faEye, faEyeSlash, faHome, faHeart, faCalendar, faComments, faUser, faSignOutAlt, faTrophy, faFire, faStar, faPlus, faCheck, faBook, faPalette, faDumbbell, faSpa, faChevronLeft, faChevronRight, faPaperPlane, faCamera, faPen, faTrash, faClock, faMusic)
 
