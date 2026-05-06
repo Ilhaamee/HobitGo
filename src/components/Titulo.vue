@@ -13,7 +13,7 @@ defineProps({
 
 <template>
   <h1 class="titulo" :class="{ light }" :style="{ fontSize: size + 'px' }">
-    <span class="hobbit">Hobbit</span>
+    <span class="hobit">Hobit</span>
     <span class="go">GO</span>
   </h1>
 </template>
@@ -25,7 +25,7 @@ defineProps({
   margin: 0;
   transition: color 0.3s ease;
 }
-.hobbit {
+.hobit {
   color: #22284E;
   transition: color 0.3s ease;
 }
@@ -34,7 +34,7 @@ defineProps({
 }
 
 /* Light mode for dark backgrounds */
-.titulo.light .hobbit {
+.titulo.light .hobit {
   color: #fff;
 }
 </style>

@@ -1,26 +1,39 @@
 import { createApp } from 'vue'
 import { library } from '@fortawesome/fontawesome-svg-core'
 import { faApple, faAndroid } from '@fortawesome/free-brands-svg-icons'
-import { faEye, faEyeSlash, faHome, faHeart, faCalendar, faComments, faUser, faSignOutAlt, faTrophy, faFire, faStar, faPlus, faCheck, faBook, faPalette, faDumbbell, faSpa, faChevronLeft, faChevronRight, faPaperPlane, faCamera } from '@fortawesome/free-solid-svg-icons'
+import {
+  faEye, faEyeSlash, faHome, faHeart, faCalendar, faComments, faUser, faSignOutAlt,
+  faTrophy, faFire, faStar, faPlus, faCheck, faBook, faPalette, faDumbbell, faSpa,
+  faChevronLeft, faChevronRight, faPaperPlane, faCamera, faPen, faTrash, faClock,
+  faMusic, faUsers, faMedal, faLightbulb, faCog, faShareAlt, faBookmark, faComment,
+  faShareSquare, faShieldAlt, faSearch
+} from '@fortawesome/free-solid-svg-icons'
+import { faHeart as farHeart, faBookmark as farBookmark } from '@fortawesome/free-regular-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome'
 import App from './App.vue'
 import router from './router'
 import { supabase } from './lib/supabase'
+import './styles/dark-mode.css'
 
-// Add icons to library
-library.add(faApple, faAndroid, faEye, faEyeSlash, faHome, faHeart, faCalendar, faComments, faUser, faSignOutAlt, faTrophy, faFire, faStar, faPlus, faCheck, faBook, faPalette, faDumbbell, faSpa, faChevronLeft, faChevronRight, faPaperPlane, faCamera)
+library.add(
+  faApple, faAndroid,
+  faEye, faEyeSlash, faHome, faHeart, faCalendar, faComments, faUser, faSignOutAlt,
+  faTrophy, faFire, faStar, faPlus, faCheck, faBook, faPalette, faDumbbell, faSpa,
+  faChevronLeft, faChevronRight, faPaperPlane, faCamera, faPen, faTrash, faClock,
+  faMusic, faUsers, faMedal, faLightbulb, faCog, faShareAlt, faBookmark, faComment,
+  faShareSquare, faShieldAlt, faSearch,
+  farHeart, farBookmark
+)
 
-// Global authentication state
 const app = createApp(App)
-
-// Provide Supabase client globally
 app.provide('supabase', supabase)
 
-// Track auth state
 supabase.auth.onAuthStateChange((event, session) => {
   app.config.globalProperties.$user = session?.user || null
   if (event === 'SIGNED_IN' && session?.user) {
-    router.push('/dashboard')
+    if (router.currentRoute.value.path === '/' || router.currentRoute.value.path === '/auth') {
+      router.push('/dashboard')
+    }
   }
   if (event === 'SIGNED_OUT') {
     app.config.globalProperties.$user = null
