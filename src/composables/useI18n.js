@@ -1,0 +1,352 @@
+import { ref, computed } from 'vue'
+import { supabase } from '../lib/supabase'
+
+const currentLang = ref('es')
+
+const translations = {
+    es: {
+        // Nav
+        home: 'Home',
+        hobbies: 'Hobbies',
+        calendar: 'Calendario',
+        chat: 'Chat',
+        friends: 'Amigos',
+        leaderboard: 'Clasificación',
+        profile: 'Perfil',
+        logout: 'Cerrar sesión',
+
+        // Home
+        good_morning: 'Buenos días',
+        good_afternoon: 'Buenas tardes',
+        good_evening: 'Buenas noches',
+        home_subtitle: 'Tu espacio personal de desafíos y hobbies',
+        active_challenges: 'Desafíos activos',
+        events_this_month: 'Eventos este mes',
+        total_points: 'Puntos totales',
+        current_streak: 'Racha actual',
+        consecutive_days: 'Retos completados',
+        activity_this_week: 'Actividad esta semana',
+        upcoming_events: 'Próximos eventos',
+        recent_activity: 'Actividad reciente',
+        no_upcoming_events: 'No tienes eventos próximos',
+        no_recent_activity: 'No hay actividad reciente',
+        my_challenges: 'Mis retos',
+        new_challenge: 'Nuevo reto',
+        add_challenge_placeholder: 'Ej: 30 días sin azúcar, 30 días de ejercicio...',
+        duration_label: 'Duración (mínimo 30 días)',
+        start_challenge: 'Empezar reto',
+        cancel: 'Cancelar',
+        saving: 'Guardando...',
+        day_of: 'Día {current} de {total}',
+        mark_day: 'Marcar día {day} como completado',
+        come_back_tomorrow: '¡Ya completaste el día de hoy! Vuelve mañana 💪',
+        completed_badge: '🏆 Completado',
+        done_today: '✅ Hecho hoy',
+        no_challenges: 'No tienes retos activos. ¡Empieza uno!',
+        min_days_error: 'El mínimo son 30 días',
+        title_required: 'El título es obligatorio',
+
+        // Calendar
+        calendar_title: 'Calendario',
+        calendar_subtitle: 'Planifica tus actividades y desafíos',
+        add_event: 'Añadir evento',
+        no_events_day: 'No hay eventos este día',
+        event_title_placeholder: 'Título del evento',
+        description_placeholder: 'Descripción (opcional)',
+        start_time: 'Inicio',
+        end_time: 'Fin',
+        save: 'Guardar',
+        delete: 'Eliminar',
+        edit: 'Editar',
+        end_after_start: 'La hora de fin debe ser posterior a la de inicio',
+        error_saving: 'Error al guardar el evento',
+
+        // Hobbies
+        hobbies_title: 'Mis Hobbies',
+        hobbies_subtitle: 'Gestiona tus pasatiempos y actividades',
+        add_hobby: 'Añadir hobby',
+        new_hobby: 'Nuevo hobby',
+        edit_hobby: 'Editar hobby',
+        hobby_name_placeholder: 'Nombre del hobby',
+        icon_label: 'Icono',
+        color_label: 'Color',
+        image_label: 'Imagen (opcional)',
+        upload_image: 'Subir imagen',
+        remove_image: 'Quitar imagen',
+        total_time: 'Tiempo total',
+        sessions: 'Sesiones',
+        minutes_placeholder: 'Minutos',
+        note_placeholder: 'Nota (opcional)',
+        register: '+ Registrar',
+        no_hobbies: 'No tienes hobbies aún. ¡Añade uno!',
+        name_required: 'El nombre es obligatorio',
+
+        // Chat
+        chat_title: 'Chat',
+        chat_subtitle: 'Conecta con la comunidad',
+        community: 'Comunidad',
+        public_channel: 'Canal público',
+        private_messages: 'Mensajes privados',
+        search_user: 'Buscar usuario...',
+        write_message: 'Escribe un mensaje...',
+        no_messages: 'No hay mensajes aún. ¡Sé el primero!',
+        choose_username: 'Elige tu nombre de usuario',
+        username_needed: 'Necesitas un nombre para participar en el chat',
+        continue: 'Continuar',
+        view_profile: 'Ver perfil',
+        community_hobitgo: '🌍 Comunidad HobitGo',
+
+        // Friends
+        friends_title: 'Amigos',
+        friends_subtitle: 'Conecta con otros usuarios de HobitGo',
+        search_users: 'Buscar usuarios por nombre...',
+        pending_requests: '🔔 Solicitudes pendientes',
+        my_friends: '✨ Mis amigos',
+        add_friend: 'Añadir',
+        pending: 'Pendiente',
+        sent_request: 'Te envió solicitud',
+        already_friends: '✅ Amigos',
+        accept: '✅ Aceptar',
+        no_bio: 'Sin biografía',
+        no_friends: 'No tienes amigos aún. ¡Busca usuarios para añadir!',
+        message: 'Mensaje',
+
+        // Leaderboard
+        leaderboard_title: '🏆 Clasificación',
+        leaderboard_subtitle: 'Los usuarios con más puntos de la comunidad',
+        loading: 'Cargando...',
+        no_users: 'No hay usuarios aún',
+        challenges_count: '{n} retos',
+        your_position: 'Tu posición',
+        points: 'pts',
+
+        // Profile
+        profile_title: 'Mi Perfil',
+        profile_subtitle: 'Gestiona tu información personal',
+        personal_info: 'Información personal',
+        username_label: 'Nombre de usuario',
+        email_label: 'Email',
+        bio_label: 'Biografía',
+        bio_placeholder: 'Cuéntanos sobre ti...',
+        save_changes: 'Guardar cambios',
+        preferences: 'Preferencias',
+        dark_mode: '🌙 Modo oscuro',
+        light_mode: '☀️ Modo claro',
+        theme_desc: 'Cambia el tema de la aplicación',
+        language_label: 'Idioma',
+        language_desc: 'Cambia el idioma de la aplicación',
+        change_password: 'Cambiar contraseña',
+        new_password: 'Nueva contraseña',
+        confirm_password: 'Confirmar contraseña',
+        my_stats: '📊 Mis estadísticas',
+        completed_challenges: 'Retos completados',
+        events_created: 'Eventos creados',
+        messages_sent: 'Mensajes enviados',
+        hobby_sessions: 'Sesiones de hobby',
+        account: 'Cuenta',
+        logout_title: 'Cerrar sesión',
+        logout_desc: 'Salir de tu cuenta en este dispositivo',
+        profile_updated: '✅ Perfil actualizado correctamente',
+        password_updated: '✅ Contraseña actualizada correctamente',
+        username_required: 'El nombre de usuario es obligatorio',
+        username_taken: 'Ese nombre ya está en uso',
+        passwords_no_match: 'Las contraseñas no coinciden',
+        password_min: 'La contraseña debe tener al menos 6 caracteres',
+
+        // Public profile
+        back: '← Volver',
+        send_message: 'Mensaje',
+        add_friend_btn: 'Añadir amigo',
+        request_sent: 'Solicitud enviada',
+        mutual_friends: 'Amigos en común',
+        completed_challenges_label: 'Retos completados',
+        no_hobbies_yet: 'No tiene hobbies aún',
+        no_goals_yet: 'No ha completado retos aún',
+        user_not_found: 'Usuario no encontrado',
+    },
+
+    en: {
+        // Nav
+        home: 'Home',
+        hobbies: 'Hobbies',
+        calendar: 'Calendar',
+        chat: 'Chat',
+        friends: 'Friends',
+        leaderboard: 'Leaderboard',
+        profile: 'Profile',
+        logout: 'Log out',
+
+        // Home
+        good_morning: 'Good morning',
+        good_afternoon: 'Good afternoon',
+        good_evening: 'Good evening',
+        home_subtitle: 'Your personal space for challenges and hobbies',
+        active_challenges: 'Active challenges',
+        events_this_month: 'Events this month',
+        total_points: 'Total points',
+        current_streak: 'Current streak',
+        consecutive_days: 'Completed challenges',
+        activity_this_week: 'Activity this week',
+        upcoming_events: '📅 Upcoming events',
+        recent_activity: '⚡ Recent activity',
+        no_upcoming_events: 'No upcoming events',
+        no_recent_activity: 'No recent activity',
+        my_challenges: '🎯 My challenges',
+        new_challenge: 'New challenge',
+        add_challenge_placeholder: 'E.g.: 30 days no sugar, 30 days of exercise...',
+        duration_label: 'Duration (minimum 30 days)',
+        start_challenge: 'Start challenge',
+        cancel: 'Cancel',
+        saving: 'Saving...',
+        day_of: 'Day {current} of {total}',
+        mark_day: 'Mark day {day} as completed',
+        come_back_tomorrow: "You've already completed today! Come back tomorrow 💪",
+        completed_badge: '🏆 Completed',
+        done_today: '✅ Done today',
+        no_challenges: 'No active challenges. Start one!',
+        min_days_error: 'Minimum is 30 days',
+        title_required: 'Title is required',
+
+        // Calendar
+        calendar_title: 'Calendar',
+        calendar_subtitle: 'Plan your activities and challenges',
+        add_event: 'Add event',
+        no_events_day: 'No events this day',
+        event_title_placeholder: 'Event title',
+        description_placeholder: 'Description (optional)',
+        start_time: 'Start',
+        end_time: 'End',
+        save: 'Save',
+        delete: 'Delete',
+        edit: 'Edit',
+        end_after_start: 'End time must be after start time',
+        error_saving: 'Error saving event',
+
+        // Hobbies
+        hobbies_title: 'My Hobbies',
+        hobbies_subtitle: 'Manage your hobbies and activities',
+        add_hobby: 'Add hobby',
+        new_hobby: 'New hobby',
+        edit_hobby: 'Edit hobby',
+        hobby_name_placeholder: 'Hobby name',
+        icon_label: 'Icon',
+        color_label: 'Color',
+        image_label: 'Image (optional)',
+        upload_image: 'Upload image',
+        remove_image: 'Remove image',
+        total_time: 'Total time',
+        sessions: 'Sessions',
+        minutes_placeholder: 'Minutes',
+        note_placeholder: 'Note (optional)',
+        register: '+ Log',
+        no_hobbies: 'No hobbies yet. Add one!',
+        name_required: 'Name is required',
+
+        // Chat
+        chat_title: 'Chat',
+        chat_subtitle: 'Connect with the community',
+        community: 'Community',
+        public_channel: 'Public channel',
+        private_messages: 'Private messages',
+        search_user: 'Search user...',
+        write_message: 'Write a message...',
+        no_messages: "No messages yet. Be the first!",
+        choose_username: 'Choose your username',
+        username_needed: 'You need a username to participate in the chat',
+        continue: 'Continue',
+        view_profile: 'View profile',
+        community_hobitgo: '🌍 HobitGo Community',
+
+        // Friends
+        friends_title: 'Friends',
+        friends_subtitle: 'Connect with other HobitGo users',
+        search_users: 'Search users by name...',
+        pending_requests: '🔔 Pending requests',
+        my_friends: '✨ My friends',
+        add_friend: 'Add',
+        pending: 'Pending',
+        sent_request: 'Sent you a request',
+        already_friends: '✅ Friends',
+        accept: '✅ Accept',
+        no_bio: 'No bio',
+        no_friends: 'No friends yet. Search for users to add!',
+        message: 'Message',
+
+        // Leaderboard
+        leaderboard_title: '🏆 Leaderboard',
+        leaderboard_subtitle: 'Users with the most points in the community',
+        loading: 'Loading...',
+        no_users: 'No users yet',
+        challenges_count: '{n} challenges',
+        your_position: 'Your position',
+        points: 'pts',
+
+        // Profile
+        profile_title: 'My Profile',
+        profile_subtitle: 'Manage your personal information',
+        personal_info: 'Personal information',
+        username_label: 'Username',
+        email_label: 'Email',
+        bio_label: 'Bio',
+        bio_placeholder: 'Tell us about yourself...',
+        save_changes: 'Save changes',
+        preferences: 'Preferences',
+        dark_mode: '🌙 Dark mode',
+        light_mode: '☀️ Light mode',
+        theme_desc: 'Change the app theme',
+        language_label: 'Language',
+        language_desc: 'Change the app language',
+        change_password: 'Change password',
+        new_password: 'New password',
+        confirm_password: 'Confirm password',
+        my_stats: '📊 My statistics',
+        completed_challenges: 'Completed challenges',
+        events_created: 'Events created',
+        messages_sent: 'Messages sent',
+        hobby_sessions: 'Hobby sessions',
+        account: 'Account',
+        logout_title: 'Log out',
+        logout_desc: 'Sign out of your account on this device',
+        profile_updated: '✅ Profile updated successfully',
+        password_updated: '✅ Password updated successfully',
+        username_required: 'Username is required',
+        username_taken: 'That username is already taken',
+        passwords_no_match: "Passwords don't match",
+        password_min: 'Password must be at least 6 characters',
+
+        // Public profile
+        back: '← Back',
+        send_message: 'Message',
+        add_friend_btn: 'Add friend',
+        request_sent: 'Request sent',
+        mutual_friends: 'Mutual friends',
+        completed_challenges_label: 'Completed challenges',
+        no_hobbies_yet: 'No hobbies yet',
+        no_goals_yet: 'No completed challenges yet',
+        user_not_found: 'User not found',
+    }
+}
+
+export function useI18n() {
+    function t(key, vars = {}) {
+        const lang = translations[currentLang.value] || translations.es
+        let text = lang[key] || translations.es[key] || key
+        Object.entries(vars).forEach(([k, v]) => { text = text.replace(`{${k}}`, v) })
+        return text
+    }
+
+    async function loadLanguage() {
+        const { data: { user } } = await supabase.auth.getUser()
+        if (!user) return
+        const { data } = await supabase.from('profiles').select('language').eq('id', user.id).single()
+        if (data?.language) currentLang.value = data.language
+    }
+
+    async function setLanguage(lang) {
+        currentLang.value = lang
+        const { data: { user } } = await supabase.auth.getUser()
+        if (user) await supabase.from('profiles').update({ language: lang }).eq('id', user.id)
+    }
+
+    return { t, currentLang, loadLanguage, setLanguage }
+}

@@ -9,6 +9,8 @@ import DashboardCalendar from '../pages/DashboardCalendar.vue'
 import DashboardChat from '../pages/DashboardChat.vue'
 import DashboardProfile from '../pages/DashboardProfile.vue'
 import DashboardLeaderboard from '../pages/DashboardLeaderboard.vue'
+import DashboardFriends from '../pages/DashboardFriends.vue'
+import PublicProfile from '../pages/PublicProfile.vue'
 import { supabase } from '../lib/supabase'
 
 const routes = [
@@ -23,8 +25,10 @@ const routes = [
       { path: 'hobbies', name: 'DashboardHobbies', component: DashboardHobbies },
       { path: 'calendar', name: 'DashboardCalendar', component: DashboardCalendar },
       { path: 'chat', name: 'DashboardChat', component: DashboardChat },
-      { path: 'profile', name: 'DashboardProfile', component: DashboardProfile },
+      { path: 'friends', name: 'DashboardFriends', component: DashboardFriends },
       { path: 'leaderboard', name: 'DashboardLeaderboard', component: DashboardLeaderboard },
+      { path: 'profile', name: 'DashboardProfile', component: DashboardProfile },
+      { path: 'profile/:id', name: 'PublicProfile', component: PublicProfile },
     ]
   }
 ]

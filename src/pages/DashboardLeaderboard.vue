@@ -4,13 +4,11 @@
     <p class="subtitle">Los usuarios con más puntos de la comunidad</p>
 
     <div v-if="loading" class="loading">Cargando...</div>
-
     <div v-else-if="leaderboard.length === 0" class="empty-text">No hay usuarios aún</div>
 
     <div v-else class="leaderboard-card">
-      <!-- Top 3 -->
       <div class="top3" v-if="leaderboard.length >= 3">
-        <div class="top-item second">
+        <div class="top-item second" @click="goToProfile(leaderboard[1].id)">
           <div class="top-avatar">
             <img v-if="leaderboard[1].avatar_url" :src="leaderboard[1].avatar_url" />
             <div v-else class="avatar-placeholder">{{ leaderboard[1].username[0].toUpperCase() }}</div>
@@ -20,7 +18,7 @@
           <span class="top-points">{{ leaderboard[1].total_points }} pts</span>
         </div>
 
-        <div class="top-item first">
+        <div class="top-item first" @click="goToProfile(leaderboard[0].id)">
           <div class="crown">👑</div>
           <div class="top-avatar large">
             <img v-if="leaderboard[0].avatar_url" :src="leaderboard[0].avatar_url" />
@@ -31,7 +29,7 @@
           <span class="top-points">{{ leaderboard[0].total_points }} pts</span>
         </div>
 
-        <div class="top-item third">
+        <div class="top-item third" @click="goToProfile(leaderboard[2].id)">
           <div class="top-avatar">
             <img v-if="leaderboard[2].avatar_url" :src="leaderboard[2].avatar_url" />
             <div v-else class="avatar-placeholder">{{ leaderboard[2].username[0].toUpperCase() }}</div>
@@ -42,13 +40,12 @@
         </div>
       </div>
 
-      <!-- Lista completa desde posición 4 -->
       <div class="list">
         <div
-          v-for="(user, index) in leaderboard"
-          :key="user.id"
+          v-for="(user, index) in leaderboard" :key="user.id"
           class="list-item"
           :class="{ 'is-me': user.id === currentUserId }"
+          @click="goToProfile(user.id)"
         >
           <span class="rank">
             <span v-if="index === 0">🥇</span>
@@ -74,7 +71,6 @@
         </div>
       </div>
 
-      <!-- Mi posición si no estoy en top 3 -->
       <div v-if="myPosition > 3" class="my-position">
         <span>Tu posición: <strong>#{{ myPosition }}</strong></span>
         <span>{{ myPoints }} puntos</span>
@@ -85,28 +81,26 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
 import { supabase } from '../lib/supabase'
 
+const router = useRouter()
 const leaderboard = ref([])
 const currentUserId = ref(null)
 const loading = ref(true)
 
-const myPosition = computed(() => {
-  const idx = leaderboard.value.findIndex(u => u.id === currentUserId.value)
-  return idx + 1
-})
+const myPosition = computed(() => leaderboard.value.findIndex(u => u.id === currentUserId.value) + 1)
+const myPoints = computed(() => leaderboard.value.find(u => u.id === currentUserId.value)?.total_points || 0)
 
-const myPoints = computed(() => {
-  const user = leaderboard.value.find(u => u.id === currentUserId.value)
-  return user ? user.total_points : 0
-})
+function goToProfile(userId) {
+  if (userId === currentUserId.value) router.push('/dashboard/profile')
+  else router.push(`/dashboard/profile/${userId}`)
+}
 
 onMounted(async () => {
   const { data: { user } } = await supabase.auth.getUser()
   if (user) currentUserId.value = user.id
-
-  const { data, error } = await supabase.from('leaderboard').select('*')
-  console.log(data, error)
+  const { data } = await supabase.from('leaderboard').select('*')
   if (data) leaderboard.value = data
   loading.value = false
 })
@@ -114,15 +108,16 @@ onMounted(async () => {
 
 <style scoped>
 .dashboard-leaderboard { max-width: 700px; margin: 0 auto; }
-h1 { font-size: 28px; color: #1a1a2e; margin-bottom: 8px; }
-.subtitle { color: #666; margin-bottom: 32px; }
-.loading { text-align: center; color: #888; padding: 60px; }
-.empty-text { text-align: center; color: #aaa; padding: 60px; font-size: 14px; }
+h1 { font-size: 28px; color: var(--text-primary); margin-bottom: 8px; }
+.subtitle { color: var(--text-secondary); margin-bottom: 32px; }
+.loading { text-align: center; color: var(--text-muted); padding: 60px; }
+.empty-text { text-align: center; color: var(--text-muted); padding: 60px; font-size: 14px; }
 
-.leaderboard-card { background: #fff; border-radius: 20px; overflow: hidden; box-shadow: 0 2px 20px rgba(0,0,0,0.05); }
+.leaderboard-card { background: var(--bg-card); border-radius: 20px; overflow: hidden; box-shadow: 0 2px 20px var(--shadow); }
 
-.top3 { display: flex; align-items: flex-end; justify-content: center; gap: 16px; padding: 40px 24px 24px; background: linear-gradient(135deg, #22284E 0%, #1a1a2e 100%); }
-.top-item { display: flex; flex-direction: column; align-items: center; gap: 6px; }
+.top3 { display: flex; align-items: flex-end; justify-content: center; gap: 16px; padding: 40px 24px 24px; background: linear-gradient(135deg, #22284E 0%, #1a1a2e 100%); cursor: pointer; }
+.top-item { display: flex; flex-direction: column; align-items: center; gap: 6px; transition: transform 0.2s; }
+.top-item:hover { transform: translateY(-4px); }
 .top-item.first { order: 2; }
 .top-item.second { order: 1; }
 .top-item.third { order: 3; }
@@ -141,25 +136,24 @@ h1 { font-size: 28px; color: #1a1a2e; margin-bottom: 8px; }
 .top-points { font-size: 12px; color: rgba(255,255,255,0.7); }
 
 .list { padding: 8px 0; }
-.list-item { display: flex; align-items: center; gap: 14px; padding: 14px 24px; transition: background 0.2s; border-left: 3px solid transparent; }
-.list-item:hover { background: #f9f9f9; }
-.list-item.is-me { background: #fff5f0; border-left-color: #E08E6B; }
+.list-item { display: flex; align-items: center; gap: 14px; padding: 14px 24px; transition: background 0.2s; border-left: 3px solid transparent; cursor: pointer; }
+.list-item:hover { background: var(--bg-hover); }
+.list-item.is-me { background: rgba(224,142,107,0.1); border-left-color: #E08E6B; }
 
-.rank { width: 32px; text-align: center; font-size: 18px; font-weight: 700; color: #aaa; flex-shrink: 0; }
-
+.rank { width: 32px; text-align: center; font-size: 18px; font-weight: 700; color: var(--text-muted); flex-shrink: 0; }
 .user-avatar { width: 40px; height: 40px; border-radius: 12px; overflow: hidden; flex-shrink: 0; }
 .user-avatar img { width: 100%; height: 100%; object-fit: cover; }
 .avatar-placeholder.small { width: 100%; height: 100%; background: #E08E6B; color: #fff; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 16px; border-radius: 12px; }
 
 .user-info { flex: 1; display: flex; flex-direction: column; gap: 2px; }
-.user-name { font-size: 14px; font-weight: 600; color: #1a1a2e; display: flex; align-items: center; gap: 6px; }
+.user-name { font-size: 14px; font-weight: 600; color: var(--text-primary); display: flex; align-items: center; gap: 6px; }
 .me-tag { background: #E08E6B; color: #fff; font-size: 10px; padding: 2px 6px; border-radius: 10px; font-weight: 700; }
-.user-stats { font-size: 12px; color: #888; }
+.user-stats { font-size: 12px; color: var(--text-muted); }
 
 .user-points { display: flex; flex-direction: column; align-items: flex-end; }
-.points-val { font-size: 18px; font-weight: 700; color: #1a1a2e; }
-.points-lbl { font-size: 11px; color: #888; }
+.points-val { font-size: 18px; font-weight: 700; color: var(--text-primary); }
+.points-lbl { font-size: 11px; color: var(--text-muted); }
 
-.my-position { display: flex; justify-content: space-between; align-items: center; padding: 16px 24px; background: #fff5f0; border-top: 1px solid #eee; font-size: 14px; color: #666; }
+.my-position { display: flex; justify-content: space-between; align-items: center; padding: 16px 24px; background: rgba(224,142,107,0.1); border-top: 1px solid var(--border-color); font-size: 14px; color: var(--text-secondary); }
 .my-position strong { color: #E08E6B; }
 </style>

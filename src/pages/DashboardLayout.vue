@@ -16,19 +16,18 @@
             <span v-if="item.path === '/dashboard/chat' && unreadCount > 0" class="badge">{{ unreadCount }}</span>
             <span v-if="item.path === '/dashboard/friends' && pendingCount > 0" class="badge">{{ pendingCount }}</span>
           </div>
-          <span v-if="isSidebarOpen" class="nav-label">{{ item.name }}</span>
+          <span v-if="isSidebarOpen" class="nav-label">{{ t(item.labelKey) }}</span>
         </router-link>
       </nav>
 
       <div class="sidebar-footer">
         <button class="logout-btn" @click="handleLogout">
           <font-awesome-icon icon="sign-out-alt" />
-          <span v-if="isSidebarOpen">Cerrar sesión</span>
+          <span v-if="isSidebarOpen">{{ t('logout') }}</span>
         </button>
       </div>
     </aside>
 
-    <!-- Toast notificación mensaje -->
     <div v-if="notification" class="toast" @click="goToChat">
       <div class="toast-avatar">
         <img v-if="notification.avatar" :src="notification.avatar" />
@@ -41,7 +40,6 @@
       <button class="toast-close" @click.stop="notification = null">✕</button>
     </div>
 
-    <!-- Toast solicitud de amistad -->
     <div v-if="friendNotification" class="toast friend-toast" @click="goToFriends">
       <div class="toast-avatar">
         <img v-if="friendNotification.avatar" :src="friendNotification.avatar" />
@@ -49,7 +47,7 @@
       </div>
       <div class="toast-content">
         <span class="toast-name">{{ friendNotification.username }}</span>
-        <span class="toast-msg">Te ha enviado una solicitud de amistad</span>
+        <span class="toast-msg">{{ currentLang === 'en' ? 'Sent you a friend request' : 'Te ha enviado una solicitud de amistad' }}</span>
       </div>
       <button class="toast-close" @click.stop="friendNotification = null">✕</button>
     </div>
@@ -65,19 +63,21 @@ import { ref, onMounted, onUnmounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { supabase } from '../lib/supabase'
 import { useTheme } from '../composables/useTheme'
+import { useI18n } from '../composables/useI18n'
 
 const route = useRoute()
 const router = useRouter()
 const { loadTheme } = useTheme()
+const { t, currentLang, loadLanguage } = useI18n()
 
 const menuItems = [
-  { name: 'Home', icon: 'home', path: '/dashboard' },
-  { name: 'Hobbies', icon: 'heart', path: '/dashboard/hobbies' },
-  { name: 'Calendar', icon: 'calendar', path: '/dashboard/calendar' },
-  { name: 'Chat', icon: 'comments', path: '/dashboard/chat' },
-  { name: 'Amigos', icon: 'user-group', path: '/dashboard/friends' },
-  { name: 'Clasificación', icon: 'trophy', path: '/dashboard/leaderboard' },
-  { name: 'Perfil', icon: 'user', path: '/dashboard/profile' },
+  { labelKey: 'home', icon: 'home', path: '/dashboard' },
+  { labelKey: 'hobbies', icon: 'heart', path: '/dashboard/hobbies' },
+  { labelKey: 'calendar', icon: 'calendar', path: '/dashboard/calendar' },
+  { labelKey: 'chat', icon: 'comments', path: '/dashboard/chat' },
+  { labelKey: 'friends', icon: 'user-group', path: '/dashboard/friends' },
+  { labelKey: 'leaderboard', icon: 'trophy', path: '/dashboard/leaderboard' },
+  { labelKey: 'profile', icon: 'user', path: '/dashboard/profile' },
 ]
 
 const isSidebarOpen = ref(true)
@@ -116,26 +116,26 @@ async function setupNotifications() {
   currentUserId.value = user.id
   await loadPendingCount()
 
-  notifSubscription = supabase.channel('msg-notifications')
+  notifSubscription = supabase.channel(`msg-notifications-${currentUserId.value}`)
     .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'private_messages' }, async (payload) => {
       const msg = payload.new
       if (msg.receiver_id !== currentUserId.value) return
       if (route.path === '/dashboard/chat') return
       unreadCount.value++
       const { data: profile } = await supabase.from('profiles').select('username, avatar_url').eq('id', msg.sender_id).single()
-      notification.value = { username: profile?.username || 'Alguien', avatar: profile?.avatar_url || null, message: msg.content.length > 40 ? msg.content.slice(0, 40) + '...' : msg.content }
+      notification.value = { username: profile?.username || '?', avatar: profile?.avatar_url || null, message: msg.content.length > 40 ? msg.content.slice(0, 40) + '...' : msg.content }
       if (notifTimeout) clearTimeout(notifTimeout)
       notifTimeout = setTimeout(() => notification.value = null, 4000)
     })
     .subscribe()
 
-  friendSubscription = supabase.channel('friend-notifications')
+  friendSubscription = supabase.channel(`friend-notifications-${currentUserId.value}`)
     .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'friendships' }, async (payload) => {
       const f = payload.new
       if (f.receiver_id !== currentUserId.value) return
       pendingCount.value++
       const { data: profile } = await supabase.from('profiles').select('username, avatar_url').eq('id', f.sender_id).single()
-      friendNotification.value = { username: profile?.username || 'Alguien', avatar: profile?.avatar_url || null }
+      friendNotification.value = { username: profile?.username || '?', avatar: profile?.avatar_url || null }
       if (friendTimeout) clearTimeout(friendTimeout)
       friendTimeout = setTimeout(() => friendNotification.value = null, 4000)
     })
@@ -144,6 +144,7 @@ async function setupNotifications() {
 
 onMounted(async () => {
   await loadTheme()
+  await loadLanguage()
   await setupNotifications()
 })
 
@@ -177,7 +178,6 @@ onUnmounted(() => {
 .logout-btn:hover { background: rgba(255,255,255,0.2); }
 .main-content { flex: 1; margin-left: 260px; padding: 24px; transition: margin-left 0.3s ease; }
 .main-content.expanded { margin-left: 70px; }
-
 .toast { position: fixed; bottom: 24px; right: 24px; background: var(--bg-card); border-radius: 16px; padding: 14px 16px; box-shadow: 0 8px 30px rgba(0,0,0,0.15); display: flex; align-items: center; gap: 12px; z-index: 9999; cursor: pointer; max-width: 320px; animation: slideIn 0.3s ease; border-left: 4px solid #E08E6B; }
 .friend-toast { bottom: 90px; border-left-color: #4caf50; }
 @keyframes slideIn { from{transform:translateX(100px);opacity:0} to{transform:translateX(0);opacity:1} }
@@ -188,7 +188,6 @@ onUnmounted(() => {
 .toast-name { font-size: 13px; font-weight: 700; color: var(--text-primary); }
 .toast-msg { font-size: 12px; color: var(--text-muted); }
 .toast-close { background: none; border: none; color: var(--text-muted); cursor: pointer; font-size: 16px; padding: 2px; }
-
 @media (max-width: 768px) {
   .sidebar { width: 70px; }
   .brand-name, .nav-label, .toggle-btn { display: none; }
