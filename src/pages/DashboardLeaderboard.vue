@@ -1,165 +1,270 @@
-<template>
-  <div class="dashboard-leaderboard">
-    <h1>🏆 Clasificación</h1>
-    <p class="subtitle">Los usuarios con más puntos de la comunidad</p>
-
-    <div v-if="loading" class="loading">Cargando...</div>
-
-    <div v-else-if="leaderboard.length === 0" class="empty-text">No hay usuarios aún</div>
-
-    <div v-else class="leaderboard-card">
-      <!-- Top 3 -->
-      <div class="top3" v-if="leaderboard.length >= 3">
-        <div class="top-item second">
-          <div class="top-avatar">
-            <img v-if="leaderboard[1].avatar_url" :src="leaderboard[1].avatar_url" />
-            <div v-else class="avatar-placeholder">{{ leaderboard[1].username[0].toUpperCase() }}</div>
-          </div>
-          <div class="top-rank silver">2</div>
-          <span class="top-name">{{ leaderboard[1].username }}</span>
-          <span class="top-points">{{ leaderboard[1].total_points }} pts</span>
-        </div>
-
-        <div class="top-item first">
-          <div class="crown">👑</div>
-          <div class="top-avatar large">
-            <img v-if="leaderboard[0].avatar_url" :src="leaderboard[0].avatar_url" />
-            <div v-else class="avatar-placeholder">{{ leaderboard[0].username[0].toUpperCase() }}</div>
-          </div>
-          <div class="top-rank gold">1</div>
-          <span class="top-name">{{ leaderboard[0].username }}</span>
-          <span class="top-points">{{ leaderboard[0].total_points }} pts</span>
-        </div>
-
-        <div class="top-item third">
-          <div class="top-avatar">
-            <img v-if="leaderboard[2].avatar_url" :src="leaderboard[2].avatar_url" />
-            <div v-else class="avatar-placeholder">{{ leaderboard[2].username[0].toUpperCase() }}</div>
-          </div>
-          <div class="top-rank bronze">3</div>
-          <span class="top-name">{{ leaderboard[2].username }}</span>
-          <span class="top-points">{{ leaderboard[2].total_points }} pts</span>
-        </div>
-      </div>
-
-      <!-- Lista completa desde posición 4 -->
-      <div class="list">
-        <div
-          v-for="(user, index) in leaderboard"
-          :key="user.id"
-          class="list-item"
-          :class="{ 'is-me': user.id === currentUserId }"
-        >
-          <span class="rank">
-            <span v-if="index === 0">🥇</span>
-            <span v-else-if="index === 1">🥈</span>
-            <span v-else-if="index === 2">🥉</span>
-            <span v-else>{{ index + 1 }}</span>
-          </span>
-          <div class="user-avatar">
-            <img v-if="user.avatar_url" :src="user.avatar_url" />
-            <div v-else class="avatar-placeholder small">{{ user.username[0].toUpperCase() }}</div>
-          </div>
-          <div class="user-info">
-            <span class="user-name">
-              {{ user.username }}
-              <span v-if="user.id === currentUserId" class="me-tag">Tú</span>
-            </span>
-            <span class="user-stats">{{ user.goals_completed }} retos · {{ user.hobbies_count }} hobbies</span>
-          </div>
-          <div class="user-points">
-            <span class="points-val">{{ user.total_points }}</span>
-            <span class="points-lbl">pts</span>
-          </div>
-        </div>
-      </div>
-
-      <!-- Mi posición si no estoy en top 3 -->
-      <div v-if="myPosition > 3" class="my-position">
-        <span>Tu posición: <strong>#{{ myPosition }}</strong></span>
-        <span>{{ myPoints }} puntos</span>
-      </div>
-    </div>
-  </div>
-</template>
-
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { supabase } from '../lib/supabase'
 
-const leaderboard = ref([])
-const currentUserId = ref(null)
-const loading = ref(true)
+const leaderboard    = ref([])
+const currentUserId  = ref(null)
+const loading        = ref(true)
+const activePeriod   = ref('all')
 
-const myPosition = computed(() => {
-  const idx = leaderboard.value.findIndex(u => u.id === currentUserId.value)
-  return idx + 1
+const COLORS = ['#D4537E','#7F77DD','#1D9E75','#BA7517','#185FA5','#639922','#993C1D','#534AB7']
+
+const maxPts = computed(() => leaderboard.value[0]?.total_points || 1)
+
+const myIndex = computed(() =>
+  leaderboard.value.findIndex(u => u.id === currentUserId.value)
+)
+
+const podiumOrder = computed(() => {
+  const s = leaderboard.value
+  return [s[1], s[0], s[2]].filter(Boolean)
 })
 
-const myPoints = computed(() => {
-  const user = leaderboard.value.find(u => u.id === currentUserId.value)
-  return user ? user.total_points : 0
-})
+const podiumRanks = [2, 1, 3]
+
+function initials(name) {
+  return (name || '?').split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase()
+}
+
+function color(index) {
+  return COLORS[index % COLORS.length]
+}
+
+function rankOf(user) {
+  return leaderboard.value.indexOf(user)
+}
 
 onMounted(async () => {
   const { data: { user } } = await supabase.auth.getUser()
   if (user) currentUserId.value = user.id
 
-  const { data, error } = await supabase.from('leaderboard').select('*')
-  console.log(data, error)
+  const { data } = await supabase.from('leaderboard').select('*')
   if (data) leaderboard.value = data
   loading.value = false
 })
 </script>
+<template>
+  <div class="lb-wrap">
 
+    <div class="lb-header">
+      <h1>Clasificación</h1>
+      <p>Los usuarios con más puntos de la comunidad</p>
+    </div>
+
+    <div v-if="loading" class="loading">Cargando...</div>
+
+    <template v-else-if="leaderboard.length === 0">
+      <div class="empty-text">No hay usuarios aún</div>
+    </template>
+
+    <template v-else>
+
+      <!-- Podio -->
+      <div class="podium">
+        <div
+          v-for="(u, i) in podiumOrder" :key="u.id"
+          class="podium-item"
+          :data-rank="podiumRanks[i]"
+        >
+          <div class="podium-avatar-wrap">
+            <div class="podium-avatar" :style="{ background: color(rankOf(u)), borderColor: color(rankOf(u)) }">
+              <img v-if="u.avatar_url" :src="u.avatar_url" />
+              <span v-else>{{ initials(u.username) }}</span>
+            </div>
+            <div class="rank-badge">{{ podiumRanks[i] }}</div>
+          </div>
+          <span class="podium-name">{{ u.username }}</span>
+          <span class="podium-pts">{{ u.total_points?.toLocaleString() }} pts</span>
+          <div class="podium-bar"></div>
+        </div>
+      </div>
+
+      <!-- Lista -->
+      <div class="list-section">
+        <div
+          v-for="(u, i) in leaderboard" :key="u.id"
+          class="list-item"
+          :class="{ 'is-me': u.id === currentUserId }"
+        >
+          <span class="rank-num">{{ i + 1 }}</span>
+          <div class="list-avatar" :style="{ background: color(i) }">
+            <img v-if="u.avatar_url" :src="u.avatar_url" style="width:100%;height:100%;object-fit:cover;border-radius:50%" />
+            <span v-else>{{ initials(u.username) }}</span>
+          </div>
+          <div class="list-info">
+            <div class="list-name">
+              {{ u.username }}
+              <span v-if="u.id === currentUserId" class="me-badge">Tú</span>
+            </div>
+            <div class="list-stats">{{ u.goals_completed }} retos · {{ u.hobbies_count }} hobbies</div>
+            <div class="progress-bar">
+              <div class="progress-fill" :style="{ width: Math.round(u.total_points / maxPts * 100) + '%', background: color(i) }"></div>
+            </div>
+          </div>
+          <div class="list-right">
+            <span class="list-pts">{{ u.total_points?.toLocaleString() }}</span>
+            <span class="list-pts-lbl">pts</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Mi posición si no estoy en top 3 -->
+      <div v-if="myIndex > 2" class="my-pos-card">
+        <span>Tu posición: <strong>#{{ myIndex + 1 }}</strong></span>
+        <span>{{ leaderboard[myIndex]?.total_points?.toLocaleString() }} puntos</span>
+      </div>
+
+    </template>
+  </div>
+</template>
 <style scoped>
-.dashboard-leaderboard { max-width: 700px; margin: 0 auto; }
-h1 { font-size: 28px; color: #1a1a2e; margin-bottom: 8px; }
-.subtitle { color: #666; margin-bottom: 32px; }
-.loading { text-align: center; color: #888; padding: 60px; }
+.lb-wrap { max-width: 700px; margin: 0 auto; padding-bottom: 2rem; }
+
+.lb-header { margin-bottom: 1.5rem; }
+.lb-header h1 { font-size: 26px; font-weight: 800; color: #22284E; margin-bottom: 4px; }
+.lb-header p  { font-size: 13px; color: rgba(34,40,78,.45); }
+
+.loading    { text-align: center; color: #888; padding: 60px; }
 .empty-text { text-align: center; color: #aaa; padding: 60px; font-size: 14px; }
 
-.leaderboard-card { background: #fff; border-radius: 20px; overflow: hidden; box-shadow: 0 2px 20px rgba(0,0,0,0.05); }
+/* Podio */
+.podium {
+  display: flex; align-items: flex-end; justify-content: center;
+  gap: 12px; margin-bottom: 2rem; padding: 0 1rem;
+}
+.podium-item {
+  display: flex; flex-direction: column; align-items: center;
+  gap: 8px; flex: 1; max-width: 160px;
+}
+.podium-avatar-wrap { position: relative; }
+.podium-avatar {
+  border-radius: 50%; display: flex; align-items: center; justify-content: center;
+  font-weight: 700; color: #fff; border: 2px solid transparent; overflow: hidden;
+  flex-shrink: 0;
+}
+.podium-avatar img {
+  width: 100%; height: 100%; object-fit: cover; border-radius: 50%;
+} 
+.podium-item[data-rank="1"] .podium-avatar { width: 72px; height: 72px; font-size: 20px; }
+.podium-item[data-rank="2"] .podium-avatar { width: 56px; height: 56px; font-size: 16px; }
+.podium-item[data-rank="3"] .podium-avatar { width: 56px; height: 56px; font-size: 16px; }
 
-.top3 { display: flex; align-items: flex-end; justify-content: center; gap: 16px; padding: 40px 24px 24px; background: linear-gradient(135deg, #22284E 0%, #1a1a2e 100%); }
-.top-item { display: flex; flex-direction: column; align-items: center; gap: 6px; }
-.top-item.first { order: 2; }
-.top-item.second { order: 1; }
-.top-item.third { order: 3; }
-.crown { font-size: 24px; margin-bottom: -4px; }
+.rank-badge {
+  position: absolute; bottom: -4px; right: -4px;
+  width: 20px; height: 20px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 10px; font-weight: 700; color: #fff;
+  border: 2px solid #fff;
+}
+.podium-item[data-rank="1"] .rank-badge { background: #BA7517; }
+.podium-item[data-rank="2"] .rank-badge { background: #888780; }
+.podium-item[data-rank="3"] .rank-badge { background: #993C1D; }
 
-.top-avatar { width: 60px; height: 60px; border-radius: 50%; overflow: hidden; border: 3px solid rgba(255,255,255,0.3); }
-.top-avatar.large { width: 80px; height: 80px; border-color: #FFD700; }
-.top-avatar img { width: 100%; height: 100%; object-fit: cover; }
-.avatar-placeholder { width: 100%; height: 100%; background: #E08E6B; color: #fff; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 20px; }
+.podium-name { font-size: 13px; font-weight: 700; color: #22284E; text-align: center; }
+.podium-pts  { font-size: 12px; color: rgba(34,40,78,.45); }
 
-.top-rank { width: 28px; height: 28px; border-radius: 50%; background: #888; color: #fff; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 700; margin-top: -10px; }
-.top-rank.gold { background: #FFD700; color: #1a1a2e; }
-.top-rank.silver { background: #C0C0C0; color: #1a1a2e; }
-.top-rank.bronze { background: #CD7F32; color: #fff; }
-.top-name { font-size: 13px; font-weight: 600; color: #fff; }
-.top-points { font-size: 12px; color: rgba(255,255,255,0.7); }
+.podium-bar {
+  width: 100%; border-radius: 8px 8px 0 0;
+}
+.podium-item[data-rank="1"] .podium-bar { height: 80px; background: #D4537E; }
+.podium-item[data-rank="2"] .podium-bar { height: 56px; background: #7F77DD; }
+.podium-item[data-rank="3"] .podium-bar { height: 40px; background: #1D9E75; }
 
-.list { padding: 8px 0; }
-.list-item { display: flex; align-items: center; gap: 14px; padding: 14px 24px; transition: background 0.2s; border-left: 3px solid transparent; }
-.list-item:hover { background: #f9f9f9; }
-.list-item.is-me { background: #fff5f0; border-left-color: #E08E6B; }
+/* Lista */
+.list-section { display: flex; flex-direction: column; gap: 6px; }
 
-.rank { width: 32px; text-align: center; font-size: 18px; font-weight: 700; color: #aaa; flex-shrink: 0; }
+.list-item {
+  display: flex; align-items: center; gap: 12px;
+  padding: 12px 14px; border-radius: 14px;
+  border: 1px solid rgba(34,40,78,.06);
+  background: #fff; transition: background .15s, border-color .15s;
+}
+.list-item:hover { background: #fafafa; }
+.list-item.is-me { border-color: #D4537E; background: #fff5f8; }
 
-.user-avatar { width: 40px; height: 40px; border-radius: 12px; overflow: hidden; flex-shrink: 0; }
-.user-avatar img { width: 100%; height: 100%; object-fit: cover; }
-.avatar-placeholder.small { width: 100%; height: 100%; background: #E08E6B; color: #fff; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 16px; border-radius: 12px; }
+.rank-num { width: 28px; font-size: 13px; font-weight: 600; color: rgba(34,40,78,.35); text-align: center; flex-shrink: 0; }
 
-.user-info { flex: 1; display: flex; flex-direction: column; gap: 2px; }
-.user-name { font-size: 14px; font-weight: 600; color: #1a1a2e; display: flex; align-items: center; gap: 6px; }
-.me-tag { background: #E08E6B; color: #fff; font-size: 10px; padding: 2px 6px; border-radius: 10px; font-weight: 700; }
-.user-stats { font-size: 12px; color: #888; }
+.list-avatar {
+  width: 38px; height: 38px; border-radius: 50%; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  font-weight: 700; font-size: 13px; color: #fff;
+}
 
-.user-points { display: flex; flex-direction: column; align-items: flex-end; }
-.points-val { font-size: 18px; font-weight: 700; color: #1a1a2e; }
-.points-lbl { font-size: 11px; color: #888; }
+.list-info { flex: 1; min-width: 0; }
+.list-name { font-size: 14px; font-weight: 700; color: #22284E; display: flex; align-items: center; gap: 6px; margin-bottom: 2px; }
+.me-badge { font-size: 10px; padding: 2px 7px; border-radius: 99px; background: rgba(212,83,126,.1); color: #993556; font-weight: 700; }
+.list-stats { font-size: 12px; color: rgba(34,40,78,.4); margin-bottom: 4px; }
 
-.my-position { display: flex; justify-content: space-between; align-items: center; padding: 16px 24px; background: #fff5f0; border-top: 1px solid #eee; font-size: 14px; color: #666; }
-.my-position strong { color: #E08E6B; }
+.progress-bar { height: 3px; background: rgba(34,40,78,.06); border-radius: 99px; overflow: hidden; }
+.progress-fill { height: 100%; border-radius: 99px; transition: width .6s cubic-bezier(.4,0,.2,1); }
+
+.list-right { display: flex; flex-direction: column; align-items: flex-end; gap: 1px; flex-shrink: 0; }
+.list-pts     { font-size: 17px; font-weight: 800; color: #22284E; }
+.list-pts-lbl { font-size: 11px; color: rgba(34,40,78,.35); }
+
+.my-pos-card {
+  margin-top: 1rem; padding: 14px 18px;
+  border-radius: 14px; border: 1px solid #D4537E;
+  background: #fff5f8;
+  display: flex; align-items: center; justify-content: space-between;
+  font-size: 13px; color: rgba(34,40,78,.6);
+}
+.my-pos-card strong { color: #993556; font-weight: 800; }
+/* Corona animada sobre el #1 */
+.podium-item[data-rank="1"] .podium-avatar-wrap::before {
+  content: '👑';
+  position: absolute;
+  top: -22px; left: 50%;
+  transform: translateX(-50%);
+  font-size: 20px;
+  animation: crown-float 2s ease-in-out infinite;
+}
+@keyframes crown-float {
+  0%, 100% { transform: translateX(-50%) translateY(0); }
+  50%       { transform: translateX(-50%) translateY(-4px); }
+}
+
+/* Anillo pulsante en el #1 */
+.podium-item[data-rank="1"] .podium-avatar {
+  box-shadow: 0 0 0 4px rgba(212,83,126,.2), 0 0 0 8px rgba(212,83,126,.08);
+  animation: pulse-ring 2s ease-in-out infinite;
+}
+@keyframes pulse-ring {
+  0%, 100% { box-shadow: 0 0 0 4px rgba(212,83,126,.2), 0 0 0 8px rgba(212,83,126,.08); }
+  50%       { box-shadow: 0 0 0 6px rgba(212,83,126,.3), 0 0 0 12px rgba(212,83,126,.1); }
+}
+
+/* Racha de fuego en la lista si tiene buena posición */
+.list-item:nth-child(-n+3) .rank-num::after {
+  content: ' 🔥';
+  font-size: 11px;
+}
+
+/* Entrada animada de los items */
+.list-item {
+  animation: slide-in .35s ease both;
+}
+.list-item:nth-child(1) { animation-delay: .05s; }
+.list-item:nth-child(2) { animation-delay: .10s; }
+.list-item:nth-child(3) { animation-delay: .15s; }
+.list-item:nth-child(4) { animation-delay: .20s; }
+.list-item:nth-child(5) { animation-delay: .25s; }
+.list-item:nth-child(6) { animation-delay: .30s; }
+@keyframes slide-in {
+  from { opacity: 0; transform: translateX(-16px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+/* Barra del podio con entrada animada */
+.podium-bar {
+  animation: grow-up .7s cubic-bezier(.4,0,.2,1) both;
+  transform-origin: bottom;
+}
+.podium-item[data-rank="1"] .podium-bar { animation-delay: .1s; }
+.podium-item[data-rank="2"] .podium-bar { animation-delay: .2s; }
+.podium-item[data-rank="3"] .podium-bar { animation-delay: .3s; }
+@keyframes grow-up {
+  from { transform: scaleY(0); opacity: 0; }
+  to   { transform: scaleY(1); opacity: 1; }
+}
 </style>

@@ -19,10 +19,41 @@ const showPassword = ref(false)
 const loading      = ref(false)
 const error        = ref('')
 const message      = ref('')
+const showForgot  = ref(false)
+const forgotEmail = ref('')
+const forgotSent  = ref(false)
+const forgotError = ref('')
+
+async function handleForgot() {
+  if (!forgotEmail.value) { forgotError.value = 'Introduce tu email'; return }
+  const { error } = await supabase.auth.resetPasswordForEmail(forgotEmail.value, {
+    redirectTo: `${window.location.origin}/auth/callback`
+  })
+  if (error) { forgotError.value = error.message; return }
+  forgotSent.value = true
+
+  // Desaparece a los 4 segundos
+  setTimeout(() => {
+    forgotSent.value  = false
+    showForgot.value  = false
+    forgotEmail.value = ''
+  }, 4000)
+}
 
 // Si el padre cambia initialMode (ej: desde login a signin) lo aplicamos
 import { watch } from 'vue'
-watch(() => props.initialMode, val => { mode.value = val })
+watch(() => props.initialMode, val => { 
+  mode.value = val 
+  showForgot.value = false  
+  forgotSent.value = false
+  forgotError.value = ''
+})
+
+watch(mode, () => {
+  showForgot.value  = false
+  forgotSent.value  = false
+  forgotError.value = ''
+})
 
 async function handleSubmit() {
   if (!email.value)    { error.value = 'Por favor, introduce tu email';      return }
@@ -54,8 +85,19 @@ async function handleSubmit() {
         password: password.value
       })
       if (signInError) throw signInError
+
+      // Consultar Supabase como fuente de verdad
+      const { data: { user } } = await supabase.auth.getUser()
+      const { data } = await supabase
+        .from('profiles')
+        .select('onboarding_done')
+        .eq('id', user.id)
+        .single()
+
+      const done = !!data?.onboarding_done
+      if (done) localStorage.setItem('onboarding_done', 'true')
+
       emit('close')
-      const done = localStorage.getItem('onboarding_done')
       router.push(done ? '/dashboard' : '/onboarding')
     }
   } catch (err) {
@@ -161,6 +203,34 @@ async function handleGoogleLogin() {
           </div>
         </div>
 
+        <!-- Olvidaste contraseña -->
+          <div v-if="mode === 'login'" class="forgot-wrap">
+            <button class="forgot-btn" @click="showForgot = !showForgot">
+              ¿Olvidaste tu contraseña?
+            </button>
+          </div>
+
+          <Transition name="slide">
+            <div v-if="showForgot" class="forgot-box">
+              <template v-if="!forgotSent">
+                <p>Te enviaremos un enlace para restablecer tu contraseña.</p>
+                <input
+                  v-model="forgotEmail"
+                  type="email"
+                  class="field-input"
+                  placeholder="Tu email"
+                />
+                <p v-if="forgotError" class="msg error">{{ forgotError }}</p>
+                <button class="btn-primary" @click="handleForgot">
+                  Enviar enlace
+                </button>
+              </template>
+              <p v-else class="msg success">
+                ✓ Revisa tu correo — te hemos enviado el enlace
+              </p>
+            </div>
+          </Transition>
+
         <!-- Mensajes -->
         <div v-if="error"   class="msg error">{{ error }}</div>
         <div v-if="message" class="msg success">{{ message }}</div>
@@ -196,14 +266,6 @@ async function handleGoogleLogin() {
 </template>
 
 <style scoped>
-/* ─── Colores de la app ───────────────────────────────
-   --navy:       #22284E
-   --pink:       #ff6b9d
-   --pink-light: #ffb3c6
-   --yellow:     #fff59e
-   --bg:         #fafafa
-────────────────────────────────────────────────────── */
-
 /* ─── Transición ─────────────────────────────────────── */
 .modal-fade-enter-active,
 .modal-fade-leave-active { transition: opacity .25s ease; }
@@ -378,4 +440,21 @@ async function handleGoogleLogin() {
   color: #22284E; cursor: pointer; font-weight: 600;
 }
 .terms strong:hover { color: #ff6b9d; text-decoration: underline; }
+.forgot-wrap { text-align: right; margin-top: -8px; margin-bottom: 14px; }
+.forgot-btn {
+  background: none; border: none; cursor: pointer;
+  font-size: 12px; color: rgba(34,40,78,.45);
+  transition: color .2s;
+}
+.forgot-btn:hover { color: #ff6b9d; }
+.forgot-box {
+  background: rgba(34,40,78,.03);
+  border: 1.5px solid rgba(34,40,78,.08);
+  border-radius: 12px; padding: 14px;
+  display: flex; flex-direction: column; gap: 10px;
+  margin-bottom: 6px;
+}
+.forgot-box p { font-size: 13px; color: rgba(34,40,78,.55); margin: 0; }
+.slide-enter-active, .slide-leave-active { transition: all .25s ease; }
+.slide-enter-from, .slide-leave-to { opacity: 0; transform: translateY(-8px); }
 </style>

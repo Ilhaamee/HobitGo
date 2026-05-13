@@ -1,13 +1,13 @@
 <script setup>
 import inicioImage from '../assets/inicio.png'
 import { ref } from 'vue'
+import { supabase } from '@/lib/supabase'
 
 defineProps({ show: Boolean })
 defineEmits(['close', 'signin'])
 
 const activeTab = ref('browser')
 
-// Hábitos con iconos SVG elegantes en vez de emojis básicos
 const habits = [
   { label: 'Yoga', color: '#ff6b9d' },
   { label: 'Lectura', color: '#8b5cf6' },
@@ -16,6 +16,19 @@ const habits = [
   { label: 'Guitarra', color: '#22284E' },
   { label: 'Dibujo', color: '#ff6b9d' },
 ]
+
+function handleCreateChallengeSignin() {
+  showCreateChallenge.value = false
+  openAuth('login')
+}
+
+async function handleGoogle() {
+  const { error } = await supabase.auth.signInWithOAuth({
+    provider: 'google',
+    options: { redirectTo: `${window.location.origin}/auth/callback` }
+  })
+  if (error) console.error(error)
+}
 </script>
 
 <template>
@@ -111,7 +124,7 @@ const habits = [
           <!-- ── Tab Web ── -->
           <div v-if="activeTab === 'browser'" class="tab-content">
 
-            <button class="btn-primary" @click="$emit('signin')">
+            <button class="btn-primary" @click="$emit('signin', 'signin')">
               <!-- Icono persona -->
               <svg viewBox="0 0 20 20" fill="none" width="18" style="flex-shrink:0">
                 <path d="M10 10a4 4 0 100-8 4 4 0 000 8zM3 18a7 7 0 0114 0" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
@@ -119,13 +132,13 @@ const habits = [
               Crear cuenta gratis
             </button>
 
-            <button class="btn-ghost" @click="$emit('signin')">
+            <button class="btn-ghost" @click="$emit('signin', 'login')">
               Ya tengo cuenta — entrar
             </button>
 
             <div class="or-line"><span>o continúa con</span></div>
 
-            <button class="btn-google" @click="$emit('signin')">
+            <button class="btn-google" @click="handleGoogle">
               <!-- Logo Google real en SVG -->
               <svg viewBox="0 0 24 24" width="18" height="18">
                 <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
@@ -225,10 +238,10 @@ const habits = [
   width: 30px; height: 30px; border-radius: 50%;
   background: rgba(255,255,255,.18); border: 1px solid rgba(255,255,255,.3);
   display: flex; align-items: center; justify-content: center;
-  cursor: pointer; color: #fff;
+  cursor: pointer; color: #ff6b9d;
   transition: background .2s;
 }
-.close-btn:hover { background: rgba(255,255,255,.3); }
+.close-btn:hover { background: #ffb3c6;  color: #fff;}
 
 /* ─── IZQUIERDA ──────────────────────────────────────── */
 .modal-left {
@@ -452,6 +465,6 @@ const habits = [
   .modal-left { padding: 28px 24px 20px; }
   .modal-right { padding: 24px 24px 28px; }
   .app-img-wrap { display: none; }
-  .close-btn { color: #22284E; background: rgba(34,40,78,.08); border-color: rgba(34,40,78,.12); }
+  .close-btn { color: #ff6b9d; background: rgba(34,40,78,.08); border-color: rgba(34,40,78,.12); }
 }
 </style>

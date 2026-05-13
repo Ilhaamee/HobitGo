@@ -42,17 +42,28 @@ async function submitEvent() {
 }
 
 /* ── color del hobby ───────────────────────────────── */
-function hobbyColor(id) {
-  const h = props.hobbies.find(h => h.id === id)
-  return h && Array.isArray(h.gradient) ? h.gradient[0] : '#ff6b9d'
+function hobbyColor(h) {
+  return Array.isArray(h.gradient) ? h.gradient[0] : '#ff6b9d'
 }
-function hobbyName(id) {
-  return props.hobbies.find(h => h.id === id)?.name || 'Hobby'
-}
+
 function formatMins(m) {
-  if (!m) return ''
+  if (!m) return '0 min'
   return m < 60 ? `${m} min` : `${Math.floor(m/60)}h ${m%60 ? m%60+'min':''}`
 }
+
+// Hobbies con estado de cumplimiento del día
+const hobbyStatus = computed(() => {
+  const dayEnd = new Date(props.date + 'T23:59:59')
+  return props.hobbies
+    .filter(h => new Date(h.created_at) <= dayEnd)
+    .map(h => {
+      const daySessions = props.sessions.filter(s => s.hobby_id === h.id)
+      const totalMin = daySessions.reduce((sum, s) => sum + (s.minutes || 0), 0)
+      const goal = h.daily_minutes || 20
+      const done = totalMin >= goal
+      return { ...h, totalMin, goal, done, sessionCount: daySessions.length }
+    })
+})
 </script>
 
 <template>
@@ -62,11 +73,11 @@ function formatMins(m) {
       <div>
         <h3 class="dp-date">{{ formattedDate }}</h3>
         <p class="dp-count">
-          {{ sessions.length }} sesión{{ sessions.length !== 1 ? 'es' : '' }}
+          {{ hobbyStatus.filter(h => h.done).length }}/{{ hobbyStatus.length }} hobbies completados
           · {{ events.length }} evento{{ events.length !== 1 ? 's' : '' }}
         </p>
       </div>
-      <button class="dp-add-btn" @click="showForm = !showForm">
+      <button class="dp-add-btn" @click="showForm = true">
         <svg viewBox="0 0 14 14" fill="none" width="12">
           <path d="M7 1v12M1 7h12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
         </svg>
@@ -75,31 +86,28 @@ function formatMins(m) {
     </div>
 
     <!-- Sesiones de hobbies -->
-    <div v-if="sessions.length > 0" class="dp-section">
+    <div class="dp-section">
       <p class="dp-section-label">Hobbies del día</p>
       <div class="dp-sessions">
-        <div
-          v-for="s in sessions" :key="s.id"
-          class="dp-session"
-          :style="{ borderLeftColor: hobbyColor(s.hobby_id) }"
+        <div v-for="h in hobbyStatus" :key="h.id" class="dp-session"
+          :style="{ borderLeftColor: hobbyColor(h) }"
         >
           <div class="ds-left">
-            <span class="ds-dot" :style="{ background: hobbyColor(s.hobby_id) }"></span>
+            <span class="ds-dot" :style="{ background: hobbyColor(h) }"></span>
             <div>
-              <p class="ds-name">{{ hobbyName(s.hobby_id) }}</p>
-              <p class="ds-time">{{ formatMins(s.minutes) }}{{ s.note ? ' · ' + s.note : '' }}</p>
+              <p class="ds-name">{{ h.name }}</p>
+              <p class="ds-time">
+                {{ formatMins(h.totalMin) }} / {{ formatMins(h.goal) }}
+                <span v-if="h.sessionCount > 0"> · {{ h.sessionCount }} sesión{{ h.sessionCount > 1 ? 'es' : '' }}</span>
+              </p>
             </div>
           </div>
-          <button
-            class="ds-check"
-            :class="{ done: s.done }"
-            @click="emit('toggle-session', s.id, !s.done)"
-            :title="s.done ? 'Marcar pendiente' : 'Marcar completado'"
-          >
+          <!-- Check solo visual, sin click -->
+          <div class="ds-check" :class="{ done: h.done }">
             <svg viewBox="0 0 14 14" fill="none" width="12">
               <path d="M2 7l4 4 6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
             </svg>
-          </button>
+          </div>
         </div>
       </div>
     </div>
@@ -136,24 +144,39 @@ function formatMins(m) {
     </div>
 
     <!-- Formulario nuevo evento -->
-    <Transition name="slide">
-      <div v-if="showForm" class="dp-form">
-        <input v-model="newTitle" type="text" class="f-input" placeholder="Título del evento" />
-        <div class="f-row">
-          <input v-model="newTime" type="time" class="f-input" />
-          <input v-model="newEnd"  type="time" class="f-input" />
-        </div>
-        <textarea v-model="newDesc" class="f-input f-textarea" placeholder="Descripción (opcional)"></textarea>
-        <p v-if="formError" class="f-error">{{ formError }}</p>
-        <div class="f-actions">
-          <button class="f-btn-save" @click="submitEvent" :disabled="saving">
-            {{ saving ? '...' : 'Guardar evento' }}
-          </button>
-          <button class="f-btn-cancel" @click="showForm = false">Cancelar</button>
+    <Transition name="ev-modal">
+      <div v-if="showForm" class="ev-overlay" @click.self="showForm = false">
+        <div class="ev-sheet">
+          <div class="ev-sheet-head">
+            <h4>Nuevo evento</h4>
+            <button class="ev-close" @click="showForm = false">
+              <svg viewBox="0 0 14 14" fill="none" width="10">
+                <path d="M1 1l12 12M13 1L1 13" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+              </svg>
+            </button>
+          </div>
+          <input v-model="newTitle" type="text" class="f-input" placeholder="Título del evento" />
+          <div class="f-row">
+            <div class="f-time-field">
+              <label>Inicio</label>
+              <input v-model="newTime" type="time" class="f-input" />
+            </div>
+            <div class="f-time-field">
+              <label>Fin</label>
+              <input v-model="newEnd" type="time" class="f-input" />
+            </div>
+          </div>
+          <textarea v-model="newDesc" class="f-input f-textarea" placeholder="Descripción (opcional)"></textarea>
+          <p v-if="formError" class="f-error">{{ formError }}</p>
+          <div class="f-actions">
+            <button class="f-btn-save" @click="submitEvent" :disabled="saving">
+              {{ saving ? 'Guardando...' : 'Guardar evento' }}
+            </button>
+            <button class="f-btn-cancel" @click="showForm = false">Cancelar</button>
+          </div>
         </div>
       </div>
     </Transition>
-
   </div>
 </template>
 
@@ -237,8 +260,6 @@ function formatMins(m) {
 .dp-empty p { font-size: 13px; color: rgba(34,40,78,.35); margin: 0; }
 
 /* Formulario */
-.dp-form { border-top: 1px solid rgba(34,40,78,.06); padding-top: 16px; margin-top: 12px; }
-
 .f-input {
   width: 100%; padding: 10px 12px; box-sizing: border-box;
   border: 1.5px solid rgba(34,40,78,.1); border-radius: 10px;
@@ -267,7 +288,39 @@ function formatMins(m) {
 }
 .f-btn-cancel:hover { background: rgba(34,40,78,.04); }
 
+.ev-overlay {
+  position: fixed; inset: 0; z-index: 1500;
+  background: rgba(34,40,78,.5); backdrop-filter: blur(8px);
+  display: flex; align-items: center; justify-content: center;
+  padding: 20px;
+}
+.ev-sheet {
+  background: #fff;
+  width: 100%; max-width: 540px;
+  padding: 24px 20px calc(24px + env(safe-area-inset-bottom));
+  display: flex; flex-direction: column; gap: 10px;
+  border-radius: 20px; 
+  max-height: 90vh; overflow-y: auto;
+}
+.ev-sheet-head {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 4px;
+}
+.ev-sheet-head h4 { font-size: 16px; font-weight: 800; color: #22284E; margin: 0; }
+.ev-close {
+  width: 28px; height: 28px; border-radius: 50%;
+  background: rgba(34,40,78,.06); border: none;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; color: rgba(34,40,78,.5);
+}
+.f-time-field { flex: 1; display: flex; flex-direction: column; gap: 4px; }
+.f-time-field label { font-size: 11px; font-weight: 600; color: rgba(34,40,78,.45); }
+
+.ev-modal-enter-active, .ev-modal-leave-active { transition: opacity .25s ease; }
+.ev-modal-enter-active .ev-sheet, .ev-modal-leave-active .ev-sheet { transition: transform .25s ease; }
+.ev-modal-enter-from, .ev-modal-leave-to { opacity: 0; }
+.ev-modal-enter-from .ev-sheet, .ev-modal-leave-to .ev-sheet { transform: translateY(40px); }
+
 /* Transición formulario */
-.slide-enter-active, .slide-leave-active { transition: opacity .2s, transform .2s; }
 .slide-enter-from, .slide-leave-to { opacity: 0; transform: translateY(-8px); }
 </style>

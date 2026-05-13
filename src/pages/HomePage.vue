@@ -14,21 +14,27 @@ const showCreateChallenge = ref(false)
 const showAuth            = ref(false)
 
 function openCreateChallenge() { showCreateChallenge.value = true }
-function openAuth()             { showAuth.value = true }
 
-function handleCreateChallengeSignin() {
+function handleCreateChallengeSignin(mode = 'signin') {
   showCreateChallenge.value = false
+  authMode.value = mode
+  showAuth.value = true
+}
+
+const authMode = ref('signin')
+
+function openAuth(mode = 'signin') {
+  authMode.value = mode
   showAuth.value = true
 }
 </script>
 
 <template>
   <AppNavbar
-    @signin="openAuth"
+    @signin="openAuth('login')"
     @start="openCreateChallenge"
   />
 
-  <!-- Siempre visible — móvil y web -->
   <HeroSection
     @start="openCreateChallenge"
     @signin="openAuth"
@@ -50,6 +56,7 @@ function handleCreateChallengeSignin() {
 
   <AuthPage
     :show="showAuth"
+    :initial-mode="authMode"
     @close="showAuth = false"
   />
 

@@ -1,15 +1,101 @@
 <script setup>
 import { ref, onMounted, onUnmounted } from 'vue'
+import FallingText from '@/components/home/FallingText.vue'
+import { HOBBIES_LIST } from '@/data/hobbiesData.js'
 
 defineEmits(['start', 'signin'])
 
-const isVisible  = ref(false)
-const activeWord = ref(0)
-const words      = ['hábitos', 'retos', 'progreso', 'resultados']
+const fallingTextContent = HOBBIES_LIST.map(h => h.name).join(' ')
+const highlightedHobbies = ['Yoga', 'Correr', 'Lectura', 'Música', 'Fotografía', 'Cocina']
+
+const isVisible    = ref(false)
+const activeWord   = ref(0)
+const words        = ['hábitos', 'retos', 'progreso', 'resultados']
+const plasmaCanvas = ref(null)
 
 let wordTimer = null
+let rafId     = null
+let ctx       = null
+let mouseX    = 0
+let mouseY    = 0
+let targetX   = 0
+let targetY   = 0
+
+function initPlasma() {
+  const canvas = plasmaCanvas.value
+  if (!canvas) return
+  ctx = canvas.getContext('2d')
+  canvas.width  = window.innerWidth
+  canvas.height = window.innerHeight
+  drawPlasma()
+}
+
+function drawPlasma() {
+  if (!ctx) return
+  autoMove()
+  const w = ctx.canvas.width
+  const h = ctx.canvas.height
+
+  mouseX += (targetX - mouseX) * 0.04
+  mouseY += (targetY - mouseY) * 0.04
+
+  ctx.clearRect(0, 0, w, h)
+
+  const blobs = [
+    { x: mouseX,                                    y: mouseY,                                    r: w * 0.45, color: 'rgba(255,107,157,0.50)' },
+    { x: w - mouseX,                                y: h - mouseY,                                r: w * 0.40, color: 'rgba(197,202,233,0.45)' },
+    { x: w * 0.5 + (mouseX - w * 0.5) * 0.3,       y: h * 0.5 + (mouseY - h * 0.5) * 0.3,       r: w * 0.30, color: 'rgba(255,179,198,0.40)' },
+    { x: w * 0.1,                                   y: h * 0.1,                                   r: w * 0.35, color: 'rgba(255,245,158,0.35)' },
+  ]
+
+  blobs.forEach(({ x, y, r, color }) => {
+    const g = ctx.createRadialGradient(x, y, 0, x, y, r)
+    g.addColorStop(0,   color)
+    g.addColorStop(0.6, color.replace(/[\d.]+\)$/, '0.12)'))
+    g.addColorStop(1,   'transparent')
+    ctx.fillStyle = g
+    ctx.fillRect(0, 0, w, h)
+  })
+
+  rafId = requestAnimationFrame(drawPlasma)
+}
+
+function onResize() {
+  if (!plasmaCanvas.value) return
+  plasmaCanvas.value.width  = window.innerWidth
+  plasmaCanvas.value.height = window.innerHeight
+}
+
+function onMouseMove(e) {
+  targetX = e.clientX
+  targetY = e.clientY
+}
+
+// Detectar si es móvil
+const isMobile = () => window.innerWidth <= 768
+
+// Movimiento automático para móvil
+let autoAngle = 0
+function autoMove() {
+  if (!isMobile()) return
+  autoAngle += 0.008
+  targetX = window.innerWidth  * (0.5 + 0.4 * Math.sin(autoAngle))
+  targetY = window.innerHeight * (0.5 + 0.4 * Math.cos(autoAngle * 0.7))
+}
 
 onMounted(() => {
+  targetX = window.innerWidth  / 2
+  targetY = window.innerHeight / 2
+  mouseX  = targetX
+  mouseY  = targetY
+
+  initPlasma()
+
+  if (!isMobile()) {
+    window.addEventListener('mousemove', onMouseMove)
+  }
+  window.addEventListener('resize',    onResize)
+
   setTimeout(() => { isVisible.value = true }, 100)
   wordTimer = setInterval(() => {
     activeWord.value = (activeWord.value + 1) % words.length
@@ -18,6 +104,12 @@ onMounted(() => {
 
 onUnmounted(() => {
   if (wordTimer) clearInterval(wordTimer)
+  if (rafId)     cancelAnimationFrame(rafId)
+  if (!isMobile()) {
+    window.removeEventListener('mousemove', onMouseMove)
+  }
+  window.removeEventListener('resize',    onResize)
+  ctx = null
 })
 </script>
 
@@ -25,11 +117,7 @@ onUnmounted(() => {
   <section class="hero" role="banner">
 
     <!-- Fondo degradado animado -->
-    <div class="hero-bg" aria-hidden="true">
-      <div class="blob b1"></div>
-      <div class="blob b2"></div>
-      <div class="blob b3"></div>
-    </div>
+    <canvas ref="plasmaCanvas" class="plasma-canvas" aria-hidden="true"></canvas>
 
     <!-- Contenido central -->
     <div class="hero-center" :class="{ visible: isVisible }">
@@ -67,17 +155,29 @@ onUnmounted(() => {
         <button class="btn-main" @click="$emit('start')">
           Empezar gratis
         </button>
-        <button class="btn-sec" @click="$emit('signin')">
+        <button class="btn-sec" @click="$emit('signin', 'login')">
           Ya tengo cuenta
         </button>
       </div>
+    </div>
 
+    <!-- Falling Text en la parte baja del hero -->
+    <div class="falling-text-wrap">
+      <FallingText
+        :text="fallingTextContent"
+        :highlight-words="highlightedHobbies"
+        highlight-class="highlighted"
+        trigger="auto"
+        background-color="transparent"
+        :gravity="1.2"
+        :mouse-constraint-stiffness="0.2"
+        font-size="0.95rem"
+      />
     </div>
   </section>
 </template>
 
 <style scoped>
-/* ─── Variables de color de la app ───────────────────── */
 :root {
   --navy:      #22284E;
   --pink:      #ff6b9d;
@@ -88,7 +188,6 @@ onUnmounted(() => {
 
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-/* ─── HERO ───────────────────────────────────────────── */
 .hero {
   position: relative;
   min-height: 100svh;
@@ -100,7 +199,6 @@ onUnmounted(() => {
   background: var(--yellow, #fff59e);
 }
 
-/* ─── FONDO con blobs animados ───────────────────────── */
 .hero-bg {
   position: absolute;
   inset: 0;
@@ -108,46 +206,15 @@ onUnmounted(() => {
   z-index: 0;
 }
 
-.blob {
+.plasma-canvas {
   position: absolute;
-  border-radius: 50%;
-  filter: blur(70px);
-  opacity: 0.55;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 0;
+  pointer-events: none;
 }
 
-.b1 {
-  width: 520px;
-  height: 520px;
-  background: radial-gradient(circle, #ff6b9d, #ffb3c6);
-  top: -180px;
-  right: -140px;
-  animation: drift 14s ease-in-out infinite;
-}
-
-.b2 {
-  width: 400px;
-  height: 400px;
-  background: radial-gradient(circle, #fff59e, #ffe0ec);
-  bottom: -120px;
-  left: -100px;
-  animation: drift 18s ease-in-out infinite reverse;
-}
-
-.b3 {
-  width: 280px;
-  height: 280px;
-  background: radial-gradient(circle, #c5cae9, #fff59e);
-  top: 40%;
-  left: 25%;
-  animation: drift 11s ease-in-out infinite 4s;
-}
-
-@keyframes drift {
-  0%, 100% { transform: translate(0, 0) scale(1); }
-  50%       { transform: translate(28px, -22px) scale(1.08); }
-}
-
-/* ─── CENTRO ─────────────────────────────────────────── */
 .hero-center {
   position: relative;
   z-index: 10;
@@ -163,7 +230,6 @@ onUnmounted(() => {
   transform: none;
 }
 
-/* ─── PILL ───────────────────────────────────────────── */
 .hero-pill {
   display: inline-flex;
   align-items: center;
@@ -187,7 +253,6 @@ onUnmounted(() => {
   display: inline-block;
 }
 
-/* ─── TÍTULO ─────────────────────────────────────────── */
 .hero-h1 {
   display: flex;
   flex-direction: column;
@@ -213,7 +278,6 @@ onUnmounted(() => {
   line-height: .95;
 }
 
-/* Palabra animada */
 .h-switch {
   position: relative;
   display: block;
@@ -241,7 +305,6 @@ onUnmounted(() => {
   transform: translateX(-50%) translateY(0);
 }
 
-/* ─── DESCRIPCIÓN ────────────────────────────────────── */
 .hero-desc {
   font-size: clamp(14px, 1.5vw, 17px);
   color: rgba(34,40,78,.62);
@@ -249,7 +312,6 @@ onUnmounted(() => {
   margin: 0 0 36px;
 }
 
-/* ─── BOTONES ────────────────────────────────────────── */
 .hero-btns {
   display: flex;
   gap: 12px;
@@ -290,10 +352,28 @@ onUnmounted(() => {
   background: rgba(255,255,255,.92);
 }
 
-/* ─── RESPONSIVE ─────────────────────────────────────── */
 @media (max-width: 600px) {
   .hero { padding: 90px 20px 48px; }
   .hero-btns { flex-direction: column; align-items: center; }
   .btn-main, .btn-sec { width: 100%; max-width: 300px; }
+}
+
+.falling-text-wrap {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 55%;
+  pointer-events: all;
+  z-index: 5;
+  pointer-events: none;
+}
+
+.b1, .b2, .b3 {
+  will-change: left, top;
+}
+
+@media (max-width: 768px) {
+  .falling-text-wrap { display: none; }
 }
 </style>

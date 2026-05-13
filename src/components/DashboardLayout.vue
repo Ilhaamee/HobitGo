@@ -200,11 +200,6 @@ onUnmounted(() => {
 </script>
 
 <style scoped>
-/* ─── Colores ─────────────────────────────────────────
-   navy:  #22284E  |  pink: #ff6b9d  |  yellow: #fff59e
-   bg:    #f4f5f9  |  card: #ffffff
-────────────────────────────────────────────────────── */
-
 .dash-root {
   display: flex;
   min-height: 100vh;
@@ -352,7 +347,10 @@ onUnmounted(() => {
   padding: 28px;
   transition: margin-left .28s cubic-bezier(.4,0,.2,1);
   min-height: 100vh;
-  padding-bottom: 100px; /* espacio para bottombar en móvil */
+  padding-bottom: 100px;
+  overflow-x: hidden;  
+  min-width: 0;         
+  max-width: 100%;      
 }
 .dash-main.expanded { margin-left: 68px; }
 
@@ -427,10 +425,9 @@ onUnmounted(() => {
 }
 .toast-close:hover { color: #ff6b9d; }
 
-/* ══ RESPONSIVE ═════════════════════════════════════ */
 @media (max-width: 768px) {
   .sidebar { display: none; }
-  .dash-main { margin-left: 0; padding: 20px 16px; }
+  .dash-main { margin-left: 0; padding: 20px 16px 120px; overflow-x: hidden; width: 100%; box-sizing: border-box; }
   .bottombar { display: flex; }
 }
 </style>

@@ -4,6 +4,9 @@ import { supabase } from '../lib/supabase'
 import CalendarGrid     from '../components/calendar/CalendarGrid.vue'
 import CalendarDayPanel from '../components/calendar/CalendarDayPanel.vue'
 import CalendarFilter   from '../components/calendar/CalendarFilter.vue'
+import HabitUniverse    from '../components/calendar/Habituniverse.vue'
+
+
 
 /* ── state ─────────────────────────────────────────── */
 const today        = new Date()
@@ -24,7 +27,7 @@ async function load() {
   userId.value = user.id
 
   const [{ data: hData }, { data: sData }, { data: eData }] = await Promise.all([
-    supabase.from('hobbies').select('id, name, gradient').eq('user_id', user.id),
+    supabase.from('hobbies').select('id, name, gradient, created_at, daily_minutes').eq('user_id', user.id),
     supabase.from('hobby_sessions').select('*').eq('user_id', user.id),
     supabase.from('events').select('*').eq('user_id', user.id),
   ])
@@ -122,38 +125,50 @@ onMounted(load)
       @change="filterHobby = $event"
     />
 
-    <!-- Grid del mes -->
-    <CalendarGrid
-      :month="currentMonth"
-      :year="currentYear"
-      :selected-date="selectedDate"
-      :sessions-by-date="sessionsByDate"
-      :events-by-date="eventsByDate"
-      :hobbies="hobbies"
-      :filter-hobby="filterHobby"
-      @prev="prevMonth"
-      @next="nextMonth"
-      @day-click="onDayClick"
-    />
+    <div class="cal-body">
+      <!-- Grid del mes -->
+      <CalendarGrid
+        :month="currentMonth"
+        :year="currentYear"
+        :selected-date="selectedDate"
+        :sessions-by-date="sessionsByDate"
+        :events-by-date="eventsByDate"
+        :hobbies="hobbies"
+        :filter-hobby="filterHobby"
+        @prev="prevMonth"
+        @next="nextMonth"
+        @day-click="onDayClick"
+      />
 
-    <!-- Panel inferior del día -->
-    <CalendarDayPanel
-      v-if="selectedDate"
-      :date="selectedDate"
-      :sessions="daySessions"
-      :events="dayEvents"
-      :hobbies="hobbies"
-      @add-event="onAddEvent"
-      @delete-event="onDeleteEvent"
-      @toggle-session="onToggleSession"
-    />
-
+      <!-- Panel inferior del día -->
+      <CalendarDayPanel
+        v-if="selectedDate"
+        :date="selectedDate"
+        :sessions="daySessions"
+        :events="dayEvents"
+        :hobbies="hobbies"
+        @add-event="onAddEvent"
+        @delete-event="onDeleteEvent"
+        @toggle-session="onToggleSession"
+      />
+    </div>
   </div>
+
+  <!-- FAB árbol fijo -->
+  <HabitUniverse :hobbies="hobbies" :sessions="sessions" />
+
 </template>
 
 <style scoped>
-.cal-page { max-width: 700px; margin: 0 auto; }
-.page-head { margin-bottom: 20px; }
-.page-title { font-size: 26px; font-weight: 900; color: #22284E; letter-spacing: -1px; margin: 0 0 4px; }
-.page-sub   { font-size: 13px; color: rgba(34,40,78,.45); margin: 0; }
+.cal-page { max-width: 700px; margin: 0 auto; width: 100%;}
+.page-head { margin-bottom: 14px; }
+.page-title { font-size: 22px; font-weight: 900; color: #22284E; letter-spacing: -1px; margin: 0 0 2px; }
+.page-sub   { font-size: 12px; color: rgba(34,40,78,.45); margin: 0; }
+.cal-body { overflow-x: hidden; width: 100%; }
+
+@media (min-width: 480px) {
+  .cal-page { padding: 0; }
+  .page-title { font-size: 26px; }
+  .page-head { margin-bottom: 20px; }
+}
 </style>

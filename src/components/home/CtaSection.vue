@@ -63,7 +63,6 @@ defineEmits(['start'])
   overflow: hidden;
 }
 
-/* ── Blobs animados ──────────────────────────────────── */
 .cta-bg { position: absolute; inset: 0; pointer-events: none; z-index: 0; }
 .blob { position: absolute; border-radius: 50%; filter: blur(60px); }
 
@@ -76,7 +75,6 @@ defineEmits(['start'])
   50%       { transform: translate(30px, -20px) scale(1.1); }
 }
 
-/* ── Pills flotantes ─────────────────────────────────── */
 .cta-hobbies { position: absolute; inset: 0; pointer-events: none; z-index: 1; }
 
 .hobby-pill {
@@ -104,7 +102,6 @@ defineEmits(['start'])
   50%       { transform: translateY(-10px) rotate(1deg); }
 }
 
-/* ── Contenido ───────────────────────────────────────── */
 .cta-inner {
   max-width: 520px;
   margin: 0 auto;

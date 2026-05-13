@@ -6,47 +6,63 @@ import { supabase } from '../lib/supabase'
 const router = useRouter()
 
 onMounted(async () => {
-  // Esperamos a que Supabase procese el token de la URL
-  // (necesario para OAuth como Google)
   const { data: { session }, error } = await supabase.auth.getSession()
 
-  if (session) {
-    redirect(session)
+  // Detectar si viene de un reset de contraseña
+  const hash = window.location.hash
+  const isRecovery = hash.includes('type=recovery') || 
+  new URLSearchParams(window.location.search).get('type') === 'recovery'
+
+  if (isRecovery) {
+    router.push('/reset-password')
     return
   }
 
-  // Si no hay sesión todavía, escuchamos el evento authStateChange
-  // que dispara Supabase cuando termina de procesar el token OAuth
-  const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+  if (session) {
+    await redirect(session)  // ← añade await
+    return
+  }
+
+  const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
     if (event === 'SIGNED_IN' && session) {
       subscription.unsubscribe()
-      redirect(session)
+      await redirect(session)  // ← añade await
     }
-    // Si tras 5s no hay sesión, mandamos al home
   })
 
-  // Timeout de seguridad — si algo falla no se queda colgado
   setTimeout(() => {
     subscription.unsubscribe()
     router.push('/')
   }, 5000)
 })
 
-function redirect(session) {
+async function redirect(session) {
   if (!session) { router.push('/'); return }
 
-  // Detectar si es cuenta nueva comparando created_at con now
-  // Si la cuenta se creó hace menos de 10 segundos → es nueva → onboarding
-  const createdAt  = new Date(session.user.created_at).getTime()
-  const now        = Date.now()
-  const isNew      = (now - createdAt) < 10000   // menos de 10 segundos
+  const createdAt = new Date(session.user.created_at).getTime()
+  const now       = Date.now()
+  const isNew     = (now - createdAt) < 10000
 
-  const done = localStorage.getItem('onboarding_done')
-
-  if (isNew && !done) {
+  // Cuenta nueva — siempre al onboarding
+  if (isNew) {
     router.push('/onboarding')
-  } else {
+    return
+  }
+
+  // Cuenta existente — consultar Supabase como fuente de verdad
+  const { data } = await supabase
+    .from('profiles')
+    .select('onboarding_done')
+    .eq('id', session.user.id)
+    .single()
+
+  const done = !!data?.onboarding_done
+
+  if (done) {
+    localStorage.setItem('onboarding_done', 'true')
     router.push('/dashboard')
+  } else {
+    router.push('/onboarding')
   }
 }
 </script>

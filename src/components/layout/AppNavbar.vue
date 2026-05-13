@@ -43,16 +43,13 @@ onUnmounted(() => {
 <template>
   <nav class="navbar" :class="{ scrolled: isScrolled }" role="navigation" aria-label="Navegación principal">
 
-    <!-- Logo -->
     <div class="brand">
       <img src="@/assets/logo.png" alt="HobitGo" class="logo-img" />
       <AppLogo :size="26" />
     </div>
 
-    <!-- ── Escritorio ───────────────────────────────────── -->
     <div class="nav-btns desktop">
 
-      <!-- Dropdown idioma -->
       <div class="lang-wrap">
         <button class="btn-lang" @click.stop="langOpen = !langOpen" :aria-expanded="langOpen">
           <svg viewBox="0 0 18 18" fill="none" width="14">
@@ -86,17 +83,13 @@ onUnmounted(() => {
       <button class="btn-nav-main" @click="$emit('start')">{{ lang === 'ES' ? 'Empezar gratis' : 'Start free' }}</button>
     </div>
 
-    <!-- ── Hamburguesa ──────────────────────────────────── -->
     <button class="hamburger" @click="isMenuOpen = !isMenuOpen" aria-label="Menú">
       <span :class="{ open: isMenuOpen }"></span>
       <span :class="{ open: isMenuOpen }"></span>
       <span :class="{ open: isMenuOpen }"></span>
     </button>
 
-    <!-- ── Menú móvil ───────────────────────────────────── -->
     <div class="mobile-menu" :class="{ open: isMenuOpen }">
-
-      <!-- Idioma: toggle de dos pastillas en una fila — sin dropdown -->
       <div class="mobile-lang-row">
         <span class="mobile-lang-title">
           <svg viewBox="0 0 18 18" fill="none" width="13">
@@ -127,7 +120,6 @@ onUnmounted(() => {
 </template>
 
 <style scoped>
-/* ─── Base ───────────────────────────────────────────── */
 .navbar {
   position: fixed;
   top: 0; left: 0; right: 0;
@@ -144,14 +136,11 @@ onUnmounted(() => {
   box-shadow: 0 2px 20px rgba(0,0,0,.08);
 }
 
-/* ─── Logo ───────────────────────────────────────────── */
 .brand { display: flex; align-items: center; gap: 10px; }
 .logo-img { width: 36px; height: 36px; object-fit: contain; }
 
-/* ─── Escritorio ─────────────────────────────────────── */
 .nav-btns { display: flex; align-items: center; gap: 12px; }
 
-/* ── Dropdown idioma ─────────────────────────────────── */
 .lang-wrap { position: relative; }
 
 .btn-lang {
@@ -193,11 +182,9 @@ onUnmounted(() => {
 .lang-label { font-size: 13px; font-weight: 500; color: rgba(34,40,78,.6); flex: 1; }
 .lang-check { margin-left: auto; flex-shrink: 0; }
 
-/* Animación dropdown */
 .drop-enter-active, .drop-leave-active { transition: opacity .18s ease, transform .18s ease; }
 .drop-enter-from, .drop-leave-to { opacity: 0; transform: translateY(-6px) scale(.97); }
 
-/* ── Botones nav escritorio ──────────────────────────── */
 .btn-nav-sec {
   background: transparent;
   border: 2px solid rgba(34,40,78,.22);
@@ -217,7 +204,6 @@ onUnmounted(() => {
 }
 .btn-nav-main:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(34,40,78,.32); }
 
-/* ─── Hamburguesa ────────────────────────────────────── */
 .hamburger {
   display: none; flex-direction: column; gap: 5px;
   background: none; border: none; cursor: pointer; padding: 6px;
@@ -231,7 +217,6 @@ onUnmounted(() => {
 .hamburger span:nth-child(2).open { opacity: 0; }
 .hamburger span:nth-child(3).open { transform: rotate(-45deg) translate(5px, -5px); }
 
-/* ─── Menú móvil ─────────────────────────────────────── */
 .mobile-menu {
   display: none;
   position: absolute; top: 100%; left: 0; right: 0;
@@ -244,7 +229,6 @@ onUnmounted(() => {
 }
 .mobile-menu.open { display: flex; }
 
-/* Fila de idioma — label a la izquierda, pastillas a la derecha */
 .mobile-lang-row {
   display: flex; align-items: center;
   justify-content: space-between;
@@ -264,7 +248,6 @@ onUnmounted(() => {
   display: flex; gap: 4px;
 }
 
-/* Cada pastilla ES / EN */
 .ml-pill {
   padding: 5px 14px;
   border-radius: 99px;
@@ -281,7 +264,6 @@ onUnmounted(() => {
   box-shadow: 0 2px 8px rgba(34,40,78,.22);
 }
 
-/* Botones del menú móvil */
 .mm-sec {
   width: 100%; padding: 13px; border: none;
   border-radius: 10px; font-size: 15px; font-weight: 600;
@@ -300,7 +282,6 @@ onUnmounted(() => {
 }
 .mm-main:hover { opacity: .9; }
 
-/* ─── Responsive ─────────────────────────────────────── */
 @media (max-width: 768px) {
   .navbar { padding: 16px 20px; }
   .desktop { display: none; }

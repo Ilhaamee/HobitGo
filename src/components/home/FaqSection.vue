@@ -63,7 +63,7 @@ function toggleFaq(i) {
 </template>
 
 <style scoped>
-.s-faq { padding: 72px 0 80px; background: #fafafa; }  /* ← menos espacio arriba */
+.s-faq { padding: 72px 0 80px; background: #fafafa; } 
 
 .s-inner { max-width: 720px; margin: 0 auto; padding: 0 6vw; }
 

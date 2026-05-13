@@ -68,7 +68,7 @@ onMounted(() => {
 
 <style scoped>
 .s-features {
-  padding: 72px 0 80px;   /* ← menos espacio arriba */
+  padding: 72px 0 80px;  
   background: linear-gradient(150deg, #ff6b9d 0%, #ffb3c6 55%, #ff8fab 100%);
   opacity: 0;
   transform: translateY(20px);

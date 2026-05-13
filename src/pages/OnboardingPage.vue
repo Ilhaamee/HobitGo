@@ -6,6 +6,7 @@ import { supabase } from '../lib/supabase'
 
 const router = useRouter()
 const saving = ref(false)
+const checking = ref(true)
 
 // ── Estado global ─────────────────────────────────────
 const current   = ref(0)
@@ -82,8 +83,7 @@ async function finish() {
     const { data: { user } } = await supabase.auth.getUser()
 
     if (user) {
-      // UPSERT — crea el perfil si no existe, actualiza si ya existe
-      await supabase.from('profiles').upsert({
+      const { error } = await supabase.from('profiles').upsert({
         id:                 user.id,
         username:           user.email.split('@')[0],
         onboarding_goal:    answers.value.goal,
@@ -91,9 +91,17 @@ async function finish() {
         onboarding_time:    answers.value.time,
         onboarding_done:    true
       }, { onConflict: 'id' })
+
+      if (error) {
+        console.error('Error guardando onboarding:', error)
+        saving.value = false
+        return
+      }
     }
   } catch (e) {
-    console.error('Error guardando onboarding:', e)
+    console.error('Error:', e)
+    saving.value = false
+    return
   }
 
   localStorage.setItem('onboarding_done', 'true')
@@ -101,15 +109,28 @@ async function finish() {
 }
 
 // ── Entrada inicial ───────────────────────────────────
-onMounted(() => {
-  if (localStorage.getItem('onboarding_done')) {
+onMounted(async () => {
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) { router.push('/'); return }
+
+  const { data } = await supabase
+    .from('profiles')
+    .select('onboarding_done')
+    .eq('id', user.id)
+    .single()
+
+  if (data?.onboarding_done) {
+    localStorage.setItem('onboarding_done', 'true')
     router.push('/dashboard')
+    return
   }
+
+  checking.value = false  
 })
 </script>
 
 <template>
-  <div class="ob-root">
+  <div v-if="!checking" class="ob-root">
 
     <!-- ══ FONDO ════════════════════════════════════════ -->
     <div class="ob-bg" aria-hidden="true">
