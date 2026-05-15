@@ -1,79 +1,49 @@
 <template>
   <div class="dashboard-leaderboard">
-    <h1>🏆 Clasificación</h1>
-    <p class="subtitle">Los usuarios con más puntos de la comunidad</p>
+    <h1>{{ t('leaderboard_title') }}</h1>
+    <p class="subtitle">{{ t('leaderboard_subtitle') }}</p>
 
-    <div v-if="loading" class="loading">Cargando...</div>
-    <div v-else-if="leaderboard.length === 0" class="empty-text">No hay usuarios aún</div>
+    <div v-if="loading" class="loading">{{ t('loading') }}</div>
+    <div v-else-if="leaderboard.length === 0" class="empty-text">{{ t('no_users') }}</div>
 
     <div v-else class="leaderboard-card">
       <div class="top3" v-if="leaderboard.length >= 3">
         <div class="top-item second" @click="goToProfile(leaderboard[1].id)">
-          <div class="top-avatar">
-            <img v-if="leaderboard[1].avatar_url" :src="leaderboard[1].avatar_url" />
-            <div v-else class="avatar-placeholder">{{ leaderboard[1].username[0].toUpperCase() }}</div>
-          </div>
+          <div class="top-avatar"><img v-if="leaderboard[1].avatar_url" :src="leaderboard[1].avatar_url" /><div v-else class="avatar-placeholder">{{ leaderboard[1].username[0].toUpperCase() }}</div></div>
           <div class="top-rank silver">2</div>
           <span class="top-name">{{ leaderboard[1].username }}</span>
-          <span class="top-points">{{ leaderboard[1].total_points }} pts</span>
+          <span class="top-points">{{ leaderboard[1].total_points }} {{ t('points') }}</span>
         </div>
-
         <div class="top-item first" @click="goToProfile(leaderboard[0].id)">
           <div class="crown">👑</div>
-          <div class="top-avatar large">
-            <img v-if="leaderboard[0].avatar_url" :src="leaderboard[0].avatar_url" />
-            <div v-else class="avatar-placeholder">{{ leaderboard[0].username[0].toUpperCase() }}</div>
-          </div>
+          <div class="top-avatar large"><img v-if="leaderboard[0].avatar_url" :src="leaderboard[0].avatar_url" /><div v-else class="avatar-placeholder">{{ leaderboard[0].username[0].toUpperCase() }}</div></div>
           <div class="top-rank gold">1</div>
           <span class="top-name">{{ leaderboard[0].username }}</span>
-          <span class="top-points">{{ leaderboard[0].total_points }} pts</span>
+          <span class="top-points">{{ leaderboard[0].total_points }} {{ t('points') }}</span>
         </div>
-
         <div class="top-item third" @click="goToProfile(leaderboard[2].id)">
-          <div class="top-avatar">
-            <img v-if="leaderboard[2].avatar_url" :src="leaderboard[2].avatar_url" />
-            <div v-else class="avatar-placeholder">{{ leaderboard[2].username[0].toUpperCase() }}</div>
-          </div>
+          <div class="top-avatar"><img v-if="leaderboard[2].avatar_url" :src="leaderboard[2].avatar_url" /><div v-else class="avatar-placeholder">{{ leaderboard[2].username[0].toUpperCase() }}</div></div>
           <div class="top-rank bronze">3</div>
           <span class="top-name">{{ leaderboard[2].username }}</span>
-          <span class="top-points">{{ leaderboard[2].total_points }} pts</span>
+          <span class="top-points">{{ leaderboard[2].total_points }} {{ t('points') }}</span>
         </div>
       </div>
 
       <div class="list">
-        <div
-          v-for="(user, index) in leaderboard" :key="user.id"
-          class="list-item"
-          :class="{ 'is-me': user.id === currentUserId }"
-          @click="goToProfile(user.id)"
-        >
-          <span class="rank">
-            <span v-if="index === 0">🥇</span>
-            <span v-else-if="index === 1">🥈</span>
-            <span v-else-if="index === 2">🥉</span>
-            <span v-else>{{ index + 1 }}</span>
-          </span>
-          <div class="user-avatar">
-            <img v-if="user.avatar_url" :src="user.avatar_url" />
-            <div v-else class="avatar-placeholder small">{{ user.username[0].toUpperCase() }}</div>
-          </div>
+        <div v-for="(user, index) in leaderboard" :key="user.id" class="list-item" :class="{ 'is-me': user.id === currentUserId }" @click="goToProfile(user.id)">
+          <span class="rank"><span v-if="index === 0">🥇</span><span v-else-if="index === 1">🥈</span><span v-else-if="index === 2">🥉</span><span v-else>{{ index + 1 }}</span></span>
+          <div class="user-avatar"><img v-if="user.avatar_url" :src="user.avatar_url" /><div v-else class="avatar-placeholder small">{{ user.username[0].toUpperCase() }}</div></div>
           <div class="user-info">
-            <span class="user-name">
-              {{ user.username }}
-              <span v-if="user.id === currentUserId" class="me-tag">Tú</span>
-            </span>
-            <span class="user-stats">{{ user.goals_completed }} retos · {{ user.hobbies_count }} hobbies</span>
+            <span class="user-name">{{ user.username }}<span v-if="user.id === currentUserId" class="me-tag">{{ currentLang === 'en' ? 'You' : 'Tú' }}</span></span>
+            <span class="user-stats">{{ user.goals_completed }} {{ currentLang === 'en' ? 'challenges' : 'retos' }} · {{ user.hobbies_count }} hobbies</span>
           </div>
-          <div class="user-points">
-            <span class="points-val">{{ user.total_points }}</span>
-            <span class="points-lbl">pts</span>
-          </div>
+          <div class="user-points"><span class="points-val">{{ user.total_points }}</span><span class="points-lbl">{{ t('points') }}</span></div>
         </div>
       </div>
 
       <div v-if="myPosition > 3" class="my-position">
-        <span>Tu posición: <strong>#{{ myPosition }}</strong></span>
-        <span>{{ myPoints }} puntos</span>
+        <span>{{ t('your_position') }}: <strong>#{{ myPosition }}</strong></span>
+        <span>{{ myPoints }} {{ t('points') }}</span>
       </div>
     </div>
   </div>
@@ -83,7 +53,9 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { supabase } from '../lib/supabase'
+import { useI18n } from '../composables/useI18n'
 
+const { t, currentLang } = useI18n()
 const router = useRouter()
 const leaderboard = ref([])
 const currentUserId = ref(null)
@@ -112,48 +84,35 @@ h1 { font-size: 28px; color: var(--text-primary); margin-bottom: 8px; }
 .subtitle { color: var(--text-secondary); margin-bottom: 32px; }
 .loading { text-align: center; color: var(--text-muted); padding: 60px; }
 .empty-text { text-align: center; color: var(--text-muted); padding: 60px; font-size: 14px; }
-
 .leaderboard-card { background: var(--bg-card); border-radius: 20px; overflow: hidden; box-shadow: 0 2px 20px var(--shadow); }
-
 .top3 { display: flex; align-items: flex-end; justify-content: center; gap: 16px; padding: 40px 24px 24px; background: linear-gradient(135deg, #22284E 0%, #1a1a2e 100%); cursor: pointer; }
 .top-item { display: flex; flex-direction: column; align-items: center; gap: 6px; transition: transform 0.2s; }
 .top-item:hover { transform: translateY(-4px); }
-.top-item.first { order: 2; }
-.top-item.second { order: 1; }
-.top-item.third { order: 3; }
+.top-item.first { order: 2; } .top-item.second { order: 1; } .top-item.third { order: 3; }
 .crown { font-size: 24px; margin-bottom: -4px; }
-
 .top-avatar { width: 60px; height: 60px; border-radius: 50%; overflow: hidden; border: 3px solid rgba(255,255,255,0.3); }
 .top-avatar.large { width: 80px; height: 80px; border-color: #FFD700; }
 .top-avatar img { width: 100%; height: 100%; object-fit: cover; }
 .avatar-placeholder { width: 100%; height: 100%; background: #E08E6B; color: #fff; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 20px; }
-
 .top-rank { width: 28px; height: 28px; border-radius: 50%; background: #888; color: #fff; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 700; margin-top: -10px; }
-.top-rank.gold { background: #FFD700; color: #1a1a2e; }
-.top-rank.silver { background: #C0C0C0; color: #1a1a2e; }
-.top-rank.bronze { background: #CD7F32; color: #fff; }
+.top-rank.gold { background: #FFD700; color: #1a1a2e; } .top-rank.silver { background: #C0C0C0; color: #1a1a2e; } .top-rank.bronze { background: #CD7F32; color: #fff; }
 .top-name { font-size: 13px; font-weight: 600; color: #fff; }
 .top-points { font-size: 12px; color: rgba(255,255,255,0.7); }
-
 .list { padding: 8px 0; }
 .list-item { display: flex; align-items: center; gap: 14px; padding: 14px 24px; transition: background 0.2s; border-left: 3px solid transparent; cursor: pointer; }
 .list-item:hover { background: var(--bg-hover); }
 .list-item.is-me { background: rgba(224,142,107,0.1); border-left-color: #E08E6B; }
-
 .rank { width: 32px; text-align: center; font-size: 18px; font-weight: 700; color: var(--text-muted); flex-shrink: 0; }
 .user-avatar { width: 40px; height: 40px; border-radius: 12px; overflow: hidden; flex-shrink: 0; }
 .user-avatar img { width: 100%; height: 100%; object-fit: cover; }
 .avatar-placeholder.small { width: 100%; height: 100%; background: #E08E6B; color: #fff; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 16px; border-radius: 12px; }
-
 .user-info { flex: 1; display: flex; flex-direction: column; gap: 2px; }
 .user-name { font-size: 14px; font-weight: 600; color: var(--text-primary); display: flex; align-items: center; gap: 6px; }
 .me-tag { background: #E08E6B; color: #fff; font-size: 10px; padding: 2px 6px; border-radius: 10px; font-weight: 700; }
 .user-stats { font-size: 12px; color: var(--text-muted); }
-
 .user-points { display: flex; flex-direction: column; align-items: flex-end; }
 .points-val { font-size: 18px; font-weight: 700; color: var(--text-primary); }
 .points-lbl { font-size: 11px; color: var(--text-muted); }
-
 .my-position { display: flex; justify-content: space-between; align-items: center; padding: 16px 24px; background: rgba(224,142,107,0.1); border-top: 1px solid var(--border-color); font-size: 14px; color: var(--text-secondary); }
 .my-position strong { color: #E08E6B; }
 </style>
