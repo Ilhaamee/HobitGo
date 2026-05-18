@@ -64,6 +64,37 @@
       </button>
     </div>
 
+    <!-- ── Privacidad ─────────────────────── -->
+      <div class="card">
+        <div class="card-head">
+          <div class="head-icon pink">
+            <svg viewBox="0 0 18 18" fill="none" width="16" stroke="#ff6b9d" stroke-width="1.5">
+              <path d="M9 2a5 5 0 00-5 5v2a2 2 0 00-2 2v2a2 2 0 002 2h10a2 2 0 002-2v-2a2 2 0 00-2-2V7a5 5 0 00-5-5z" stroke-linecap="round" stroke-linejoin="round"/>
+              <path d="M9 14v3M6 17h6" stroke-linecap="round"/>
+            </svg>
+          </div>
+          <div>
+            <h3>Privacidad</h3>
+            <p>Controla quién ve tu perfil</p>
+          </div>
+        </div>
+
+        <div class="privacy-row">
+          <div class="privacy-info">
+            <span class="privacy-label">Perfil público</span>
+            <span class="privacy-hint">{{ isPublic ? 'Cualquiera puede ver tus posts' : 'Solo tú ves tus posts' }}</span>
+          </div>
+          <button 
+            class="toggle-btn" 
+            :class="{ active: isPublic }"
+            @click="$emit('toggle-privacy')"
+            :disabled="savingPrivacy"
+          >
+            <div class="toggle-knob"></div>
+          </button>
+        </div>
+      </div>
+
     <!-- ── Contraseña ─────────────────────── -->
     <div class="card">
       <div class="card-head">
@@ -183,9 +214,11 @@ const props = defineProps({
   savingPassword:  { type: Boolean, default: false },
   passwordSuccess: { type: Boolean, default: false },
   passwordError:   { type: String,  default: '' },
+  isPublic: { type: Boolean, default: true },
+  savingPrivacy: { type: Boolean, default: false },
 })
 
-const emit = defineEmits(['save-profile', 'save-password', 'logout'])
+const emit = defineEmits(['save-profile', 'save-password', 'logout', 'toggle-privacy'])
 
 /* ── Identidad ──────────────────────────── */
 const localUsername = ref(props.username)
@@ -358,4 +391,58 @@ function cancelPwd() {
 .dots i:nth-child(2) { animation-delay: .15s; }
 .dots i:nth-child(3) { animation-delay: .30s; }
 @keyframes dot { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-4px)} }
+.privacy-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 0;
+}
+
+.privacy-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.privacy-label {
+  font-size: 15px;
+  font-weight: 700;
+  color: #22284E;
+}
+
+.privacy-hint {
+  font-size: 13px;
+  color: rgba(34,40,78,.4);
+}
+
+.toggle-btn {
+  width: 52px;
+  height: 28px;
+  border-radius: 99px;
+  background: rgba(34,40,78,.15);
+  border: none;
+  position: relative;
+  cursor: pointer;
+  transition: background .25s;
+}
+
+.toggle-btn.active {
+  background: #ff6b9d;
+}
+
+.toggle-knob {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: #fff;
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  transition: transform .25s;
+  box-shadow: 0 1px 4px rgba(0,0,0,.15);
+}
+
+.toggle-btn.active .toggle-knob {
+  transform: translateX(24px);
+}
 </style>

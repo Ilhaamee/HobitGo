@@ -6,19 +6,17 @@ import CalendarDayPanel from '../components/calendar/CalendarDayPanel.vue'
 import CalendarFilter   from '../components/calendar/CalendarFilter.vue'
 import HabitUniverse    from '../components/calendar/Habituniverse.vue'
 
-
-
 /* ── state ─────────────────────────────────────────── */
 const today        = new Date()
 const currentMonth = ref(today.getMonth())
 const currentYear  = ref(today.getFullYear())
-const selectedDate = ref(null)          // 'YYYY-MM-DD'
-const filterHobby  = ref(null)          // hobby id o null = todos
+const selectedDate = ref(null)
+const filterHobby  = ref(null)
 const userId       = ref(null)
 
-const hobbies  = ref([])   // hobbies del usuario
-const sessions = ref([])   // hobby_sessions
-const events   = ref([])   // eventos del calendario
+const hobbies  = ref([])
+const sessions = ref([])
+const events   = ref([])
 
 /* ── cargar datos ───────────────────────────────────── */
 async function load() {
@@ -27,7 +25,7 @@ async function load() {
   userId.value = user.id
 
   const [{ data: hData }, { data: sData }, { data: eData }] = await Promise.all([
-    supabase.from('hobbies').select('id, name, gradient, created_at, daily_minutes').eq('user_id', user.id),
+    supabase.from('hobbies').select('id, name, gradient, created_at, daily_minutes, total_days, completed_at').eq('user_id', user.id),
     supabase.from('hobby_sessions').select('*').eq('user_id', user.id),
     supabase.from('events').select('*').eq('user_id', user.id),
   ])
@@ -99,7 +97,6 @@ async function onDeleteEvent(id) {
 }
 
 async function onToggleSession(sessionId, done) {
-  // marca/desmarca una sesión como completada (campo done)
   await supabase.from('hobby_sessions').update({ done }).eq('id', sessionId)
   const s = sessions.value.find(s => s.id === sessionId)
   if (s) s.done = done
@@ -108,13 +105,14 @@ async function onToggleSession(sessionId, done) {
 onMounted(load)
 </script>
 
-<template>
+<<template>
   <div class="cal-page">
 
-    <div class="page-head">
-      <div>
-        <h1 class="page-title">Calendario</h1>
-        <p class="page-sub">Registra y visualiza tu progreso</p>
+    <!-- ══ HEADER ESTILO CHAT ═══════════════════════════ -->
+    <div class="cal-header">
+      <div class="cal-title">
+        <h1>Calendario <HabitUniverse :hobbies="hobbies" :sessions="sessions" inline /></h1>
+        <p>Registra y visualiza tu progreso</p>
       </div>
     </div>
 
@@ -125,6 +123,7 @@ onMounted(load)
       @change="filterHobby = $event"
     />
 
+    <!-- ══ CONTENIDO ORIGINAL (una columna) ══════════════ -->
     <div class="cal-body">
       <!-- Grid del mes -->
       <CalendarGrid
@@ -140,35 +139,97 @@ onMounted(load)
         @day-click="onDayClick"
       />
 
-      <!-- Panel inferior del día -->
-      <CalendarDayPanel
-        v-if="selectedDate"
-        :date="selectedDate"
-        :sessions="daySessions"
-        :events="dayEvents"
-        :hobbies="hobbies"
-        @add-event="onAddEvent"
-        @delete-event="onDeleteEvent"
-        @toggle-session="onToggleSession"
-      />
+      <!-- Panel inferior del día (aparece al pulsar) -->
+      <Transition name="slide-up">
+        <CalendarDayPanel
+          v-if="selectedDate"
+          :date="selectedDate"
+          :sessions="daySessions"
+          :events="dayEvents"
+          :hobbies="hobbies"
+          @add-event="onAddEvent"
+          @delete-event="onDeleteEvent"
+          @toggle-session="onToggleSession"
+        />
+      </Transition>
     </div>
   </div>
-
-  <!-- FAB árbol fijo -->
-  <HabitUniverse :hobbies="hobbies" :sessions="sessions" />
-
 </template>
 
 <style scoped>
-.cal-page { max-width: 700px; margin: 0 auto; width: 100%;}
-.page-head { margin-bottom: 14px; }
-.page-title { font-size: 22px; font-weight: 900; color: #22284E; letter-spacing: -1px; margin: 0 0 2px; }
-.page-sub   { font-size: 12px; color: rgba(34,40,78,.45); margin: 0; }
-.cal-body { overflow-x: hidden; width: 100%; }
+/* ══ LAYOUT PRINCIPAL ═════════════════════════════════ */
+.cal-page {
+  max-width: 700px;
+  margin: 0 auto;
+  width: 100%;
+}
 
-@media (min-width: 480px) {
-  .cal-page { padding: 0; }
-  .page-title { font-size: 26px; }
-  .page-head { margin-bottom: 20px; }
+/* ── HEADER (igual que Chat) ── */
+.cal-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 14px;
+  flex-shrink: 0;
+  padding-top: 8px;
+}
+
+.cal-title h1 {
+  font-size: 26px;
+  font-weight: 900;
+  color: #22284E;
+  letter-spacing: -1px;
+  margin: 0 0 3px;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.cal-title p {
+  font-size: 13px;
+  color: rgba(34,40,78,.45);
+  margin: 0;
+}
+
+/* ── BODY (original, una columna) ── */
+.cal-body {
+  overflow-x: hidden;
+  width: 100%;
+}
+
+/* Transición del panel */
+.slide-up-enter-active,
+.slide-up-leave-active {
+  transition: all 0.25s ease;
+}
+
+.slide-up-enter-from,
+.slide-up-leave-to {
+  opacity: 0;
+  transform: translateY(10px);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .cal-page {
+    padding: 0 12px 12px;
+  }
+  .cal-header {
+    padding: 12px 4px;
+    margin-bottom: 8px;
+  }
+  .desktop-only { display: none; }
+  .mobile-only { display: flex; }
+  .cal-body {
+    flex-direction: column;
+  }
+  .cal-main {
+    max-width: 100%;
+  }
+}
+
+@media (min-width: 769px) {
+  .mobile-only { display: none !important; }
 }
 </style>

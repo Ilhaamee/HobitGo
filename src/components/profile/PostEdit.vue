@@ -135,13 +135,15 @@ function clearImage() {
 }
 
 function handleSave() {
+  const selectedHobby = props.hobbies.find(h => h.id === form.hobbyId)
   emit('save', {
-    id:         props.post.id,
-    hobbyId:    form.hobbyId,
-    hobbyName:  form.hobbyName,
-    text:       form.text.trim(),
-    minutes:    form.minutes,
-    newImage:   newImage.value,
+    id: props.post.id,
+    hobbyId: form.hobbyId,
+    hobbyName: form.hobbyName,
+    hobbyColor: selectedHobby?.gradient?.[0] || '#ff6b9d',
+    text: form.text.trim(),
+    minutes: form.minutes,
+    newImage: newImage.value,
     removeImage: !previewUrl.value && !!props.post.image_url,
   })
 }

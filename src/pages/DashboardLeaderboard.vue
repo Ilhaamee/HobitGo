@@ -5,7 +5,6 @@ import { supabase } from '../lib/supabase'
 const leaderboard    = ref([])
 const currentUserId  = ref(null)
 const loading        = ref(true)
-const activePeriod   = ref('all')
 
 const COLORS = ['#D4537E','#7F77DD','#1D9E75','#BA7517','#185FA5','#639922','#993C1D','#534AB7']
 
@@ -38,12 +37,42 @@ onMounted(async () => {
   const { data: { user } } = await supabase.auth.getUser()
   if (user) currentUserId.value = user.id
 
-  const { data } = await supabase.from('leaderboard').select('*')
-  if (data) leaderboard.value = data
+  // 1. Cargar leaderboard
+  const { data: lbData } = await supabase.from('leaderboard').select('*')
+  
+  if (!lbData || lbData.length === 0) {
+    loading.value = false
+    return
+  }
+
+  // 2. Obtener IDs de usuarios
+  const userIds = lbData.map(u => u.id)
+
+  // 3. Contar retos por usuario desde group_challenge_members
+  const { data: challengesData } = await supabase
+    .from('group_challenge_members')
+    .select('user_id, challenge_id')
+    .in('user_id', userIds)
+
+  // Crear mapa de user_id -> count de retos
+  const challengesMap = {}
+  if (challengesData) {
+    challengesData.forEach(row => {
+      challengesMap[row.user_id] = (challengesMap[row.user_id] || 0) + 1
+    })
+  }
+
+  // 4. Combinar datos: añadir challenges_count a cada usuario
+  leaderboard.value = lbData.map(u => ({
+    ...u,
+    challenges_count: challengesMap[u.id] || 0
+  }))
+
   loading.value = false
 })
 </script>
-<template>
+
+<<template>
   <div class="lb-wrap">
 
     <div class="lb-header">
@@ -62,7 +91,8 @@ onMounted(async () => {
       <!-- Podio -->
       <div class="podium">
         <div
-          v-for="(u, i) in podiumOrder" :key="u.id"
+          v-for="(u, i) in podiumOrder"
+          :key="u.id"
           class="podium-item"
           :data-rank="podiumRanks[i]"
         >
@@ -82,7 +112,8 @@ onMounted(async () => {
       <!-- Lista -->
       <div class="list-section">
         <div
-          v-for="(u, i) in leaderboard" :key="u.id"
+          v-for="(u, i) in leaderboard"
+          :key="u.id"
           class="list-item"
           :class="{ 'is-me': u.id === currentUserId }"
         >
@@ -96,7 +127,8 @@ onMounted(async () => {
               {{ u.username }}
               <span v-if="u.id === currentUserId" class="me-badge">Tú</span>
             </div>
-            <div class="list-stats">{{ u.goals_completed }} retos · {{ u.hobbies_count }} hobbies</div>
+            <!-- CAMBIO AQUÍ: u.challenges_count en lugar de u.goals_completed -->
+            <div class="list-stats">{{ u.challenges_count }} retos · {{ u.hobbies_count }} hobbies</div>
             <div class="progress-bar">
               <div class="progress-fill" :style="{ width: Math.round(u.total_points / maxPts * 100) + '%', background: color(i) }"></div>
             </div>
@@ -117,6 +149,7 @@ onMounted(async () => {
     </template>
   </div>
 </template>
+
 <style scoped>
 .lb-wrap { max-width: 700px; margin: 0 auto; padding-bottom: 2rem; }
 

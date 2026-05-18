@@ -14,7 +14,8 @@ export function useProfile() {
   const profile        = ref({})
   const avatarUrl      = ref('')
   const hobbies        = ref([])
-  const stats          = ref({ hobbies:0, events:0, goalsCompleted:0, points:0, messages:0, hobbySessions:0 })
+  const stats          = ref({ hobbies:0, events:0, challenges:0, points:0, messages:0, hobbySessions:0 })
+  const targetUserId   = ref(null)
 
   const editUsername   = ref('')
   const editBio        = ref('')
@@ -29,6 +30,13 @@ export function useProfile() {
   const passwordError   = ref('')
 
   /* ── Computed ─────────────────────────── */
+  const isOwner = computed(() => {
+    if (!targetUserId.value) return true
+    return targetUserId.value === currentUser.value?.id
+  })
+
+  const isPublic = computed(() => profile.value?.is_public ?? true)
+
   const userLevel = computed(() => {
     let lv = 1
     THRESHOLDS.forEach((t, i) => { if (stats.value.points >= t) lv = i + 1 })
@@ -50,15 +58,50 @@ export function useProfile() {
   )
 
   /* ── Load ─────────────────────────────── */
-  async function load() {
+  async function load(username = null) {
+    loading.value = true
+    
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return
     currentUser.value = user
 
+    let profileId = user.id
+    
+    // Si hay username, buscar el ID de ese usuario
+    if (username) {
+      const { data: userData } = await supabase
+        .from('profiles')
+        .select('id, is_public')
+        .eq('username', username)
+        .single()
+      
+      if (!userData) {
+        router.push('/dashboard')
+        return
+      }
+      
+      profileId = userData.id
+      targetUserId.value = profileId
+      
+      // Si el perfil es privado y no es owner, cargar solo lo básico
+      if (!userData.is_public && profileId !== user.id) {
+        profile.value = { username, is_public: false }
+        loading.value = false
+        return
+      }
+    } else {
+      targetUserId.value = null
+    }
+
+    // Query de hobbies: externo = solo públicos, propio = todos
+    const hobbiesQuery = username 
+      ? supabase.from('hobbies').select('id,name,gradient,is_public').eq('user_id', profileId).eq('is_public', true)
+      : supabase.from('hobbies').select('id,name,gradient,is_public').eq('user_id', profileId)
+
     const [profRes, hobbiesRes, statsRes] = await Promise.all([
-      supabase.from('profiles').select('*').eq('id', user.id).single(),
-      supabase.from('hobbies').select('id,name,gradient').eq('user_id', user.id),
-      loadStats(user.id),
+      supabase.from('profiles').select('*').eq('id', profileId).single(),
+      hobbiesQuery,
+      loadStats(profileId),
     ])
 
     if (profRes.data) {
@@ -72,24 +115,22 @@ export function useProfile() {
     loading.value = false
   }
 
-  async function loadStats(userId) {
-    const [h, e, g, a, m, s] = await Promise.all([
-      supabase.from('hobbies').select('*', { count:'exact', head:true }).eq('user_id', userId),
-      supabase.from('events').select('*', { count:'exact', head:true }).eq('user_id', userId),
-      supabase.from('goals').select('*', { count:'exact', head:true }).eq('user_id', userId).eq('completed', true),
-      supabase.from('activity_log').select('points').eq('user_id', userId),
-      supabase.from('community_messages').select('*', { count:'exact', head:true }).eq('user_id', userId),
-      supabase.from('hobby_sessions').select('*', { count:'exact', head:true }).eq('user_id', userId),
-    ])
-    return {
-      hobbies:        h.count || 0,
-      events:         e.count || 0,
-      goalsCompleted: g.count || 0,
-      points:         a.data?.reduce((sum, x) => sum + (x.points || 0), 0) ?? 0,
-      messages:       m.count || 0,
-      hobbySessions:  s.count || 0,
-    }
+async function loadStats(userId) {
+  const [h, a, s, c] = await Promise.all([
+    supabase.from('hobbies').select('*', { count:'exact', head:true }).eq('user_id', userId),
+    supabase.from('activity_log').select('points').eq('user_id', userId),
+    supabase.from('hobby_sessions').select('*', { count:'exact', head:true }).eq('user_id', userId),
+    supabase.from('group_challenge_members').select('*', { count:'exact', head:true }).eq('user_id', userId),
+  ])
+  return {
+    hobbies: h.count ?? 0,
+    events: 0,
+    points: a.data?.reduce((sum, x) => sum + (x.points || 0), 0) ?? 0,
+    messages: 0,
+    hobbySessions: s.count ?? 0,
+    challenges: c.count ?? 0,
   }
+}
 
   /* ── Actions ──────────────────────────── */
   async function uploadAvatar(e) {
@@ -153,6 +194,7 @@ export function useProfile() {
 
   return {
     loading, currentUser, profile, avatarUrl, hobbies, stats,
+    isOwner, isPublic,
     editUsername, editBio, savingProfile, profileSuccess, profileError,
     newPassword, confirmPassword, savingPassword, passwordSuccess, passwordError,
     userLevel, levelName, levelProgress, nextLevelPts,

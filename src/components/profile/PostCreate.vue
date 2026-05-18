@@ -94,7 +94,7 @@
             <label>Racha actual</label>
             <div class="streak-display">
               <span class="streak-fire">🔥</span>
-              <span class="streak-num">{{ streak }} días</span>
+              <span class="streak-num">{{ hobbyStreak }} días</span>
             </div>
           </div>
         </div>
@@ -124,9 +124,10 @@ const props = defineProps({
   hobbies:   { type: Array,  default: () => [] },
   streak:    { type: Number, default: 0 },
   submitting:{ type: Boolean, default: false },
+  sessions: { type: Array, default: () => [] },
 })
 
-const emit = defineEmits(['submit'])
+const emit = defineEmits(['submit', 'like', 'delete', 'edit'])
 
 const open         = ref(false)
 const imagePreview = ref(null)
@@ -143,6 +144,22 @@ const form = reactive({
 
 const initial  = computed(() => (props.username || 'U')[0].toUpperCase())
 const canPost  = computed(() => form.text.trim().length > 0 || imagePreview.value)
+
+const hobbyStreak = computed(() => {
+  if (!form.hobbyId || !props.sessions.length) return props.streak
+  const dates = [...new Set(
+    props.sessions
+      .filter(s => s.hobby_id === form.hobbyId)
+      .map(s => new Date(s.created_at).toDateString())
+  )].map(d => new Date(d)).sort((a,b) => b - a)
+
+  let streak = 0
+  let cur = new Date(); cur.setHours(0,0,0,0)
+  for (const d of dates) {
+    if (Math.round((cur - d) / 86400000) <= 1) { streak++; cur = d } else break
+  }
+  return streak
+})
 
 function handleImage(e) {
   const file = e.target.files[0]
@@ -179,7 +196,7 @@ function close() {
   form.hobbyName     = ''
   form.hobbyColor    = '#ff6b9d'
   form.text          = ''
-  form.minutes       = 0
+  form.minutes       = 20
   if (fileInput.value) fileInput.value.value = ''
 }
 

@@ -69,5 +69,19 @@ export function getHobbyImage(id) { const h = HOBBIES_LIST.find(h => h.id === id
 export function searchHobbies(query) { if (!query.trim()) return HOBBIES_LIST; const q = query.toLowerCase(); return HOBBIES_LIST.filter(h => h.name.toLowerCase().includes(q) || h.category.toLowerCase().includes(q)) }
 export function filterByCategory(key) { return key ? HOBBIES_LIST.filter(h => h.category === key) : HOBBIES_LIST }
 export function getGroupedHobbies() { return HOBBY_CATEGORIES.map(cat => ({ ...cat, hobbies: HOBBIES_LIST.filter(h => h.category === cat.key) })).filter(cat => cat.hobbies.length > 0) }
-export const SPECIAL_MODES = { reading: { mode: 'library', label: 'Biblioteca' }, music: { mode: 'music', label: 'Estudio' }, cooking: { mode: 'kitchen', label: 'Cocina' }, drawing: { mode: 'gallery', label: 'Galería' }, painting: { mode: 'gallery', label: 'Galería' }, photography: { mode: 'gallery', label: 'Galería' }, meditation: { mode: 'timer', label: 'Meditación' }, gaming: { mode: 'collection', label: 'Colección' } }
-export function getSpecialMode(id) { return SPECIAL_MODES[id] || null }
+export const SPECIAL_MODES = { 
+  reading:      { mode: 'library',  label: 'Biblioteca' },
+  cooking:      { mode: 'kitchen',  label: 'Cocina' },
+  baking:       { mode: 'kitchen',  label: 'Repostería' },
+  drawing:      { mode: 'gallery',  label: 'Galería' },
+  painting:     { mode: 'gallery',  label: 'Galería' },
+  photography:  { mode: 'gallery',  label: 'Galería' },
+}
+
+export function getSpecialMode(id) { 
+  const special = SPECIAL_MODES[id]
+  if (special) return special
+  
+  const hobby = HOBBIES_LIST.find(h => h.id === id)
+  return hobby ? { mode: 'standard', label: hobby.name } : null
+}

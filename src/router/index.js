@@ -28,8 +28,13 @@ const routes = [
       { path: 'calendar',    name: 'DashboardCalendar',    component: DashboardCalendar },
       { path: 'chat',        name: 'DashboardChat',        component: DashboardChat },
       { path: 'profile',     name: 'DashboardProfile',     component: DashboardProfile },
+      { path: 'profile/:username', name: 'UserProfile', component: DashboardProfile, props: true },
       { path: 'leaderboard', name: 'DashboardLeaderboard', component: DashboardLeaderboard },
       { path: 'hobbies/:hobbyId/library', name: 'Library', component: () => import('../pages/LibraryPage.vue') },
+      { path: 'hobbies/:hobbyId/kitchen', name: 'Kitchen', component: () => import('../pages/KitchenPage.vue') },
+      { path: 'hobbies/:hobbyId/gallery', name: 'Gallery', component: () => import('../pages/GalleryPage.vue') },
+      { path: 'hobbies/:hobbyId/standard', name: 'Standard', component: () => import('../pages/StandardPage.vue') },
+      { path: 'hobbies/:hobbyId', name: 'HobbyDetail', component: () => import('../pages/StandardPage.vue') },
     ]
   }
 ]

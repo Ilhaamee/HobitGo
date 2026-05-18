@@ -1,9 +1,10 @@
 <script setup>
-
+import AICoach from './components/Aicoach.vue'
 </script>
 
 <template>
   <router-view />
+  <AICoach />
 </template>
 
 <style>

@@ -4,6 +4,8 @@ import { supabase } from '../lib/supabase'
 import HobbyCard   from '../components/hobbies/HobbyCard.vue'
 import HobbyPicker from '../components/hobbies/HobbyPicker.vue'
 import HobbySetup  from '../components/hobbies/HobbySetup.vue'
+import ConfirmModal from '../components/ConfirmModal.vue'
+import CelebrationPopup from '../components/hobbies/CelebrationPopup.vue'
 
 const hobbies      = ref([])
 const sessions     = ref([])
@@ -12,7 +14,37 @@ const currentUser  = ref(null)
 const deleteId     = ref(null)
 const loading      = ref(false)
 const error        = ref('')
-const editingHobby = ref(null)  // hobby que se está editando
+const editingHobby = ref(null) 
+const showModal = ref(false)
+const modalConfig = ref({})
+const pendingAction = ref(null)
+const showCelebration = ref(false)
+const celebrationData = ref({ hobbyName: '', points: 10 })
+
+async function onCelebrate({ hobbyId, hobbyName }) {
+  // Mostrar popup
+  celebrationData.value = { hobbyName, points: 10 }
+  showCelebration.value = true
+  
+  // Marcar como celebrado en BD (evita que vuelva a salir)
+  await supabase
+    .from('hobbies')
+    .update({ completed_at: new Date().toISOString() })
+    .eq('id', hobbyId)
+  
+  // Actualizar local
+  const hobby = hobbies.value.find(h => h.id === hobbyId)
+  if (hobby) hobby.completed_at = new Date().toISOString()
+  
+  // Guardar puntos
+  await supabase.from('activity_log').insert({
+    user_id: currentUser.value.id,
+    type: 'achievement',
+    title: `Reto completado: "${hobbyName}"`,
+    points: 20,
+    activity_date: new Date().toISOString().split('T')[0]
+  })
+}
 
 async function load() {
   const { data: h } = await supabase
@@ -26,6 +58,80 @@ async function load() {
     .eq('user_id', currentUser.value.id)
     .order('created_at', { ascending: false })
   if (s) sessions.value = s
+
+  for (const hobby of hobbies.value) {
+    const correctTotal = sessions.value
+      .filter(s => s.hobby_id === hobby.id)
+      .reduce((sum, s) => sum + s.minutes, 0)
+    
+    if (correctTotal !== hobby.total_minutes) {
+      hobby.total_minutes = correctTotal
+      await supabase
+        .from('hobbies')
+        .update({ total_minutes: correctTotal })
+        .eq('id', hobby.id)
+    }
+  }
+}
+
+async function onModalConfirm(value) {
+  const { type, hobbyId } = pendingAction.value
+  
+  try {  // ← AÑADIDO try/catch
+    if (type === 'continue') {
+      const days = parseInt(value)
+      if (!days || days < 1) return
+      const hobby = hobbies.value.find(h => h.id === hobbyId)
+      if (!hobby) return
+      
+      const newTotalDays = (hobby.total_days || 30) + days
+      
+      const { error: err } = await supabase
+        .from('hobbies')
+        .update({ 
+          total_days: newTotalDays,
+          completed_at: null
+        })
+        .eq('id', hobbyId)
+      
+      if (err) throw err  // ← AÑADIDO
+      
+      hobby.total_days = newTotalDays
+      hobby.completed_at = null
+    }
+    
+    if (type === 'restart') {
+      const { error: err1 } = await supabase
+        .from('hobby_sessions')
+        .delete()
+        .eq('hobby_id', hobbyId)
+      if (err1) throw err1
+      
+      const { error: err2 } = await supabase
+        .from('hobbies')
+        .update({ 
+          total_minutes: 0,
+          total_days: 30,
+          completed_at: null
+        })
+        .eq('id', hobbyId)
+      if (err2) throw err2
+      
+      sessions.value = sessions.value.filter(s => s.hobby_id !== hobbyId)
+      const hobby = hobbies.value.find(h => h.id === hobbyId)
+      if (hobby) {
+        hobby.total_minutes = 0
+        hobby.total_days = 30
+        hobby.completed_at = null
+      }
+    }
+  } catch (e) {
+    error.value = 'Error: ' + e.message  // ← AÑADIDO: mostrar error al usuario
+    console.error(e)
+  }
+  
+  showModal.value = false
+  pendingAction.value = null
 }
 
 // ── Crear nuevo hobby ──────────────────────────────────
@@ -90,7 +196,7 @@ async function onHobbySelected(hobbyData) {
     hobbies.value.unshift(data[0])
     await supabase.from('activity_log').insert({
       user_id: currentUser.value.id, type: 'hobby',
-      title: `Nuevo hobby: "${hobbyData.name}"`, points: 100,
+      title: `Nuevo hobby: "${hobbyData.name}"`, points: 10,
       activity_date: new Date().toISOString().split('T')[0]
     })
   }
@@ -117,6 +223,35 @@ function openEdit(hobby) {
     reminder:    hobby.reminder,
     reminderTime:hobby.reminder_time,
   }
+}
+
+function continueHobby(hobbyId) {
+  pendingAction.value = { type: 'continue', hobbyId }
+  modalConfig.value = {
+    title: 'Añadir días al reto',
+    message: '¿Cuántos días más quieres practicar este hobby?',
+    showInput: true,
+    inputType: 'number',
+    inputLabel: 'Días adicionales',
+    inputValue: '',
+    confirmText: 'Añadir',
+    cancelText: 'Cancelar',
+    type: 'extend',
+  }
+  showModal.value = true
+}
+
+function restartHobby(hobbyId) {
+  pendingAction.value = { type: 'restart', hobbyId }
+  modalConfig.value = {
+    title: 'Reiniciar hobby',
+    message: 'Se borrarán todas las sesiones y el progreso. ¿Estás seguro?',
+    showInput: false,
+    confirmText: 'Sí, reiniciar',
+    cancelText: 'Cancelar',
+    type: 'restart',
+  }
+  showModal.value = true
 }
 
 // ── Guardar edición ────────────────────────────────────
@@ -184,17 +319,33 @@ async function onAddSession({ hobbyId, minutes, note }) {
     .from('hobby_sessions')
     .insert({ hobby_id: hobbyId, user_id: currentUser.value.id, minutes, note })
     .select()
+  
   if (err) { console.error('Error añadiendo sesión:', err); return }
+  
   if (data?.[0]) {
     sessions.value.unshift(data[0])
+    
     const hobby = hobbies.value.find(h => h.id === hobbyId)
     if (hobby) {
-      hobby.total_minutes = (hobby.total_minutes || 0) + minutes
-      await supabase.from('hobbies').update({ total_minutes: hobby.total_minutes }).eq('id', hobbyId)
+      // Calcular nuevo total desde TODAS las sesiones (no solo sumar)
+      const newTotal = sessions.value
+        .filter(s => s.hobby_id === hobbyId)
+        .reduce((sum, s) => sum + s.minutes, 0)
+      
+      hobby.total_minutes = newTotal
+      
+      await supabase
+        .from('hobbies')
+        .update({ total_minutes: newTotal })
+        .eq('id', hobbyId)
     }
+    
+    // Puntos...
     await supabase.from('activity_log').insert({
-      user_id: currentUser.value.id, type: 'hobby',
-      title: `Sesión de "${hobby?.name}"`, points: 10,
+      user_id: currentUser.value.id, 
+      type: 'hobby',
+      title: `Sesión de "${hobby?.name}"`, 
+      points: 5,
       activity_date: new Date().toISOString().split('T')[0]
     })
   }
@@ -245,6 +396,9 @@ onMounted(async () => {
         @delete="id => deleteId = id"
         @add-session="onAddSession"
         @edit="openEdit"
+        @continue-hobby="continueHobby"
+        @restart-hobby="restartHobby"
+        @celebrate="onCelebrate"
       />
     </div>
 
@@ -298,6 +452,21 @@ onMounted(async () => {
         </div>
       </div>
     </Transition>
+
+    <ConfirmModal
+      :show ="showModal"
+      v-bind="modalConfig"
+      @confirm="onModalConfirm"
+      @cancel="showModal = false"
+    />
+
+    <!-- Celebration Popup -->
+    <CelebrationPopup
+      v-if="showCelebration"
+      :hobby-name="celebrationData.hobbyName"
+      :points="celebrationData.points"
+      @close="showCelebration = false"
+    />
 
   </div>
 </template>

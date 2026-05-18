@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, watch, onMounted } from 'vue'
 
 const props = defineProps({
   hobby: { type: Object, required: true }
@@ -18,6 +18,27 @@ const reminderTime  = ref('08:00')
 const motivation    = ref('')       // Por qué quiero este hobby
 const difficulty    = ref('media')  // fácil / media / difícil
 const isPublic      = ref(true)     // visible en comunidad
+
+function syncFromProps() {
+  const h = props.hobby || {}
+  
+  customName.value   = h.name || ''
+  customColor1.value = h.gradient?.[0] || '#ff6b9d'
+  customColor2.value = h.gradient?.[1] || '#ffb3c6'
+  previewUrl.value   = h.img || h.imagePreview || null
+  customImage.value  = null
+  
+  days.value         = h.totalDays ?? 30
+  dailyMinutes.value = h.dailyMinutes ?? 20
+  reminder.value     = h.reminder ?? false
+  reminderTime.value = h.reminderTime || '08:00'
+  motivation.value   = h.motivation || ''
+  difficulty.value   = h.difficulty || 'media'
+  isPublic.value     = h.isPublic ?? true
+}
+
+onMounted(syncFromProps)
+watch(() => props.hobby, syncFromProps, { deep: true, immediate: true })
 
 const displayName    = computed(() => customName.value.trim() || props.hobby.name || 'Mi hobby')
 const previewImage   = computed(() => previewUrl.value || props.hobby.img || null)
@@ -213,11 +234,11 @@ function confirm() {
 
         <!-- Motivación -->
         <div class="field">
-          <label>¿Por qué quieres este hobby?</label>
+          <label>Motivación (opcional)</label>
           <textarea
             v-model="motivation"
             class="input textarea"
-            placeholder="Ej: Quiero desconectar del trabajo y hacer algo creativo con mis manos..."
+            placeholder="Ej: Quiero leer 30 libros este año para desconectar del trabajo..."
             maxlength="200"
             rows="2"
           ></textarea>
@@ -226,7 +247,7 @@ function confirm() {
 
         <!-- Visibilidad -->
         <div class="field">
-          <label>Visibilidad</label>
+          <label>¿Mostrar en tu perfil público?</label>
           <div class="visibility-row">
             <button
               class="vis-btn" :class="{ active: isPublic }"
@@ -236,8 +257,8 @@ function confirm() {
                 <circle cx="10" cy="10" r="8" stroke="currentColor" stroke-width="1.6"/>
                 <path d="M2 10h16M10 2a14 14 0 010 16M10 2a14 14 0 000 16" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
               </svg>
-              Público
-              <span class="vis-desc">Visible en la comunidad</span>
+              <span class="vis-label">Público</span>
+              <span class="vis-desc">Otros usuarios pueden ver este hobby en tu perfil e invitarte a retos grupales</span>
             </button>
             <button
               class="vis-btn" :class="{ active: !isPublic }"
@@ -247,8 +268,8 @@ function confirm() {
                 <rect x="3" y="9" width="14" height="10" rx="2" stroke="currentColor" stroke-width="1.6"/>
                 <path d="M7 9V6a3 3 0 016 0v3" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
               </svg>
-              Privado
-              <span class="vis-desc">Solo tú lo ves</span>
+              <span class="vis-label">Privado</span>
+              <span class="vis-desc">Solo tú verás este hobby. No aparece en tu perfil ni en retos grupales.</span>
             </button>
           </div>
         </div>
@@ -448,6 +469,45 @@ function confirm() {
 
 .fade-enter-active, .fade-leave-active { transition: opacity .2s, transform .2s; }
 .fade-enter-from, .fade-leave-to { opacity: 0; transform: translateY(-6px); }
+
+/* Visibilidad mejorada */
+.vis-label {
+  font-size: 13px;
+  font-weight: 700;
+  color: inherit;
+}
+.vis-btn {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 14px 10px;
+  border-radius: 14px;
+  cursor: pointer;
+  border: 2px solid rgba(34,40,78,.1);
+  background: #fafafa;
+  color: rgba(34,40,78,.5);
+  transition: all .18s;
+  text-align: center;
+}
+.vis-btn svg {
+  margin-bottom: 2px;
+}
+.vis-desc {
+  font-size: 10px;
+  color: rgba(34,40,78,.4);
+  line-height: 1.3;
+  max-width: 140px;
+}
+.vis-btn.active {
+  border-color: #ff6b9d;
+  background: rgba(255,107,157,.06);
+  color: #22284E;
+}
+.vis-btn.active .vis-desc {
+  color: rgba(34,40,78,.55);
+}
 
 @media (min-width: 600px) {
   .overlay { align-items: center; padding: 20px; }

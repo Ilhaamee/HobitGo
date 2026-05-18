@@ -87,9 +87,8 @@ const weeks = computed(() => {
   const result = []
   let cur = new Date(start)
 
-  while (cur <= today || result.length < 53) {
-    // Si ya pasamos hoy y tenemos al menos 52 semanas, parar
-    if (cur > today && result.length >= 52) break
+  const yearEnd = new Date(today.getFullYear(), 11, 31)
+    while (result.length < 53 && cur <= yearEnd) {
 
     const week = []
     for (let d = 0; d < 7; d++) {

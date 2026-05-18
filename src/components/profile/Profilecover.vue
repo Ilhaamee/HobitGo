@@ -24,7 +24,7 @@
           <div v-else class="avatar-initial">{{ initial }}</div>
         </div>
         <!-- Botón editar foto -->
-        <label class="btn-edit-photo" title="Cambiar foto">
+        <label v-if="isOwner" class="btn-edit-photo" title="Cambiar foto">
           <svg viewBox="0 0 14 14" fill="none" width="11">
             <path d="M10 2l2 2-7.5 7.5H3v-1.5L10 2z"
               stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/>
@@ -80,6 +80,7 @@ const props = defineProps({
   levelName:     { type: String, default: 'Semilla' },
   levelProgress: { type: Number, default: 0 },
   stats:         { type: Object, default: () => ({}) },
+  isOwner:       { type: Boolean, default: true },
 })
 
 defineEmits(['upload'])
@@ -90,7 +91,7 @@ const handle   = computed(() => (props.profile.username || 'usuario').toLowerCas
 const miniStats = computed(() => [
   { value: props.stats.hobbies        || 0, label: 'hobbies'  },
   { value: props.stats.hobbySessions  || 0, label: 'sesiones' },
-  { value: props.stats.goalsCompleted || 0, label: 'retos'    },
+  { value: props.stats.challenges     || 0, label: 'retos'    }, // ← CAMBIO: challenges en lugar de goalsCompleted
   { value: props.stats.points         || 0, label: 'puntos'   },
 ])
 
@@ -270,5 +271,10 @@ const coverStyle = computed(() => {
   .mstat-num    { font-size: 17px; }
   .info-block   { padding: 12px 16px 0; }
   .avatar-row   { padding: 0 16px; }
+  .ring-svg {
+    inset: -6px;
+    width: calc(100% + 12px);
+    height: calc(100% + 12px);
+  }
 }
 </style>

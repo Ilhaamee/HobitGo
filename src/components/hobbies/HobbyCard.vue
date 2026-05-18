@@ -1,51 +1,29 @@
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { getSpecialMode, getHobbyGradient } from '../../data/hobbiesData.js'
 import AchievementBadge from './AchievementBadge.vue'
 import WeekChart from './WeekChart.vue'
-import LibraryMode from './modes/LibraryMode.vue'
 import { useRouter } from 'vue-router'
-const router = useRouter()
 
-function openMode() {
-  router.push(`/dashboard/hobbies/${props.hobby.id}/library`)
-}
+const router = useRouter()
 
 const props = defineProps({
   hobby:    { type: Object, required: true },
   sessions: { type: Array,  default: () => [] },
 })
-const emit = defineEmits(['delete', 'add-session', 'open-detail', 'edit'])
+const emit = defineEmits(['delete', 'add-session', 'open-detail', 'edit', 'continue-hobby', 'restart-hobby', 'celebrate'])
 
-// ── Refs ─────────────────────────────────────────────
 const showSession = ref(false)
 const sessionMin  = ref(props.hobby.daily_minutes || 20)
 const sessionNote = ref('')
 const adding      = ref(false)
 const justAdded   = ref(false)
 const cardRef     = ref(null)
-const triggerRef  = ref(null)
-const panelRef    = ref(null)
 
-// ── Animación entrada ─────────────────────────────────
-onMounted(() => {
-  if (!cardRef.value) return
-  cardRef.value.style.opacity = '0'
-  cardRef.value.style.transform = 'translateY(24px)'
-  requestAnimationFrame(() => {
-    requestAnimationFrame(() => {
-      if (!cardRef.value) return
-      cardRef.value.style.transition = 'opacity .45s ease, transform .45s cubic-bezier(.4,0,.2,1)'
-      cardRef.value.style.opacity = '1'
-      cardRef.value.style.transform = 'translateY(0)'
-    })
-  })
-})
+// ═══════════════════════════════════════════════════════════════
+// COMPUTEDS
+// ═══════════════════════════════════════════════════════════════
 
-// Animar panel cuando se abre — CSS transition handles this
-
-// ── Sesiones ─────────────────────────────────────────
-// Sesiones agrupadas por día (suma de minutos del mismo día)
 const sessionsByDay = computed(() => {
   const map = {}
   props.sessions
@@ -57,7 +35,6 @@ const sessionsByDay = computed(() => {
   return map
 })
 
-// Para la gráfica y últimas sesiones — sesiones individuales ordenadas
 const hobbySessions = computed(() =>
   props.sessions
     .filter(s => s.hobby_id === props.hobby.id)
@@ -80,7 +57,26 @@ const streak = computed(() => {
   return count
 })
 
-// ── Colores ──────────────────────────────────────────
+const isCompleted = computed(() => {
+  if (props.hobby.completed_at) return true
+  const total = props.hobby.total_days || 30
+  return activeDays.value >= total && activeDays.value > 0
+})
+
+const daysLeft = computed(() => {
+  const total = props.hobby.total_days || 30
+  return Math.max(0, total - activeDays.value)
+})
+
+const retoProgress = computed(() => {
+  const total = props.hobby.total_days || 30
+  return Math.min(100, (activeDays.value / total) * 100)
+})
+
+const totalMinutesComputed = computed(() => 
+  hobbySessions.value.reduce((sum, s) => sum + (s.minutes || 0), 0)
+)
+
 const cardColor  = computed(() => props.hobby.gradient?.[0] || '#ff6b9d')
 const cardColor2 = computed(() => props.hobby.gradient?.[1] || '#ffb3c6')
 const cardGradient = computed(() =>
@@ -89,27 +85,11 @@ const cardGradient = computed(() =>
     : getHobbyGradient(props.hobby.hobby_id)
 )
 
-// ── Modo especial ────────────────────────────────────
 const specialMode = computed(() => getSpecialMode(props.hobby.hobby_id))
-const modeComponent = computed(() => {
-  if (specialMode.value?.mode === 'library') return LibraryMode
-  return null
-})
 
-// ── Reto ─────────────────────────────────────────────
-const daysLeft = computed(() => {
-  const total = props.hobby.total_days || 30
-  return Math.max(0, total - activeDays.value)
-})
-const retoProgress = computed(() => {
-  const total = props.hobby.total_days || 30
-  return Math.min(100, (activeDays.value / total) * 100)
-})
-
-// ── Logros ───────────────────────────────────────────
 const achievements = computed(() => {
   const c = sessionCount.value
-  const m = props.hobby.total_minutes || 0
+  const m = totalMinutesComputed.value
   return [
     { name: 'Principiante', symbol: '◌', label: 'Primera sesión',  unlocked: c >= 1   },
     { name: 'Constante',    symbol: '◈', label: '10 sesiones',     unlocked: c >= 10  },
@@ -118,7 +98,6 @@ const achievements = computed(() => {
   ]
 })
 
-// ── Dificultad ───────────────────────────────────────
 const difficultyInfo = computed(() => {
   const labels = { facil:'Fácil', media:'Media', dificil:'Difícil' }
   const colors  = { facil:'#22c55e', media:'#f59e0b', dificil:'#ef4444' }
@@ -127,7 +106,37 @@ const difficultyInfo = computed(() => {
   return { label: labels[d], color: colors[d] }
 })
 
-// ── Botones rápidos ──────────────────────────────────
+// ═══════════════════════════════════════════════════════════════
+// WATCHES
+// ═══════════════════════════════════════════════════════════════
+
+watch(isCompleted, (newVal, oldVal) => {
+  if (newVal && !oldVal && !props.hobby.completed_at) {
+    emit('celebrate', {
+      hobbyId: props.hobby.id,
+      hobbyName: props.hobby.name
+    })
+  }
+})
+
+// ═══════════════════════════════════════════════════════════════
+// HOOKS Y FUNCIONES
+// ═══════════════════════════════════════════════════════════════
+
+onMounted(() => {
+  if (!cardRef.value) return
+  cardRef.value.style.opacity = '0'
+  cardRef.value.style.transform = 'translateY(24px)'
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => {
+      if (!cardRef.value) return
+      cardRef.value.style.transition = 'opacity .45s ease, transform .45s cubic-bezier(.4,0,.2,1)'
+      cardRef.value.style.opacity = '1'
+      cardRef.value.style.transform = 'translateY(0)'
+    })
+  })
+})
+
 const quickMins = [5, 10, 15, 20, 30, 45, 60, 90]
 
 function formatTime(mins) {
@@ -135,7 +144,14 @@ function formatTime(mins) {
   return mins < 60 ? `${mins}m` : `${Math.floor(mins/60)}h${mins%60?mins%60+'m':''}`
 }
 
-// ── Añadir sesión ────────────────────────────────────
+function openMode() {
+  const mode = specialMode.value?.mode
+  if (mode === 'library') router.push(`/dashboard/hobbies/${props.hobby.id}/library`)
+  else if (mode === 'kitchen') router.push(`/dashboard/hobbies/${props.hobby.id}/kitchen`)
+  else if (mode === 'gallery') router.push(`/dashboard/hobbies/${props.hobby.id}/gallery`)
+  else router.push(`/dashboard/hobbies/${props.hobby.id}`) 
+}
+
 async function addSession() {
   if (sessionMin.value < 1 || adding.value) return
   adding.value = true
@@ -157,6 +173,14 @@ async function addSession() {
     sessionMin.value  = props.hobby.daily_minutes || 20
   }, 2000)
 }
+
+function onContinue() {
+  emit('continue-hobby', props.hobby.id)
+}
+
+function onRestart() {
+  emit('restart-hobby', props.hobby.id)
+}
 </script>
 
 <template>
@@ -167,27 +191,26 @@ async function addSession() {
       :style="hobby.image_url
         ? { backgroundImage: `url(${hobby.image_url})` }
         : { background: cardGradient }"
-      @click="specialMode && modeComponent ? openMode() : null"
+      @click.self="specialMode ? openMode() : null"
     >
-      <!-- Gradiente inferior con el color del hobby -->
       <div class="hero-grad"
         :style="{ background: `linear-gradient(to top, ${cardColor}f2 0%, ${cardColor}80 40%, rgba(0,0,0,0.2) 100%)` }">
       </div>
 
-      <!-- Top: modo especial (si hay) -->
+      <!-- Top: modo especial + edit/borrar -->
       <div class="hero-top">
-        <button v-if="specialMode && modeComponent" class="pill-mode" @click.stop="openMode()">
-          {{ specialMode.label }} →
+        <button v-if="specialMode" class="pill-mode" @click="openMode()">
+          {{ specialMode.label + ' →' }}
         </button>
         <div v-else></div>
-        <!-- Editar + Eliminar -->
+        
         <div style="display:flex;gap:5px">
-          <button class="del-btn" @click.stop="emit('edit', hobby)" title="Editar">
+          <button class="del-btn" @click="emit('edit', hobby)" title="Editar">
             <svg viewBox="0 0 14 14" fill="none" width="12">
               <path d="M9 2l3 3-7 7H2v-3l7-7z" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
             </svg>
           </button>
-          <button class="del-btn danger" @click.stop="emit('delete', hobby.id)" title="Eliminar">
+          <button class="del-btn danger" @click="emit('delete', hobby.id)" title="Eliminar">
             <svg viewBox="0 0 14 14" fill="none" width="11">
               <path d="M1 3h12M4 3V2h6v1M5 6v5M9 6v5M2 3l1 9h8l1-9"
                 stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
@@ -196,34 +219,54 @@ async function addSession() {
         </div>
       </div>
 
-      <!-- Bottom: nombre + dificultad -->
       <div class="hero-bottom">
         <div class="hero-name-row">
-          <h3 class="hero-name">{{ hobby.name }}</h3>
-          <span v-if="difficultyInfo" class="diff-tag"
-            :style="{ background: difficultyInfo.color + '28', color: difficultyInfo.color }">
-            {{ difficultyInfo.label }}
-          </span>
-          <span v-if="hobby.is_public === false" class="priv-tag">Privado</span>
+          <div class="hero-name-left">
+            <h3 class="hero-name">{{ hobby.name }}</h3>
+            <span v-if="difficultyInfo" class="diff-tag"
+              :style="{ background: difficultyInfo.color + '28', color: difficultyInfo.color }">
+              {{ difficultyInfo.label }}
+            </span>
+            <span v-if="hobby.is_public === false" class="priv-tag">Privado</span>
+          </div>
+          
+          <!-- Derecha: botones de acción (solo cuando completado) -->
+          <div v-if="isCompleted" class="hero-actions-inline">
+            <button class="ha-btn ha-continue" @click="onContinue" title="Añadir más días">
+              <svg viewBox="0 0 14 14" fill="none" width="10">
+                <path d="M7 1v12M1 7h12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+              </svg>
+            </button>
+            <button class="ha-btn ha-restart" @click="onRestart" title="Reiniciar hobby">
+              <svg viewBox="0 0 14 14" fill="none" width="10">
+                <path d="M1 7a6 6 0 0110.2-4.2M13 7a6 6 0 01-10.2 4.2M3 3l-2 2 2 2" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+              </svg>
+            </button>
+          </div>
         </div>
         <p v-if="hobby.motivation" class="hero-motto">"{{ hobby.motivation }}"</p>
       </div>
     </div>
 
-    <!-- ══ RETO: contador + stats ══════════════════ -->
-    <div class="reto-section">
+    <!-- ══ RETO ══════════════════════════════════════ -->
+    <div class="reto-section" :class="{ completed: isCompleted }">
       <div class="reto-stats">
 
-        <!-- Contador días restantes (grande) -->
-        <div class="days-counter">
-          <span class="dc-num" :style="{ color: cardColor }">{{ daysLeft }}</span>
-          <span class="dc-label">días<br>restantes</span>
+        <!-- Contador días -->
+        <div class="days-counter" :class="{ completed: isCompleted }">
+          <span class="dc-num" :style="{ color: isCompleted ? '#f59e0b' : cardColor }">
+            {{ isCompleted ? '✓' : daysLeft }}
+          </span>
+          <span class="dc-label">
+            <template v-if="isCompleted">COMPLETADO</template>
+            <template v-else>días restantes</template>
+          </span>
         </div>
 
         <div class="reto-dividers">
           <div class="reto-col">
-            <span class="rc-val">{{ hobby.daily_minutes || 20 }}m</span>
-            <span class="rc-lbl">meta/día</span>
+            <span class="rc-val">{{ formatTime(totalMinutesComputed) }}</span>
+            <span class="rc-lbl">total</span>
           </div>
           <div class="reto-col">
             <span class="rc-val">{{ sessionCount }}</span>
@@ -233,20 +276,26 @@ async function addSession() {
             <span class="rc-val" :style="streak > 0 ? { color: '#f59e0b' } : {}">
               {{ streak > 0 ? streak + '🔥' : '—' }}
             </span>
-            <span class="rc-lbl">racha días</span>
+            <span class="rc-lbl">racha</span>
           </div>
           <div class="reto-col">
-            <span class="rc-val">{{ formatTime(hobby.total_minutes) }}</span>
-            <span class="rc-lbl">total</span>
+            <span class="rc-val">{{ activeDays }}/{{ hobby.total_days || 30 }}</span>
+            <span class="rc-lbl">días</span>
           </div>
         </div>
       </div>
 
-      <!-- Barra de progreso del reto -->
+      <!-- Barra de progreso -->
       <div class="reto-bar-wrap">
         <div class="reto-bar-track">
           <div class="reto-bar-fill"
-            :style="{ width: retoProgress + '%', background: `linear-gradient(90deg, ${cardColor}, ${cardColor2})` }">
+            :class="{ completed: isCompleted }"
+            :style="{ 
+              width: retoProgress + '%', 
+              background: isCompleted 
+                ? 'linear-gradient(90deg, #f59e0b, #fbbf24)' 
+                : `linear-gradient(90deg, ${cardColor}, ${cardColor2})` 
+            }">
           </div>
         </div>
         <span class="reto-pct">{{ activeDays }}/{{ hobby.total_days || 30 }} días</span>
@@ -263,24 +312,26 @@ async function addSession() {
       <WeekChart :sessions="hobbySessions" :color="cardColor" />
     </div>
 
-    <!-- ══ REGISTRAR SESIÓN ════════════════════════ -->
+    <!-- ══ REGISTRAR SESIÓN (siempre disponible) ═══ -->
     <div class="session-block">
 
-      <!-- Trigger -->
       <button
-        ref="triggerRef"
         class="session-trigger"
-        :class="{ done: justAdded }"
+        :class="{ done: justAdded, completed: isCompleted }"
         :style="justAdded
           ? { background: 'linear-gradient(135deg,#22c55e,#4ade80)' }
-          : { background: `linear-gradient(135deg, ${cardColor}, ${cardColor2})` }"
+          : isCompleted
+            ? { background: 'linear-gradient(135deg, #f59e0b, #fbbf24)' }
+            : { background: `linear-gradient(135deg, ${cardColor}, ${cardColor2})` }"
         @click="showSession = !showSession"
       >
         <div class="st-icon">
-          <!-- Check animado cuando se guarda -->
           <Transition name="icon-swap" mode="out-in">
             <svg v-if="justAdded" key="check" viewBox="0 0 20 20" fill="none" width="18">
               <path d="M4 10l4 4 8-8" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            <svg v-else-if="isCompleted" key="trophy" viewBox="0 0 20 20" fill="none" width="18">
+              <path d="M5 4h10M7 4v8a3 3 0 006 0V4M6 16h8" stroke="#fff" stroke-width="1.8" stroke-linecap="round"/>
             </svg>
             <svg v-else key="clock" viewBox="0 0 20 20" fill="none" width="18">
               <circle cx="10" cy="10" r="7.5" stroke="#fff" stroke-width="1.8"/>
@@ -290,7 +341,7 @@ async function addSession() {
         </div>
         <div class="st-info">
           <span class="st-title">
-            {{ justAdded ? '¡Guardado!' : 'Registrar sesión' }}
+            {{ justAdded ? '¡Guardado!' : isCompleted ? '¡Sigue practicando!' : 'Registrar sesión' }}
           </span>
           <span class="st-sub">
             {{ justAdded ? `+${sessionMin}m añadidos` : `Meta diaria: ${hobby.daily_minutes || 20} min` }}
@@ -305,9 +356,8 @@ async function addSession() {
 
       <!-- Panel desplegable -->
       <Transition name="slide-panel">
-        <div v-if="showSession" ref="panelRef" class="session-panel">
+        <div v-if="showSession" class="session-panel">
 
-          <!-- Botones rápidos -->
           <p class="panel-label">Duración rápida</p>
           <div class="quick-grid">
             <button
@@ -321,7 +371,6 @@ async function addSession() {
             >{{ m }}m</button>
           </div>
 
-          <!-- Control manual -->
           <div class="manual-row">
             <button class="mc-btn" @click="sessionMin = Math.max(1, sessionMin - 5)">−</button>
             <div class="mc-display">
@@ -331,7 +380,6 @@ async function addSession() {
             <button class="mc-btn" @click="sessionMin = Math.min(480, sessionMin + 5)">+</button>
           </div>
 
-          <!-- Nota -->
           <input
             v-model="sessionNote"
             class="note-input"
@@ -341,11 +389,12 @@ async function addSession() {
             @keyup.enter="addSession"
           />
 
-          <!-- Botón guardar -->
           <button
             class="save-btn"
             :disabled="adding"
-            :style="{ background: `linear-gradient(135deg, ${cardColor}, ${cardColor2})` }"
+            :style="{ background: isCompleted 
+              ? 'linear-gradient(135deg, #f59e0b, #fbbf24)' 
+              : `linear-gradient(135deg, ${cardColor}, ${cardColor2})` }"
             @click="addSession"
           >
             <Transition name="icon-swap" mode="out-in">
@@ -425,7 +474,55 @@ async function addSession() {
 .del-btn.danger:hover { background: rgba(239,68,68,.65); }
 
 .hero-bottom { position: relative; z-index: 2; padding: 0 14px 14px; }
-.hero-name-row { display: flex; align-items: center; gap: 7px; flex-wrap: wrap; margin-bottom: 3px; }
+.hero-name-row { 
+  display: flex; 
+  align-items: center; 
+  gap: 7px; 
+  margin-bottom: 3px; 
+}
+.hero-name-left {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  flex-wrap: wrap;
+}
+.hero-actions-inline {
+  display: flex;
+  gap: 5px;
+  margin-left: auto;
+  flex-shrink: 0;
+}
+.ha-btn {
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all .2s;
+  flex-shrink: 0;
+}
+.ha-continue {
+  background: linear-gradient(135deg, #f59e0b, #fbbf24);
+  color: #fff;
+  box-shadow: 0 2px 6px rgba(245,158,11,.3);
+}
+.ha-continue:hover {
+  transform: scale(1.12);
+  box-shadow: 0 3px 10px rgba(245,158,11,.4);
+}
+.ha-restart {
+  background: rgba(255,255,255,.2);
+  color: rgba(255,255,255,.9);
+  border: 1px solid rgba(255,255,255,.25);
+  backdrop-filter: blur(4px);
+}
+.ha-restart:hover {
+  background: rgba(255,255,255,.35);
+  transform: scale(1.12);
+}
 .hero-name { font-size: 22px; font-weight: 900; color: #fff; margin: 0; letter-spacing: -.6px; text-shadow: 0 1px 8px rgba(0,0,0,.3); }
 .diff-tag {
   font-size: 9px; font-weight: 800; text-transform: uppercase;
@@ -446,7 +543,12 @@ async function addSession() {
 .reto-section {
   padding: 14px 16px 10px;
   border-bottom: 1px solid rgba(34,40,78,.06);
+  transition: background .3s;
 }
+.reto-section.completed {
+  background: linear-gradient(135deg, rgba(245,158,11,.06), rgba(251,191,36,.04));
+}
+
 .reto-stats { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
 
 .days-counter {
@@ -454,8 +556,13 @@ async function addSession() {
   background: rgba(34,40,78,.03); border-radius: 14px;
   padding: 10px 14px; flex-shrink: 0; gap: 1px;
   border: 1px solid rgba(34,40,78,.06);
+  transition: all .3s;
 }
-.dc-num   { font-size: 32px; font-weight: 900; line-height: 1; }
+.days-counter.completed {
+  background: linear-gradient(135deg, rgba(245,158,11,.15), rgba(251,191,36,.1));
+  border-color: rgba(245,158,11,.3);
+}
+.dc-num   { font-size: 32px; font-weight: 900; line-height: 1; transition: color .3s; }
 .dc-label { font-size: 9px; color: rgba(34,40,78,.4); font-weight: 600; text-transform: uppercase; letter-spacing: .04em; text-align: center; line-height: 1.3; }
 
 .reto-dividers {
@@ -472,9 +579,9 @@ async function addSession() {
 
 .reto-bar-wrap { display: flex; align-items: center; gap: 8px; }
 .reto-bar-track { flex: 1; height: 6px; background: rgba(34,40,78,.07); border-radius: 99px; overflow: hidden; }
-.reto-bar-fill  { height: 100%; border-radius: 99px; min-width: 6px; transition: width .7s cubic-bezier(.4,0,.2,1); }
+.reto-bar-fill  { height: 100%; border-radius: 99px; min-width: 6px; transition: width .7s cubic-bezier(.4,0,.2,1), background .3s; }
+.reto-bar-fill.completed { box-shadow: 0 0 8px rgba(245,158,11,.3); }
 .reto-pct { font-size: 11px; font-weight: 700; color: rgba(34,40,78,.35); white-space: nowrap; }
-
 /* ── Badges ── */
 .badges-row {
   display: flex; gap: 5px; flex-wrap: wrap;
@@ -494,6 +601,9 @@ async function addSession() {
   will-change: transform;
 }
 .session-trigger:hover { opacity: .93; }
+.session-trigger.completed {
+  background: linear-gradient(135deg, #f59e0b, #fbbf24) !important;
+}
 
 .st-icon {
   width: 40px; height: 40px; border-radius: 12px;
