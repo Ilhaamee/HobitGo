@@ -45,10 +45,12 @@
             :submitting="submittingPost"
             :is-owner="isOwner"
             :is-public="isPublic"
+            :current-user="currentUser"
             @submit="onSubmitPost"
             @like="onLikePost"
             @delete="onDeletePost"
             @edit="editingPost = $event"
+            @comment-count="onCommentCount"
           />
 
         <ProfileStats
@@ -201,10 +203,23 @@ async function loadPosts(userId = null) {
       likes:       0,
       liked:       false,
       likedBy:     [],
+      comments:    0,
     }))
   }
 
   await loadLikesForPosts()
+  await loadCommentsCount()
+}
+
+/* ── Conteo de comentarios ─────────────────────────────────── */
+async function loadCommentsCount() {
+  if (!posts.value.length) return
+  const postIds = posts.value.map(p => p.id)
+  const { data } = await supabase.from('post_comments').select('post_id').in('post_id', postIds)
+  if (!data) return
+  const countMap = {}
+  data.forEach(c => { countMap[c.post_id] = (countMap[c.post_id] || 0) + 1 })
+  posts.value.forEach(post => { post.comments = countMap[post.id] || 0 })
 }
 
 /* ── Likes persistentes ──────────────────────────────────── */
@@ -423,6 +438,12 @@ async function onEditPost(data) {
 
   editingPost.value = null
   savingEdit.value  = false
+}
+
+/* ── Comentarios: actualizar conteo desde PostCard ─────── */
+function onCommentCount({ postId, delta }) {
+  const post = posts.value.find(p => p.id === postId)
+  if (post) post.comments = Math.max(0, (post.comments || 0) + delta)
 }
 
 /* ── Tabs ────────────────────────────────────────────────── */

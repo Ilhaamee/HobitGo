@@ -1,217 +1,182 @@
 <script setup>
-import { ref, computed, nextTick, watch } from 'vue'
-import { useRoute } from 'vue-router'
+import { ref, computed, nextTick, onMounted } from 'vue'
 import { supabase } from '../lib/supabase'
 
-// ── Config ─────────────────────────────────────────────
+// ── Config ────────────────────────────────────────────
+// Pon tu API key aquí o en .env como VITE_GEMINI_API_KEY
 const GEMINI_API_KEY = import.meta.env.VITE_GEMINI_API_KEY || ''
-const GEMINI_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`
+const GEMINI_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`
 
-const route = useRoute()
-
-const isVisible = computed(() => {
-  const p = route.path
-  // Solo visible dentro de /dashboard
-  return p.startsWith('/dashboard')
-})
-
-// Cerrar y limpiar al salir del dashboard
-watch(isVisible, (val) => {
-  if (!val) {
-    open.value       = false
-    messages.value   = []
-    dataLoaded.value = false
-    userData.value   = null
-  }
-})
-
-// ── State ──────────────────────────────────────────────
-const open        = ref(false)
-const messages    = ref([])
-const input       = ref('')
-const loading     = ref(false)
+// ── State ─────────────────────────────────────────────
+const open      = ref(false)
+const messages  = ref([])
+const input     = ref('')
+const loading   = ref(false)
 const messagesRef = ref(null)
-const userData    = ref(null)
-const dataLoaded  = ref(false)
 
+// Datos del usuario
+const userData  = ref(null)
+const dataLoaded = ref(false)
+
+// Sugerencias rápidas
 const QUICK_SUGGESTIONS = [
   '¿Cómo voy esta semana?',
-  'Dame consejos para mi racha',
+  'Dame consejos para mejorar mi racha',
   '¿Qué hobby debería priorizar?',
-  'Analiza mi progreso del mes',
+  'Analiza mi progreso este mes',
 ]
 
-// ── Cargar datos reales de Supabase ────────────────────
-// Tablas usadas: hobby_sessions (hobby_id, minutes, created_at)
-//                hobbies (id, name, daily_minutes, total_days, total_minutes)
-//                profiles (username)
+// ── Cargar datos del usuario desde Supabase ───────────
 async function loadUserData() {
   if (dataLoaded.value) return
 
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return
 
-  const now      = new Date()
-  const weekAgo  = new Date(now); weekAgo.setDate(now.getDate() - 7)
-  const monthAgo = new Date(now); monthAgo.setDate(now.getDate() - 30)
-
   const [
     { data: profile },
     { data: hobbies },
     { data: sessions },
+    { data: events },
   ] = await Promise.all([
-    supabase.from('profiles').select('username').eq('id', user.id).single(),
-    supabase.from('hobbies')
-      .select('id, name, daily_minutes, total_days, total_minutes')
-      .eq('user_id', user.id),
-    supabase.from('hobby_sessions')
-      .select('hobby_id, minutes, created_at')
-      .eq('user_id', user.id)
-      .order('created_at', { ascending: false })
-      .limit(300),
+    supabase.from('profiles').select('username, bio').eq('id', user.id).single(),
+    supabase.from('hobbies').select('id, name, daily_minutes, total_days, total_minutes, gradient').eq('user_id', user.id),
+    supabase.from('hobby_sessions').select('hobby_id, minutes, created_at, note').eq('user_id', user.id).order('created_at', { ascending: false }).limit(100),
+    supabase.from('events').select('title, date').eq('user_id', user.id).limit(10),
   ])
 
-  const allSessions   = sessions || []
-  const allHobbies    = hobbies  || []
+  // Calcular rachas por hobby
+  const streaksByHobby = {}
+  if (hobbies && sessions) {
+    hobbies.forEach(h => {
+      const dates = [...new Set(
+        sessions
+          .filter(s => s.hobby_id === h.id)
+          .map(s => new Date(s.created_at).toDateString())
+      )].map(d => new Date(d)).sort((a, b) => b - a)
 
-  // Filtrar por periodo
-  const weekSessions  = allSessions.filter(s => new Date(s.created_at) >= weekAgo)
-  const monthSessions = allSessions.filter(s => new Date(s.created_at) >= monthAgo)
-
-  // Minutos totales y del mes por hobby
-  const minsTotalByHobby = {}
-  const minsMonthByHobby = {}
-
-  allSessions.forEach(s => {
-    minsTotalByHobby[s.hobby_id] = (minsTotalByHobby[s.hobby_id] || 0) + (s.minutes || 0)
-  })
-  monthSessions.forEach(s => {
-    minsMonthByHobby[s.hobby_id] = (minsMonthByHobby[s.hobby_id] || 0) + (s.minutes || 0)
-  })
-
-  // Racha actual por hobby (días consecutivos hasta hoy)
-  const streakByHobby = {}
-  allHobbies.forEach(h => {
-    const days = [...new Set(
-      allSessions
-        .filter(s => s.hobby_id === h.id)
-        .map(s => {
-          const d = new Date(s.created_at)
-          d.setHours(0, 0, 0, 0)
-          return d.getTime()
-        })
-    )].sort((a, b) => b - a)
-
-    let streak = 0
-    let cur = new Date(); cur.setHours(0, 0, 0, 0)
-    for (const t of days) {
-      const diff = Math.round((cur.getTime() - t) / 86400000)
-      if (diff <= 1) { streak++; cur = new Date(t) }
-      else break
-    }
-    streakByHobby[h.id] = streak
-  })
-
-  // Hobby con mayor racha activa
-  const bestHobby = allHobbies.length
-    ? allHobbies.reduce((b, h) => (streakByHobby[h.id] || 0) > (streakByHobby[b.id] || 0) ? h : b, allHobbies[0])
-    : null
-
-  // Día de la semana con más minutos esta semana
-  const DAY_NAMES = ['domingo','lunes','martes','miércoles','jueves','viernes','sábado']
-  const dayMins   = {}
-  weekSessions.forEach(s => {
-    const d = DAY_NAMES[new Date(s.created_at).getDay()]
-    dayMins[d] = (dayMins[d] || 0) + (s.minutes || 0)
-  })
-  const bestDay = Object.entries(dayMins).sort((a, b) => b[1] - a[1])[0]?.[0] || null
-
-  userData.value = {
-    username:       profile?.username || 'Usuario',
-    hobbies:        allHobbies,
-    streakByHobby,
-    bestHobby,
-    bestStreak:     bestHobby ? (streakByHobby[bestHobby.id] || 0) : 0,
-    minsTotalByHobby,
-    minsMonthByHobby,
-    weekSessions:   weekSessions.length,
-    weekMinutes:    weekSessions.reduce((s, x) => s + (x.minutes || 0), 0),
-    monthSessions:  monthSessions.length,
-    monthMinutes:   monthSessions.reduce((s, x) => s + (x.minutes || 0), 0),
-    bestDay,
+      let streak = 0
+      let cur = new Date(); cur.setHours(0, 0, 0, 0)
+      for (const d of dates) {
+        if (Math.round((cur - d) / 86400000) <= 1) { streak++; cur = d }
+        else break
+      }
+      streaksByHobby[h.id] = streak
+    })
   }
 
+  // Sesiones de los últimos 7 días
+  const weekAgo = new Date(); weekAgo.setDate(weekAgo.getDate() - 7)
+  const thisWeekSessions = (sessions || []).filter(s => new Date(s.created_at) >= weekAgo)
+
+  // Sesiones de este mes
+  const monthAgo = new Date(); monthAgo.setDate(monthAgo.getDate() - 30)
+  const thisMonthSessions = (sessions || []).filter(s => new Date(s.created_at) >= monthAgo)
+
+  // Minutos por hobby este mes
+  const minutesByHobby = {}
+  thisMonthSessions.forEach(s => {
+    minutesByHobby[s.hobby_id] = (minutesByHobby[s.hobby_id] || 0) + (s.minutes || 0)
+  })
+
+  userData.value = {
+    username: profile?.username || 'Usuario',
+    hobbies: hobbies || [],
+    streaksByHobby,
+    totalSessionsThisWeek: thisWeekSessions.length,
+    totalMinutesThisWeek: thisWeekSessions.reduce((s, x) => s + (x.minutes || 0), 0),
+    totalSessionsThisMonth: thisMonthSessions.length,
+    totalMinutesThisMonth: thisMonthSessions.reduce((s, x) => s + (x.minutes || 0), 0),
+    minutesByHobby,
+    recentNotes: sessions?.slice(0, 5).map(s => s.note).filter(Boolean) || [],
+    upcomingEvents: events || [],
+  }
   dataLoaded.value = true
 }
 
-// ── System prompt ──────────────────────────────────────
+// ── Construir el contexto del sistema ─────────────────
 function buildSystemPrompt() {
   if (!userData.value) {
-    return `Eres AI Coach de HobitGo, app de hábitos y hobbies.
-Responde siempre en español, tono amigable y motivador. Máximo 4 frases por respuesta.`
+    return `Eres AI Coach de HobitGo, una app de hábitos y hobbies. 
+Ayudas a los usuarios con consejos de productividad, bienestar y constancia.
+Responde siempre en español, de forma amigable y motivadora. Respuestas cortas y directas (máximo 3-4 frases).`
   }
 
   const u = userData.value
-
-  const hobbyLines = u.hobbies.map(h => {
-    const streak  = u.streakByHobby[h.id]    || 0
-    const minsM   = u.minsMonthByHobby[h.id] || 0
-    const minsT   = u.minsTotalByHobby[h.id] || 0
-    const goal    = (h.total_days || 30) * (h.daily_minutes || 20)
-    const pct     = goal > 0 ? Math.min(100, Math.round((minsT / goal) * 100)) : 0
-    return `• ${h.name}: racha ${streak}d | ${minsM}min este mes | ${pct}% del reto`
+  const hobbyDetails = u.hobbies.map(h => {
+    const streak = u.streaksByHobby[h.id] || 0
+    const minsMonth = u.minutesByHobby[h.id] || 0
+    const progress = Math.round((h.total_minutes || 0) / Math.max(1, h.total_days * h.daily_minutes) * 100)
+    return `- ${h.name}: racha ${streak} días, ${minsMonth} min este mes, progreso ${progress}%`
   }).join('\n')
 
-  return `Eres AI Coach de HobitGo para ${u.username}.
+  return `Eres AI Coach de HobitGo, asistente personal de hábitos para ${u.username}.
 
-DATOS HOY (${new Date().toLocaleDateString('es-ES')}):
-${hobbyLines || '• Sin hobbies registrados'}
+DATOS ACTUALES DEL USUARIO:
+Hobbies activos:
+${hobbyDetails || '- Sin hobbies registrados aún'}
 
-Esta semana → ${u.weekSessions} sesiones · ${u.weekMinutes} min
-Este mes    → ${u.monthSessions} sesiones · ${u.monthMinutes} min
-${u.bestStreak > 0 && u.bestHobby ? `Mejor racha: ${u.bestStreak} días con ${u.bestHobby.name}` : ''}
-${u.bestDay ? `Día más activo esta semana: ${u.bestDay}` : ''}
+Esta semana: ${u.totalSessionsThisWeek} sesiones, ${u.totalMinutesThisWeek} minutos totales
+Este mes: ${u.totalSessionsThisMonth} sesiones, ${u.totalMinutesThisMonth} minutos totales
+${u.recentNotes.length ? `Notas recientes: "${u.recentNotes.join('", "')}"` : ''}
+${u.upcomingEvents.length ? `Próximos eventos: ${u.upcomingEvents.map(e => e.title).join(', ')}` : ''}
 
-REGLAS:
-- Responde en español, tono motivador y amigable
-- Usa los datos reales de arriba cuando el usuario pregunte por su progreso
-- Máximo 4 frases, directo al punto
-- 1-2 emojis por respuesta máximo
-- Si la pregunta no tiene que ver con hábitos/hobbies, redirige amablemente`
+INSTRUCCIONES:
+- Responde siempre en español, tono amigable y motivador
+- Usa los datos reales del usuario para personalizar consejos
+- Respuestas concisas: máximo 4 frases
+- Cuando menciones un hobby, usa su nombre real
+- Si el usuario pregunta algo sin relación a hábitos/hobbies, redirige amablemente
+- Usa emojis con moderación (1-2 por respuesta máximo)`
 }
 
-// ── Llamar a Gemini ────────────────────────────────────
+// ── Llamar a Gemini ───────────────────────────────────
 async function callGemini(userMessage) {
   if (!GEMINI_API_KEY) {
-    return '⚠️ Añade VITE_GEMINI_API_KEY en tu .env para activar el AI Coach.'
+    return '⚠️ Falta la API key de Gemini. Añade VITE_GEMINI_API_KEY en tu .env'
   }
 
-  const history = messages.value.map(m => ({
-    role:  m.role === 'ai' ? 'model' : 'user',
-    parts: [{ text: m.text }],
-  }))
+  const systemPrompt = buildSystemPrompt()
+
+  // Construir historial de conversación
+  const conversationHistory = messages.value
+    .filter(m => m.role !== 'system')
+    .map(m => ({
+      role: m.role === 'ai' ? 'model' : 'user',
+      parts: [{ text: m.text }]
+    }))
+
+  const body = {
+    system_instruction: {
+      parts: [{ text: systemPrompt }]
+    },
+    contents: [
+      ...conversationHistory,
+      { role: 'user', parts: [{ text: userMessage }] }
+    ],
+    generationConfig: {
+      temperature: 0.7,
+      maxOutputTokens: 300,
+    }
+  }
 
   const res = await fetch(GEMINI_URL, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      system_instruction: { parts: [{ text: buildSystemPrompt() }] },
-      contents: [...history, { role: 'user', parts: [{ text: userMessage }] }],
-      generationConfig: { temperature: 0.7, maxOutputTokens: 280 },
-    }),
+    body: JSON.stringify(body)
   })
 
   if (!res.ok) {
     const err = await res.json().catch(() => ({}))
+    console.error('Gemini error:', err)
     throw new Error(err.error?.message || `Error ${res.status}`)
   }
 
   const data = await res.json()
-  return data.candidates?.[0]?.content?.parts?.[0]?.text
-    || 'No pude generar una respuesta. Inténtalo de nuevo.'
+  return data.candidates?.[0]?.content?.parts?.[0]?.text || 'No pude generar una respuesta.'
 }
 
-// ── Enviar mensaje ─────────────────────────────────────
+// ── Enviar mensaje ────────────────────────────────────
 async function sendMessage(text = null) {
   const msg = (text || input.value).trim()
   if (!msg || loading.value) return
@@ -225,12 +190,11 @@ async function sendMessage(text = null) {
     const reply = await callGemini(msg)
     messages.value.push({ role: 'ai', text: reply, id: Date.now() + 1 })
   } catch (e) {
-    console.error('Gemini error:', e)
     messages.value.push({
       role: 'ai',
-      text: 'Error al conectar con Gemini. Revisa tu API key o inténtalo más tarde.',
+      text: `Lo siento, hubo un error: ${e.message}. Inténtalo de nuevo.`,
       id: Date.now() + 1,
-      error: true,
+      error: true
     })
   } finally {
     loading.value = false
@@ -238,52 +202,53 @@ async function sendMessage(text = null) {
   }
 }
 
-// ── Abrir / cerrar ─────────────────────────────────────
+// ── Abrir / cerrar ────────────────────────────────────
 async function toggleOpen() {
   open.value = !open.value
-
   if (open.value) {
     await loadUserData()
-    if (messages.value.length === 0) buildWelcomeMessage()
+    if (messages.value.length === 0) {
+      // Mensaje de bienvenida con datos reales
+      await nextTick()
+      sendWelcomeMessage()
+    }
     await nextTick()
     await scrollToBottom()
   }
 }
 
-// Mensaje de bienvenida con datos reales
-function buildWelcomeMessage() {
+function sendWelcomeMessage() {
   const u = userData.value
-
-  if (!u || !u.hobbies.length) {
+  if (!u) {
     messages.value.push({
       role: 'ai',
       text: '¡Hola! Soy tu AI Coach de HobitGo. Puedo ayudarte con consejos sobre hábitos, hobbies y productividad. ¿En qué te ayudo hoy?',
-      id: Date.now(),
+      id: Date.now()
     })
     return
   }
 
-  const parts = [`¡Hola ${u.username}!`]
+  const bestStreak = Math.max(0, ...Object.values(u.streaksByHobby))
+  const bestHobby = u.hobbies.find(h => u.streaksByHobby[h.id] === bestStreak)
 
-  if (u.bestStreak > 0 && u.bestHobby) {
-    parts.push(`Llevas ${u.bestStreak} días de racha con ${u.bestHobby.name} 🔥`)
+  let welcome = `¡Hola ${u.username}! `
+  if (bestStreak > 0 && bestHobby) {
+    welcome += `Llevas ${bestStreak} días de racha con ${bestHobby.name} 🔥 `
   }
-
-  if (u.weekSessions > 0) {
-    parts.push(`Esta semana: ${u.weekSessions} sesión${u.weekSessions > 1 ? 'es' : ''} · ${u.weekMinutes} min practicados.`)
-  } else {
-    parts.push('Todavía no tienes sesiones esta semana — hoy es un buen momento para empezar.')
+  if (u.totalSessionsThisWeek > 0) {
+    welcome += `Esta semana: ${u.totalSessionsThisWeek} sesiones y ${u.totalMinutesThisWeek} minutos. `
   }
+  welcome += '¿En qué te puedo ayudar hoy?'
 
-  parts.push('¿En qué te puedo ayudar?')
-
-  messages.value.push({ role: 'ai', text: parts.join(' '), id: Date.now() })
+  messages.value.push({ role: 'ai', text: welcome, id: Date.now() })
 }
 
-// ── Scroll ─────────────────────────────────────────────
+// ── Scroll ────────────────────────────────────────────
 async function scrollToBottom() {
   await nextTick()
-  if (messagesRef.value) messagesRef.value.scrollTop = messagesRef.value.scrollHeight
+  if (messagesRef.value) {
+    messagesRef.value.scrollTop = messagesRef.value.scrollHeight
+  }
 }
 
 function handleKeydown(e) {
@@ -295,134 +260,132 @@ function handleKeydown(e) {
 </script>
 
 <template>
-  <!-- Solo aparece dentro del dashboard, nunca en login / home / onboarding -->
-  <template v-if="isVisible">
+  <!-- Botón flotante -->
+  <div class="coach-fab-wrap">
+    <div class="coach-pulse p1"></div>
+    <div class="coach-pulse p2"></div>
+    <button
+      class="coach-fab"
+      :class="{ open }"
+      @click="toggleOpen"
+      :aria-label="open ? 'Cerrar AI Coach' : 'Abrir AI Coach'"
+    >
+      <Transition name="icon-flip" mode="out-in">
+        <i v-if="open" key="close" class="ti ti-x" aria-hidden="true"></i>
+        <i v-else key="open" class="ti ti-sparkles" aria-hidden="true"></i>
+      </Transition>
+    </button>
+    <span class="coach-label">{{ open ? '' : 'AI Coach' }}</span>
+  </div>
 
-    <!-- Botón flotante -->
-    <div class="coach-fab-wrap">
-      <div class="coach-pulse p1"></div>
-      <div class="coach-pulse p2"></div>
-      <button
-        class="coach-fab"
-        :class="{ open }"
-        @click="toggleOpen"
-        :aria-label="open ? 'Cerrar AI Coach' : 'Abrir AI Coach'"
-      >
-        <Transition name="icon-flip" mode="out-in">
-          <i v-if="open" key="close"  class="ti ti-x"        aria-hidden="true"></i>
-          <i v-else      key="open"   class="ti ti-sparkles"  aria-hidden="true"></i>
-        </Transition>
-      </button>
-      <span v-if="!open" class="coach-label">AI Coach</span>
-    </div>
+  <!-- Modal de chat -->
+  <Transition name="coach-slide">
+    <div v-if="open" class="coach-modal" role="dialog" aria-label="AI Coach">
 
-    <!-- Modal de chat -->
-    <Transition name="coach-slide">
-      <div v-if="open" class="coach-modal" role="dialog" aria-label="AI Coach">
-
-        <!-- Header -->
-        <div class="coach-header">
-          <div class="coach-header-left">
-            <div class="coach-avatar">
-              <i class="ti ti-sparkles" aria-hidden="true"></i>
-            </div>
-            <div>
-              <p class="coach-title">AI Coach</p>
-              <p class="coach-subtitle">
-                <span class="online-dot"></span>
-                Powered by Gemini
-              </p>
-            </div>
+      <!-- Header -->
+      <div class="coach-header">
+        <div class="coach-header-left">
+          <div class="coach-avatar">
+            <i class="ti ti-sparkles" aria-hidden="true"></i>
           </div>
-          <button class="coach-close" @click="toggleOpen" aria-label="Cerrar">
-            <i class="ti ti-x" aria-hidden="true"></i>
-          </button>
-        </div>
-
-        <!-- Mensajes -->
-        <div class="coach-messages" ref="messagesRef">
-
-          <!-- Sugerencias antes del primer mensaje -->
-          <div v-if="messages.length === 0 && !loading" class="coach-suggestions">
-            <p class="sugg-title">Pregúntame algo</p>
-            <div class="sugg-grid">
-              <button
-                v-for="s in QUICK_SUGGESTIONS"
-                :key="s"
-                class="sugg-btn"
-                @click="sendMessage(s)"
-              >{{ s }}</button>
-            </div>
+          <div>
+            <p class="coach-title">AI Coach</p>
+            <p class="coach-subtitle">
+              <span class="online-dot"></span>
+              Powered by Gemini
+            </p>
           </div>
-
-          <!-- Historial -->
-          <template v-else>
-            <div
-              v-for="msg in messages"
-              :key="msg.id"
-              class="msg-row"
-              :class="msg.role"
-            >
-              <div v-if="msg.role === 'ai'" class="msg-avatar">
-                <i class="ti ti-sparkles" aria-hidden="true"></i>
-              </div>
-              <div class="msg-bubble" :class="[msg.role, { error: msg.error }]">
-                {{ msg.text }}
-              </div>
-            </div>
-
-            <!-- Accesos rápidos tras conversar -->
-            <div v-if="!loading" class="quick-actions">
-              <button
-                v-for="s in QUICK_SUGGESTIONS.slice(0, 2)"
-                :key="s"
-                class="quick-btn"
-                @click="sendMessage(s)"
-              >{{ s }}</button>
-            </div>
-          </template>
-
-          <!-- Typing indicator -->
-          <div v-if="loading" class="msg-row ai">
-            <div class="msg-avatar">
-              <i class="ti ti-sparkles" aria-hidden="true"></i>
-            </div>
-            <div class="typing-bubble">
-              <span></span><span></span><span></span>
-            </div>
-          </div>
-
         </div>
-
-        <!-- Input -->
-        <div class="coach-input-area">
-          <input
-            v-model="input"
-            type="text"
-            class="coach-input"
-            placeholder="Pregunta sobre tu progreso..."
-            :disabled="loading"
-            @keydown="handleKeydown"
-            maxlength="500"
-          />
-          <button
-            class="coach-send"
-            :disabled="!input.trim() || loading"
-            @click="sendMessage()"
-            aria-label="Enviar"
-          >
-            <i class="ti ti-send" aria-hidden="true"></i>
-          </button>
-        </div>
-
+        <button class="coach-close" @click="toggleOpen" aria-label="Cerrar">
+          <i class="ti ti-x" aria-hidden="true"></i>
+        </button>
       </div>
-    </Transition>
 
-  </template>
+      <!-- Mensajes -->
+      <div class="coach-messages" ref="messagesRef">
+
+        <!-- Empty state / sugerencias -->
+        <div v-if="messages.length === 0" class="coach-suggestions">
+          <p class="sugg-title">Pregúntame algo</p>
+          <div class="sugg-grid">
+            <button
+              v-for="s in QUICK_SUGGESTIONS"
+              :key="s"
+              class="sugg-btn"
+              @click="sendMessage(s)"
+            >
+              {{ s }}
+            </button>
+          </div>
+        </div>
+
+        <!-- Historial -->
+        <template v-else>
+          <div
+            v-for="msg in messages"
+            :key="msg.id"
+            class="msg-row"
+            :class="msg.role"
+          >
+            <div v-if="msg.role === 'ai'" class="msg-avatar">
+              <i class="ti ti-sparkles" aria-hidden="true"></i>
+            </div>
+            <div class="msg-bubble" :class="[msg.role, { error: msg.error }]">
+              {{ msg.text }}
+            </div>
+          </div>
+
+          <!-- Sugerencias rápidas debajo del último mensaje -->
+          <div v-if="!loading && messages.length > 0" class="quick-actions">
+            <button
+              v-for="s in QUICK_SUGGESTIONS.slice(0, 2)"
+              :key="s"
+              class="quick-btn"
+              @click="sendMessage(s)"
+            >
+              {{ s }}
+            </button>
+          </div>
+        </template>
+
+        <!-- Typing indicator -->
+        <div v-if="loading" class="msg-row ai">
+          <div class="msg-avatar">
+            <i class="ti ti-sparkles" aria-hidden="true"></i>
+          </div>
+          <div class="typing-bubble">
+            <span></span><span></span><span></span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Input -->
+      <div class="coach-input-area">
+        <input
+          v-model="input"
+          type="text"
+          class="coach-input"
+          placeholder="Pregunta sobre tu progreso..."
+          :disabled="loading"
+          @keydown="handleKeydown"
+          maxlength="500"
+        />
+        <button
+          class="coach-send"
+          :disabled="!input.trim() || loading"
+          @click="sendMessage()"
+          aria-label="Enviar"
+        >
+          <i class="ti ti-send" aria-hidden="true"></i>
+        </button>
+      </div>
+
+    </div>
+  </Transition>
 </template>
 
 <style scoped>
-/* ── FAB ──────────────────────────────────────────────── */
+/* ── FAB ─────────────────────────────────────────────── */
 .coach-fab-wrap {
   position: fixed;
   bottom: 90px;
@@ -437,14 +400,14 @@ function handleKeydown(e) {
 .coach-pulse {
   position: absolute;
   border-radius: 50%;
-  background: rgba(34,40,78,.12);
+  background: rgba(34, 40, 78, 0.15);
   pointer-events: none;
 }
-.p1 { width: 52px; height: 52px; animation: coachPulse 3s ease-out infinite; }
-.p2 { width: 68px; height: 68px; animation: coachPulse 3s ease-out infinite 1s; }
+.p1 { width: 56px; height: 56px; animation: coachPulse 3s ease-out infinite; }
+.p2 { width: 70px; height: 70px; animation: coachPulse 3s ease-out infinite 1s; }
 
 @keyframes coachPulse {
-  0%   { transform: scale(.85); opacity: .5; }
+  0%   { transform: scale(0.85); opacity: 0.5; }
   100% { transform: scale(1.7); opacity: 0; }
 }
 
@@ -460,33 +423,34 @@ function handleKeydown(e) {
   justify-content: center;
   color: #fff59e;
   font-size: 22px;
-  box-shadow: 0 4px 20px rgba(34,40,78,.28);
-  transition: transform .25s cubic-bezier(.34,1.56,.64,1), background .2s;
+  box-shadow: 0 4px 20px rgba(34, 40, 78, 0.35);
+  transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1), background 0.2s;
   position: relative;
   z-index: 1;
 }
 .coach-fab:hover { transform: scale(1.1); }
-.coach-fab.open  { background: #ff6b9d; }
+.coach-fab.open  { background: #ff6b9d; transform: rotate(0deg); }
 
 .coach-label {
   font-size: 10px;
   font-weight: 700;
-  color: rgba(34,40,78,.45);
-  letter-spacing: .05em;
+  color: rgba(34, 40, 78, 0.5);
+  letter-spacing: 0.04em;
   text-transform: uppercase;
+  white-space: nowrap;
 }
 
-/* ── Modal ────────────────────────────────────────────── */
+/* ── Modal ───────────────────────────────────────────── */
 .coach-modal {
   position: fixed;
   bottom: 160px;
   right: 20px;
   width: 340px;
-  max-height: 500px;
+  max-height: 520px;
   background: #fff;
   border-radius: 20px;
-  box-shadow: 0 20px 60px rgba(34,40,78,.18);
-  border: 1px solid rgba(34,40,78,.08);
+  box-shadow: 0 20px 60px rgba(34, 40, 78, 0.2);
+  border: 1px solid rgba(34, 40, 78, 0.08);
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -494,11 +458,16 @@ function handleKeydown(e) {
 }
 
 .coach-slide-enter-active,
-.coach-slide-leave-active  { transition: all .3s cubic-bezier(.16,1,.3,1); }
+.coach-slide-leave-active {
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
 .coach-slide-enter-from,
-.coach-slide-leave-to      { opacity: 0; transform: translateY(20px) scale(.95); }
+.coach-slide-leave-to {
+  opacity: 0;
+  transform: translateY(20px) scale(0.95);
+}
 
-/* ── Header ───────────────────────────────────────────── */
+/* ── Header ──────────────────────────────────────────── */
 .coach-header {
   background: #22284E;
   padding: 14px 16px;
@@ -510,130 +479,235 @@ function handleKeydown(e) {
 .coach-header-left { display: flex; align-items: center; gap: 10px; }
 
 .coach-avatar {
-  width: 32px; height: 32px; border-radius: 50%;
-  background: rgba(255,245,158,.13);
-  display: flex; align-items: center; justify-content: center;
-  color: #fff59e; font-size: 15px; flex-shrink: 0;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: rgba(255, 245, 158, 0.15);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff59e;
+  font-size: 16px;
+  flex-shrink: 0;
 }
 
 .coach-title    { margin: 0; font-size: 14px; font-weight: 600; color: #fff59e; line-height: 1.2; }
-.coach-subtitle { margin: 0; font-size: 11px; color: rgba(255,255,255,.4); display: flex; align-items: center; gap: 5px; }
+.coach-subtitle {
+  margin: 0;
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.45);
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
 
-.online-dot { width: 6px; height: 6px; border-radius: 50%; background: #22c55e; display: inline-block; }
+.online-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #22c55e;
+  display: inline-block;
+}
 
 .coach-close {
-  width: 28px; height: 28px; border-radius: 50%;
-  background: rgba(255,255,255,.08); border: none;
-  color: rgba(255,255,255,.55); cursor: pointer;
-  display: flex; align-items: center; justify-content: center;
-  font-size: 16px; transition: background .2s;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.1);
+  border: none;
+  color: rgba(255, 255, 255, 0.6);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  transition: background 0.2s;
 }
-.coach-close:hover { background: rgba(255,255,255,.18); }
+.coach-close:hover { background: rgba(255, 255, 255, 0.2); }
 
-/* ── Mensajes ─────────────────────────────────────────── */
+/* ── Mensajes ────────────────────────────────────────── */
 .coach-messages {
-  flex: 1; overflow-y: auto;
-  padding: 14px;
-  display: flex; flex-direction: column; gap: 8px;
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
   scroll-behavior: smooth;
 }
-.coach-messages::-webkit-scrollbar       { width: 4px; }
+.coach-messages::-webkit-scrollbar { width: 4px; }
 .coach-messages::-webkit-scrollbar-thumb { background: rgba(34,40,78,.1); border-radius: 99px; }
 
-.coach-suggestions { display: flex; flex-direction: column; gap: 8px; }
+/* Sugerencias iniciales */
+.coach-suggestions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 8px 0;
+}
 .sugg-title {
-  margin: 0; font-size: 11px; font-weight: 700;
-  color: rgba(34,40,78,.4); text-transform: uppercase; letter-spacing: .06em;
+  margin: 0;
+  font-size: 12px;
+  font-weight: 600;
+  color: rgba(34, 40, 78, 0.4);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
 }
-.sugg-grid  { display: flex; flex-direction: column; gap: 6px; }
+.sugg-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
 .sugg-btn {
-  text-align: left; padding: 10px 13px;
-  background: rgba(34,40,78,.03);
-  border: 1px solid rgba(34,40,78,.09);
-  border-radius: 12px; font-size: 13px; color: #22284E;
-  cursor: pointer; font-family: inherit; line-height: 1.4;
-  transition: background .15s, border-color .15s;
+  text-align: left;
+  padding: 10px 14px;
+  background: rgba(34, 40, 78, 0.04);
+  border: 1px solid rgba(34, 40, 78, 0.08);
+  border-radius: 12px;
+  font-size: 13px;
+  color: #22284E;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+  font-family: inherit;
 }
-.sugg-btn:hover { background: rgba(255,107,157,.06); border-color: rgba(255,107,157,.2); }
+.sugg-btn:hover { background: rgba(255, 107, 157, 0.06); border-color: rgba(255, 107, 157, 0.2); }
 
-.msg-row        { display: flex; gap: 8px; align-items: flex-end; }
-.msg-row.user   { justify-content: flex-end; }
-.msg-row.ai     { justify-content: flex-start; }
+/* Filas de mensajes */
+.msg-row {
+  display: flex;
+  gap: 8px;
+  align-items: flex-end;
+}
+.msg-row.user { justify-content: flex-end; }
+.msg-row.ai   { justify-content: flex-start; }
 
 .msg-avatar {
-  width: 26px; height: 26px; border-radius: 50%;
-  background: #22284E; color: #fff59e; font-size: 12px;
-  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: #22284E;
+  color: #fff59e;
+  font-size: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
 }
 
 .msg-bubble {
-  max-width: 80%; padding: 10px 14px;
-  border-radius: 16px; font-size: 13px;
-  line-height: 1.55; word-break: break-word;
+  max-width: 78%;
+  padding: 10px 14px;
+  border-radius: 16px;
+  font-size: 13px;
+  line-height: 1.55;
+  word-break: break-word;
 }
-.msg-bubble.ai    { background: rgba(34,40,78,.05); color: #22284E; border-radius: 4px 16px 16px 16px; }
-.msg-bubble.user  { background: #ff6b9d; color: #fff; border-radius: 16px 4px 16px 16px; }
-.msg-bubble.error { background: rgba(239,68,68,.07); color: #dc2626; border: 1px solid rgba(239,68,68,.2); border-radius: 4px 16px 16px 16px; }
+.msg-bubble.ai   { background: rgba(34, 40, 78, 0.05); color: #22284E; border-radius: 4px 16px 16px 16px; }
+.msg-bubble.user { background: #ff6b9d; color: #fff; border-radius: 16px 4px 16px 16px; }
+.msg-bubble.error { background: rgba(239, 68, 68, 0.08); color: #dc2626; border: 1px solid rgba(239, 68, 68, 0.2); }
 
+/* Typing indicator */
 .typing-bubble {
-  background: rgba(34,40,78,.05);
+  background: rgba(34, 40, 78, 0.05);
   border-radius: 4px 16px 16px 16px;
-  padding: 12px 16px; display: flex; gap: 4px; align-items: center;
+  padding: 12px 16px;
+  display: flex;
+  gap: 4px;
+  align-items: center;
 }
 .typing-bubble span {
-  width: 6px; height: 6px; border-radius: 50%;
-  background: rgba(34,40,78,.3);
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: rgba(34, 40, 78, 0.35);
   animation: typingDot 1.4s ease-in-out infinite;
 }
-.typing-bubble span:nth-child(2) { animation-delay: .18s; }
-.typing-bubble span:nth-child(3) { animation-delay: .36s; }
+.typing-bubble span:nth-child(2) { animation-delay: 0.18s; }
+.typing-bubble span:nth-child(3) { animation-delay: 0.36s; }
+
 @keyframes typingDot {
-  0%,80%,100% { transform: scale(.7); opacity: .4; }
-  40%          { transform: scale(1);  opacity: 1; }
+  0%, 80%, 100% { transform: scale(0.7); opacity: 0.5; }
+  40%           { transform: scale(1);   opacity: 1; }
 }
 
-.quick-actions { display: flex; gap: 6px; flex-wrap: wrap; padding-top: 2px; }
+/* Sugerencias rápidas debajo de mensajes */
+.quick-actions {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  padding-top: 4px;
+}
 .quick-btn {
-  padding: 5px 11px; background: transparent;
-  border: 1px solid rgba(34,40,78,.12); border-radius: 99px;
-  font-size: 11px; color: rgba(34,40,78,.55);
-  cursor: pointer; font-family: inherit; transition: all .15s;
+  padding: 6px 12px;
+  background: transparent;
+  border: 1px solid rgba(34, 40, 78, 0.12);
+  border-radius: 99px;
+  font-size: 11px;
+  color: rgba(34, 40, 78, 0.6);
+  cursor: pointer;
+  transition: all 0.15s;
+  font-family: inherit;
 }
-.quick-btn:hover { border-color: #ff6b9d; color: #ff6b9d; background: rgba(255,107,157,.04); }
+.quick-btn:hover { border-color: #ff6b9d; color: #ff6b9d; background: rgba(255,107,157,0.05); }
 
-/* ── Input ────────────────────────────────────────────── */
+/* ── Input ───────────────────────────────────────────── */
 .coach-input-area {
-  padding: 11px 13px; border-top: 1px solid rgba(34,40,78,.07);
-  display: flex; gap: 8px; align-items: center;
-  flex-shrink: 0; background: #fff;
+  padding: 12px 14px;
+  border-top: 1px solid rgba(34, 40, 78, 0.07);
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-shrink: 0;
+  background: #fff;
 }
 
 .coach-input {
-  flex: 1; padding: 9px 13px;
-  background: rgba(34,40,78,.04);
-  border: 1px solid rgba(34,40,78,.09);
-  border-radius: 99px; font-size: 13px; color: #22284E;
-  font-family: inherit; outline: none; min-width: 0;
-  transition: border-color .2s, background .2s;
+  flex: 1;
+  padding: 9px 14px;
+  background: rgba(34, 40, 78, 0.04);
+  border: 1px solid rgba(34, 40, 78, 0.08);
+  border-radius: 99px;
+  font-size: 13px;
+  color: #22284E;
+  font-family: inherit;
+  outline: none;
+  transition: border-color 0.2s, background 0.2s;
+  min-width: 0;
 }
-.coach-input:focus        { border-color: #ff6b9d; background: #fff; }
-.coach-input::placeholder { color: rgba(34,40,78,.35); }
-.coach-input:disabled     { opacity: .6; }
+.coach-input:focus { border-color: #ff6b9d; background: #fff; }
+.coach-input::placeholder { color: rgba(34, 40, 78, 0.35); }
+.coach-input:disabled { opacity: 0.6; }
 
 .coach-send {
-  width: 36px; height: 36px; border-radius: 50%;
-  background: #ff6b9d; border: none; color: #fff; font-size: 16px;
-  cursor: pointer; display: flex; align-items: center; justify-content: center;
-  flex-shrink: 0; transition: opacity .2s, transform .15s;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: #ff6b9d;
+  border: none;
+  color: #fff;
+  font-size: 16px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: opacity 0.2s, transform 0.15s;
 }
 .coach-send:hover:not(:disabled) { transform: scale(1.08); }
-.coach-send:disabled             { opacity: .35; cursor: not-allowed; }
+.coach-send:disabled { opacity: 0.35; cursor: not-allowed; }
 
-.icon-flip-enter-active, .icon-flip-leave-active { transition: all .2s ease; }
-.icon-flip-enter-from,   .icon-flip-leave-to     { opacity: 0; transform: rotate(90deg) scale(.7); }
+/* Transición icono FAB */
+.icon-flip-enter-active, .icon-flip-leave-active { transition: all 0.2s ease; }
+.icon-flip-enter-from, .icon-flip-leave-to { opacity: 0; transform: rotate(90deg) scale(0.7); }
 
+/* Responsive móvil */
 @media (max-width: 480px) {
-  .coach-modal    { right: 10px; left: 10px; width: auto; bottom: 145px; }
-  .coach-fab-wrap { right: 14px; bottom: 78px; }
+  .coach-modal {
+    right: 12px;
+    left: 12px;
+    width: auto;
+    bottom: 150px;
+  }
+  .coach-fab-wrap { right: 14px; bottom: 80px; }
 }
 </style>

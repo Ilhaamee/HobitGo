@@ -39,8 +39,8 @@ const streakMessage = computed(() => {
     <div class="streak-card desktop">
       <div class="streak-header">
         <div class="streak-icon">
-          <svg viewBox="0 0 24 24" fill="none" width="24" stroke="#22284E" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M8.5 14.5A2.5 2.5 0 0011 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 11-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 002.5 2.5z"/>
+          <svg viewBox="0 0 24 24" width="24" height="24" fill="#ff6b9d" stroke="#22284E" stroke-width="1.5" stroke-linejoin="round" class="star-shine">
+            <path d="M12 2L14.5 9H22L16 13.5L18.5 21L12 16.5L5.5 21L8 13.5L2 9H9.5L12 2Z"/>
           </svg>
         </div>
         <div>
@@ -74,8 +74,8 @@ const streakMessage = computed(() => {
     <div class="streak-bar mobile">
       <div class="streak-bar-left">
         <div class="streak-bar-icon">
-          <svg viewBox="0 0 24 24" fill="none" width="18" stroke="#22284E" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M8.5 14.5A2.5 2.5 0 0011 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 11-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 002.5 2.5z"/>
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="#ff6b9d" stroke="#22284E" stroke-width="1.5" stroke-linejoin="round" class="star-shine">
+            <path d="M12 2L14.5 9H22L16 13.5L18.5 21L12 16.5L5.5 21L8 13.5L2 9H9.5L12 2Z"/>
           </svg>
         </div>
         <div class="streak-bar-info">
@@ -130,6 +130,7 @@ const streakMessage = computed(() => {
   text-align: center;
 }
 .streak-icon {
+  background: rgba(255, 245, 158, 0.4);
   width: 44px;
   height: 44px;
   border-radius: 14px;
@@ -310,5 +311,20 @@ const streakMessage = computed(() => {
 @media (min-width: 1024px) {
   .streak-card.desktop { padding: 28px; }
   .streak-number { font-size: 64px; }
+}
+.star-shine {
+  animation: starGlow 2s ease-in-out infinite;
+  filter: drop-shadow(0 0 4px rgba(255, 107, 157, 0.5));
+}
+
+@keyframes starGlow {
+  0%, 100% {
+    filter: drop-shadow(0 0 3px rgba(255, 107, 157, 0.3));
+    transform: scale(1);
+  }
+  50% {
+    filter: drop-shadow(0 0 8px rgba(255, 107, 157, 0.9)) drop-shadow(0 0 16px rgba(255, 107, 157, 0.4));
+    transform: scale(1.15);
+  }
 }
 </style>
