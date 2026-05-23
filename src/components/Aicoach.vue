@@ -392,7 +392,7 @@ function handleKeydown(e) {
 /* ── FAB ─────────────────────────────────────────────── */
 .coach-fab-wrap {
   position: fixed;
-  bottom: 90px;
+  bottom: calc(74px + env(safe-area-inset-bottom));
   right: 20px;
   z-index: 800;
   display: flex;
@@ -447,7 +447,7 @@ function handleKeydown(e) {
 /* ── Modal ───────────────────────────────────────────── */
 .coach-modal {
   position: fixed;
-  bottom: 160px;
+  bottom: calc(144px + env(safe-area-inset-bottom));
   right: 20px;
   width: 340px;
   max-height: 520px;
@@ -710,8 +710,8 @@ function handleKeydown(e) {
     right: 12px;
     left: 12px;
     width: auto;
-    bottom: 150px;
+    bottom: calc(134px + env(safe-area-inset-bottom));
   }
-  .coach-fab-wrap { right: 14px; bottom: 80px; }
+  .coach-fab-wrap { right: 14px; bottom: calc(74px + env(safe-area-inset-bottom)); }
 }
 </style>

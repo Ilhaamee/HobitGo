@@ -27,14 +27,44 @@ const messagesContainerRef = ref(null)
 
 const EMOJIS = ['❤️', '👍', '😂', '😮', '😢', '🎉', '🔥', '👏']
 
+// ── Longpress para móvil ──────────────────
+let longPressTimer = null
+const LONG_PRESS_MS = 500
+
+function onTouchStart(e, msg) {
+  longPressTimer = setTimeout(() => {
+    // Simular posición en el centro del elemento tocado
+    const touch = e.touches[0]
+    const fakeEvent = {
+      preventDefault: () => {},
+      stopPropagation: () => {},
+      clientX: touch.clientX,
+      clientY: touch.clientY,
+    }
+    showContextMenu(fakeEvent, msg)
+    // Vibración táctil si está disponible
+    if (navigator.vibrate) navigator.vibrate(40)
+  }, LONG_PRESS_MS)
+}
+
+function onTouchEnd() {
+  clearTimeout(longPressTimer)
+}
+
+function onTouchMove() {
+  clearTimeout(longPressTimer)
+}
+
 function showContextMenu(e, msg) {
   e.preventDefault()
   e.stopPropagation()
+  const isMobile = window.innerWidth <= 768
   contextMenu.value = {
     show: true,
-    x: Math.min(e.clientX, window.innerWidth - 170),
-    y: Math.min(e.clientY, window.innerHeight - 120),
-    msg
+    x: isMobile ? (window.innerWidth / 2 - 80) : Math.min(e.clientX, window.innerWidth - 170),
+    y: isMobile ? (window.innerHeight - 220) : Math.min(e.clientY, window.innerHeight - 120),
+    msg,
+    mobile: isMobile,
   }
 }
 
@@ -122,6 +152,9 @@ defineExpose({ scrollToBottom, messagesContainerRef })
           class="msg-row"
           :class="isOwn(item) ? 'own' : 'other'"
           @contextmenu="showContextMenu($event, item)"
+          @touchstart.passive="onTouchStart($event, item)"
+          @touchend="onTouchEnd"
+          @touchmove="onTouchMove"
         >
           <div v-if="!isOwn(item)" class="msg-av">
             <img v-if="getAvatarUrl(item)" :src="getAvatarUrl(item)" />
@@ -198,7 +231,10 @@ defineExpose({ scrollToBottom, messagesContainerRef })
     <div
       v-if="contextMenu.show"
       class="context-menu"
-      :style="{ position: 'fixed', left: contextMenu.x + 'px', top: contextMenu.y + 'px', zIndex: 1000 }"
+      :class="{ 'mobile-sheet': contextMenu.mobile }"
+      :style="contextMenu.mobile
+        ? { position: 'fixed', left: '12px', right: '12px', bottom: 'calc(80px + env(safe-area-inset-bottom))', zIndex: 1000 }
+        : { position: 'fixed', left: contextMenu.x + 'px', top: contextMenu.y + 'px', zIndex: 1000 }"
       @click.stop
     >
       <button @click.stop="$emit('reply', contextMenu.msg); closeContextMenu()">
@@ -408,8 +444,24 @@ defineExpose({ scrollToBottom, messagesContainerRef })
 @media (max-width: 768px) {
   .messages { padding: 12px; }
   .msg-bubble { max-width: 80%; padding: 8px 12px; }
-  .context-menu { max-width: 140px; }
-  .context-menu button { padding: 6px 10px; font-size: 12px; }
+  .context-menu { min-width: unset; }
+  .context-menu.mobile-sheet {
+    border-radius: 18px;
+    padding: 8px;
+    box-shadow: 0 -4px 32px rgba(0,0,0,.18);
+    animation: slideUp .2s ease;
+  }
+  .context-menu.mobile-sheet button {
+    padding: 13px 16px;
+    font-size: 15px;
+    border-radius: 12px;
+    justify-content: flex-start;
+  }
+  .context-menu.mobile-sheet button svg { width: 18px; height: 18px; }
+  @keyframes slideUp {
+    from { transform: translateY(20px); opacity: 0; }
+    to   { transform: translateY(0);   opacity: 1; }
+  }
   .emoji-picker { padding: 6px; gap: 2px; }
   .emoji-picker button { width: 32px; height: 32px; font-size: 16px; }
 }

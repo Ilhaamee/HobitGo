@@ -798,7 +798,8 @@ watch(newMessage, (val) => {
     top: 0; left: 0; right: 0; bottom: 0;
     z-index: 100;
     border-radius: 0;
-    padding-bottom: 70px;
+    height: 100%; height: 100dvh; max-height: 100dvh;
+    padding-bottom: calc(70px + env(safe-area-inset-bottom));
   }
   .back-btn { display: flex; }
 }
