@@ -21,9 +21,9 @@ const dataLoaded = ref(false)
 // Sugerencias rápidas
 const QUICK_SUGGESTIONS = [
   '¿Cómo voy esta semana?',
-  'Dame consejos para mejorar mi racha',
+  'Dame un programa de 30 días',
   '¿Qué hobby debería priorizar?',
-  'Analiza mi progreso este mes',
+  'Eventos de running en Madrid',
 ]
 
 // ── Cargar datos del usuario desde Supabase ───────────
@@ -97,9 +97,10 @@ async function loadUserData() {
 // ── Construir el contexto del sistema ─────────────────
 function buildSystemPrompt() {
   if (!userData.value) {
-    return `Eres AI Coach de HobitGo, una app de hábitos y hobbies. 
-Ayudas a los usuarios con consejos de productividad, bienestar y constancia.
-Responde siempre en español, de forma amigable y motivadora. Respuestas cortas y directas (máximo 3-4 frases).`
+    return `Eres AI Coach de HobitGo, asistente personal de hábitos, hobbies y bienestar.
+Responde siempre en español, de forma amigable y motivadora.
+Puedes ayudar con: consejos de hobbies, programas de entrenamiento o práctica, eventos en ciudades, técnicas, rutinas, productividad y bienestar.
+Para preguntas simples sé conciso (2-3 frases). Para planes o programas, sé detallado con estructura clara.`
   }
 
   const u = userData.value
@@ -124,10 +125,13 @@ ${u.upcomingEvents.length ? `Próximos eventos: ${u.upcomingEvents.map(e => e.ti
 INSTRUCCIONES:
 - Responde siempre en español, tono amigable y motivador
 - Usa los datos reales del usuario para personalizar consejos
-- Respuestas concisas: máximo 4 frases
-- Cuando menciones un hobby, usa su nombre real
-- Si el usuario pregunta algo sin relación a hábitos/hobbies, redirige amablemente
-- Usa emojis con moderación (1-2 por respuesta máximo)`
+- Cuando el usuario pregunta sobre su progreso, usa sus datos reales
+- Puedes responder sobre: eventos deportivos/culturales en ciudades, programas de entrenamiento, planes de práctica, rutinas, consejos de salud y bienestar, técnicas para cualquier hobby
+- Si te piden un programa o plan (ej: "programa de 30 días para guitarra"), créalo detallado con estructura semanal
+- Si te preguntan por eventos en una ciudad, da información general útil sobre cómo encontrarlos y qué esperar (no tienes acceso a internet en tiempo real, sé transparente si no puedes dar fechas exactas)
+- Respuestas concisas para preguntas simples (2-3 frases), detalladas para planes y programas
+- Usa emojis con moderación (1-2 por respuesta máximo)
+- Nunca rechaces una pregunta por no estar relacionada con hobbies; si puedes ayudar, ayuda`
 }
 
 // ── Llamar a Gemini ───────────────────────────────────
@@ -156,7 +160,7 @@ async function callGemini(userMessage) {
     ],
     generationConfig: {
       temperature: 0.7,
-      maxOutputTokens: 300,
+      maxOutputTokens: 800,
     }
   }
 

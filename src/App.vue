@@ -1,10 +1,17 @@
 <script setup>
 import AICoach from './components/Aicoach.vue'
+import { computed } from 'vue'
+import { useRoute } from 'vue-router'
+
+const route = useRoute()
+
+// Solo mostrar en rutas del dashboard (usuario autenticado)
+const showCoach = computed(() => route.path.startsWith('/dashboard'))
 </script>
 
 <template>
   <router-view />
-  <AICoach />
+  <AICoach v-if="showCoach" />
 </template>
 
 <style>
@@ -26,5 +33,14 @@ button {
 
 input {
   font-family: inherit;
+}
+
+/* ── Fix zoom en iOS al enfocar inputs ── */
+@media screen and (-webkit-min-device-pixel-ratio: 0) {
+  input,
+  textarea,
+  select {
+    font-size: 16px !important;
+  }
 }
 </style>
