@@ -812,7 +812,7 @@ loadBooks()
 
 /* ── All books grid ── */
 .all-books-view { padding: 20px; }
-.all-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 16px; }
+.all-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(90px, 1fr)); gap: 12px; }
 .all-book-item { background: none; border: none; padding: 0; cursor: pointer; text-align: left; transition: transform .18s; }
 .all-book-item:hover { transform: translateY(-4px); }
 .all-cover { width: 100%; aspect-ratio: 2/3; border-radius: 4px 8px 8px 4px; overflow: hidden; box-shadow: 3px 4px 12px rgba(0,0,0,.2); margin-bottom: 8px; }
@@ -1159,10 +1159,13 @@ loadBooks()
 
 /* ── Responsive ── */
 @media (max-width: 640px) {
+  .all-books-view { padding: 12px; }
   .all-grid {
-    grid-template-columns: repeat(3, 1fr);
-    gap: 12px;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
   }
+  .all-book-title { font-size: 10px; }
+  .all-book-author { font-size: 9px; }
   .lp-book-card-inner {
     padding: 16px;
     gap: 14px;
@@ -1190,6 +1193,7 @@ loadBooks()
     gap: 24px;
   }
   .book-face { width: 65px; height: 95px; }
+  .all-cover { margin-bottom: 5px; }
   .book-spine-3d { height: 95px; }
   .shelf-books-row { gap: 10px; padding: 12px 12px 0; min-height: 120px; }
 
