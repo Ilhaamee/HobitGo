@@ -6,7 +6,7 @@ import { useRoute } from 'vue-router'
 const route = useRoute()
 
 // Solo mostrar en rutas del dashboard (usuario autenticado)
-const showCoach = computed(() => route.path.startsWith('/dashboard'))
+const showCoach = computed(() => route.path.startsWith('/dashboard') && !route.path.includes('/chat'))
 </script>
 
 <template>

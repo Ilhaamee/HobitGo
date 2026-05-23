@@ -29,7 +29,7 @@ const EMOJIS = ['❤️', '👍', '😂', '😮', '😢', '🎉', '🔥', '👏'
 
 // ── Longpress para móvil ──────────────────
 let longPressTimer = null
-const LONG_PRESS_MS = 500
+const LONG_PRESS_MS = 250
 
 function onTouchStart(e, msg) {
   longPressTimer = setTimeout(() => {
