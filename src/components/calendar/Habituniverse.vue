@@ -30,6 +30,10 @@ function initAudio() {
   if (!audioContext.value) {
     audioContext.value = new (window.AudioContext || window.webkitAudioContext)()
   }
+  // iOS/Android require resuming after user gesture
+  if (audioContext.value.state === 'suspended') {
+    audioContext.value.resume()
+  }
 }
 
 function playOpenSound() {
@@ -58,6 +62,7 @@ function playOpenSound() {
 }
 
 function playHoverSound() {
+  if (!audioContext.value) initAudio()
   if (!audioContext.value) return
   const ctx = audioContext.value
   const osc = ctx.createOscillator()
@@ -478,7 +483,7 @@ onUnmounted(() => {
   <!-- Modal -->
   <Transition name="cosmos-fade">
     <div v-if="open" class="cosmos-backdrop" @click.self="open = false">
-      <div class="cosmos-modal" :class="{ 'cosmos-light': !isDark }">
+      <div class="cosmos-modal" :class="{ 'cosmos-light': !isDark }" @touchstart.once="initAudio">
 
         <!-- Header -->
         <div class="cosmos-header">
@@ -962,7 +967,9 @@ onUnmounted(() => {
   width: 100%;
   max-width: 480px;
   height: 92vh;
-  max-height: 850px;
+  height: 92dvh;
+  max-height: 92vh;
+  max-height: 92dvh;
   background: #0a0e27;
   border-radius: 32px 32px 0 0;
   display: flex;
@@ -1122,6 +1129,7 @@ onUnmounted(() => {
 .cosmos-universe {
   flex: 1;
   min-height: 0;
+  min-height: 200px;
   position: relative;
   margin: 0 16px;
   border-radius: 24px;
@@ -1229,11 +1237,21 @@ onUnmounted(() => {
 
 /* ── Responsive ──────────────────────── */
 @media (max-width: 480px) {
-  .cosmos-title { font-size: 20px; }
-  .cosmos-stats { padding: 0 16px 10px; gap: 8px; }
-  .cosmos-stat { padding: 8px 6px; }
-  .cosmos-mission { margin: 0 16px 10px; font-size: 11px; }
-  .cosmos-universe { margin: 0 12px; }
-  .cosmos-legend { padding: 10px 16px 16px; gap: 16px; }
+  .cosmos-header { padding: 14px 16px 8px; }
+  .cosmos-title { font-size: 18px; }
+  .cosmos-stats { padding: 0 12px 8px; gap: 6px; }
+  .cosmos-stat { padding: 7px 4px; border-radius: 12px; }
+  .cosmos-stat-num { font-size: 15px; }
+  .cosmos-mission { margin: 0 12px 8px; font-size: 11px; padding: 8px 12px; }
+  .cosmos-universe { margin: 0 10px; border-radius: 18px; }
+  .cosmos-legend { padding: 8px 12px 14px; gap: 12px; }
+  .cosmos-legend-item { font-size: 10px; }
+  .cosmos-mode-btn, .cosmos-close { width: 32px; height: 32px; font-size: 14px; }
+}
+
+@media (max-width: 360px) {
+  .cosmos-stat-num { font-size: 13px; }
+  .cosmos-stats { gap: 4px; }
+  .cosmos-stat { padding: 6px 3px; }
 }
 </style>

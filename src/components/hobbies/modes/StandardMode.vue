@@ -153,12 +153,13 @@ async function saveSession() {
   if (fileInput.value?.files?.[0]) {
     const file = fileInput.value.files[0]
     const ext = file.name.split('.').pop()
-    const path = `${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`
+    const { data: { user: u } } = await supabase.auth.getUser()
+    const path = `sessions/${u?.id || 'unknown'}/${Date.now()}.${ext}`
     const { data: uploadData, error: uploadError } = await supabase.storage
-      .from('session-images').upload(path, file)
+      .from('hobbies').upload(path, file)
     if (!uploadError) {
       const { data: { publicUrl } } = supabase.storage
-        .from('session-images').getPublicUrl(uploadData.path)
+        .from('hobbies').getPublicUrl(uploadData.path)
       imageUrl = publicUrl
     }
   }
@@ -169,7 +170,7 @@ async function saveSession() {
     minutes: parseInt(formDuration.value),
     note: formNote.value || null,
     image_url: imageUrl,
-    created_at: new Date(formDate.value).toISOString(),
+    created_at: (() => { const d = new Date(formDate.value); const now = new Date(); d.setHours(now.getHours(), now.getMinutes(), now.getSeconds()); return d.toISOString(); })(),
   }).select()
   if (data?.[0]) {
     sessions.value.unshift(data[0])

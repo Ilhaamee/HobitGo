@@ -37,8 +37,8 @@ const segmentDefs = [
   },
   {
     key: 'minutes',
-    label: 'Minutos',
-    desc: 'practicados en total',
+    label: 'Horas',
+    desc: 'practicadas en total',
     color: '#C1E899',
     iconColor: '#22284E',
     icon: `<circle cx="12" cy="12" r="10"/><path d="M12 6v6l3 3" stroke-linecap="round"/>`,
@@ -64,6 +64,16 @@ const segments = computed(() =>
     endAngle: s.startAngle + SEG_DEG,
   }))
 )
+
+function formatMins(mins, key) {
+  if (key === 'minutes') {
+    if (mins < 60) return mins + 'min'
+    const h = Math.floor(mins / 60)
+    const m = mins % 60
+    return m > 0 ? h + 'h ' + m + 'm' : h + 'h'
+  }
+  return mins.toLocaleString()
+}
 
 function toRad(deg) { return (deg * Math.PI) / 180 }
 
@@ -174,7 +184,7 @@ const totalScore = computed(() => {
       <div class="sg-center">
         <template v-if="activeSegment">
           <span class="sg-center-num" :style="{ color: activeSegment.iconColor }">
-            {{ activeSegment.value.toLocaleString() }}
+            {{ formatMins(activeSegment.value, activeSegment.key) }}
           </span>
           <span class="sg-center-label" :style="{ color: activeSegment.iconColor }">{{ activeSegment.label }}</span>
           <span class="sg-center-desc">{{ activeSegment.desc }}</span>
@@ -198,7 +208,7 @@ const totalScore = computed(() => {
       >
         <span class="sg-legend-dot" :style="{ background: seg.color }"></span>
         <span class="sg-legend-text">
-          <b :style="{ color: seg.iconColor }">{{ seg.value }}</b> {{ seg.label }}
+          <b :style="{ color: seg.iconColor }">{{ formatMins(seg.value, seg.key) }}</b> {{ seg.label }}
         </span>
       </div>
     </div>
@@ -248,7 +258,7 @@ const totalScore = computed(() => {
 }
 
 .sg-center-num {
-  font-size: 44px;
+  font-size: 26px;
   font-weight: 900;
   line-height: 1;
   letter-spacing: -2px;
@@ -318,7 +328,7 @@ const totalScore = computed(() => {
 @media (min-width: 1024px) {
   .sg-chart-wrap { width: 240px; height: 240px; }
   .sg-svg { width: 240px; height: 240px; }
-  .sg-center-score { font-size: 44px; }
+  .sg-center-score { font-size: 36px; }
   .sg-legend { gap: 4px 10px; }
 }
 </style>

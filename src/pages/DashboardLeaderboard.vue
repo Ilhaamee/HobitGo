@@ -269,7 +269,7 @@ onMounted(async () => {
 
 /* Racha de fuego en la lista si tiene buena posición */
 .list-item:nth-child(-n+3) .rank-num::after {
-  content: ' 🔥';
+  content: ' ⭐';
   font-size: 11px;
 }
 

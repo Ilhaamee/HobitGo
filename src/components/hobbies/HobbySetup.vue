@@ -314,14 +314,14 @@ function confirm() {
 }
 .setup {
   background: #fff; border-radius: 24px 24px 0 0;
-  width: 100%; max-width: 520px; max-height: 92vh;
+  width: 100%; max-width: 520px; max-height: 92vh; max-height: 92dvh;
   display: flex; flex-direction: column;
   box-shadow: 0 -12px 48px rgba(34,40,78,.2); overflow: hidden;
 }
 
 .setup-header {
   display: flex; align-items: center; gap: 10px;
-  padding: 20px 20px 0; flex-shrink: 0; margin-bottom: 16px;
+  padding: 16px 16px 0; flex-shrink: 0; margin-bottom: 12px;
 }
 .setup-header h3 { flex: 1; text-align: center; font-size: 16px; font-weight: 800; color: #22284E; margin: 0; }
 .back-btn {
@@ -339,10 +339,10 @@ function confirm() {
 }
 .close-btn:hover { background: rgba(255,107,157,.12); color: #ff6b9d; }
 
-.setup-body { flex: 1; overflow-y: auto; padding: 0 20px; display: flex; flex-direction: column; gap: 18px; }
+.setup-body { flex: 1; overflow-y: auto; padding: 0 16px; display: flex; flex-direction: column; gap: 14px; }
 
 /* Preview */
-.preview-card { position: relative; height: 140px; border-radius: 18px; overflow: hidden; flex-shrink: 0; }
+.preview-card { position: relative; height: 130px; border-radius: 16px; overflow: hidden; flex-shrink: 0; }
 .preview-img { width: 100%; height: 100%; object-fit: cover; display: block; }
 .preview-overlay { position: absolute; inset: 0; background: linear-gradient(to bottom, transparent 30%, rgba(20,22,50,.75) 100%); }
 .preview-info { position: absolute; bottom: 14px; left: 16px; right: 16px; z-index: 2; display: flex; flex-direction: column; gap: 4px; }
@@ -410,13 +410,13 @@ function confirm() {
 .counter-unit { font-size: 13px; font-weight: 600; color: rgba(34,40,78,.4); flex-shrink: 0; white-space: nowrap; }
 
 /* Presets */
-.presets { display: flex; gap: 6px; flex-wrap: wrap; }
+.presets { display: flex; gap: 5px; flex-wrap: wrap; }
 .preset-btn { padding: 5px 11px; border-radius: 99px; border: 1.5px solid rgba(34,40,78,.1); background: transparent; font-size: 12px; font-weight: 600; color: rgba(34,40,78,.5); cursor: pointer; transition: all .15s; }
 .preset-btn:hover { border-color: #ff6b9d; color: #ff6b9d; }
 .preset-btn.active { background: #22284E; border-color: #22284E; color: #fff59e; }
 
 /* Dificultad */
-.diff-options { display: flex; gap: 8px; }
+.diff-options { display: flex; gap: 6px; }
 .diff-btn {
   flex: 1; display: flex; flex-direction: column; align-items: center; gap: 3px;
   padding: 12px 8px; border-radius: 14px; cursor: pointer;
@@ -454,7 +454,7 @@ function confirm() {
 .time-input { max-width: 140px; }
 
 /* Footer */
-.setup-footer { padding: 16px 20px calc(16px + env(safe-area-inset-bottom)); border-top: 1px solid rgba(34,40,78,.06); flex-shrink: 0; }
+.setup-footer { padding: 12px 16px calc(12px + env(safe-area-inset-bottom)); border-top: 1px solid rgba(34,40,78,.06); flex-shrink: 0; }
 .btn-confirm {
   width: 100%; padding: 14px;
   background: linear-gradient(135deg, #22284E, #3d4570);
@@ -498,7 +498,8 @@ function confirm() {
   font-size: 10px;
   color: rgba(34,40,78,.4);
   line-height: 1.3;
-  max-width: 140px;
+  max-width: 100%;
+  word-break: break-word;
 }
 .vis-btn.active {
   border-color: #ff6b9d;
@@ -511,6 +512,26 @@ function confirm() {
 
 @media (min-width: 600px) {
   .overlay { align-items: center; padding: 20px; }
-  .setup { border-radius: 24px; max-height: 88vh; }
+  .setup { border-radius: 24px; max-height: 88vh; max-height: 88dvh; }
+  .setup-body { padding: 0 20px; gap: 18px; }
+  .setup-header { padding: 20px 20px 0; }
+  .setup-footer { padding: 16px 20px calc(16px + env(safe-area-inset-bottom)); }
+  .preview-card { height: 140px; }
+}
+
+@media (max-width: 380px) {
+  .setup-body { gap: 12px; }
+  .diff-options { gap: 5px; }
+  .diff-btn { padding: 10px 5px; }
+  .diff-desc { font-size: 9px; }
+  .visibility-row { gap: 7px; }
+  .vis-btn { padding: 10px 7px; }
+  .vis-desc { font-size: 9px; }
+  .preset-btn { padding: 4px 8px; font-size: 11px; }
+  .palettes { gap: 6px; }
+  .palette-btn { width: 30px; height: 30px; border-radius: 8px; }
+  .counter-btn { width: 36px; height: 36px; }
+  .counter-input { font-size: 18px; }
+  .setup-header h3 { font-size: 15px; }
 }
 </style>

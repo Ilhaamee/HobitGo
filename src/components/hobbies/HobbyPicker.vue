@@ -115,8 +115,9 @@ function openCustom() {
   background: #fff; border-radius: 24px 24px 0 0;
   width: 100%; max-width: 620px;
   height: 90vh;
+  height: 90dvh;
   display: flex; flex-direction: column;
-  padding: 24px 20px 0; overflow: hidden;
+  padding: 20px 16px 0; overflow: hidden;
   box-shadow: 0 -12px 48px rgba(34,40,78,.18);
 }
 
@@ -163,15 +164,14 @@ function openCustom() {
   flex: 1;
   min-height: 0;
   overflow-y: auto;
-  margin: 0 -20px;
-  padding: 4px 20px 8px;
+  margin: 0 -16px;
+  padding: 4px 16px 8px;
 }
 
 .hobbies-grid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 10px;
-  /* align-content: start para que las tarjetas no se estiren cuando hay pocas */
+  grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+  gap: 8px;
   align-content: start;
 }
 
@@ -193,8 +193,8 @@ function openCustom() {
   background: linear-gradient(to bottom, transparent 25%, rgba(20,22,50,.78) 100%);
 }
 .hobby-name {
-  position: relative; z-index: 2; padding: 6px 8px;
-  font-size: 11px; font-weight: 700; color: #fff;
+  position: relative; z-index: 2; padding: 4px 6px;
+  font-size: 10px; font-weight: 700; color: #fff;
   line-height: 1.2; text-shadow: 0 1px 3px rgba(0,0,0,.5); width: 100%;
 }
 
@@ -218,9 +218,22 @@ function openCustom() {
   .overlay { align-items: center; padding: 20px; }
   .picker {
     border-radius: 24px;
-    height: 80vh;        /* fijo también en web */
-    max-height: 680px;   /* tope máximo */
+    padding: 24px 20px 0;
+    height: 80vh;
+    height: 80dvh;
+    max-height: 680px;
   }
-  .hobbies-grid { grid-template-columns: repeat(4, 1fr); }
+  .grid-wrap { margin: 0 -20px; padding: 4px 20px 8px; }
+  .hobbies-grid { grid-template-columns: repeat(4, 1fr); gap: 10px; }
+  .hobby-name { font-size: 11px; padding: 6px 8px; }
+}
+
+@media (max-width: 360px) {
+  .picker { padding: 16px 12px 0; }
+  .grid-wrap { margin: 0 -12px; padding: 4px 12px 8px; }
+  .hobbies-grid { grid-template-columns: repeat(auto-fill, minmax(88px, 1fr)); gap: 6px; }
+  .cat-btn { padding: 5px 10px; font-size: 11px; }
+  .picker-header h3 { font-size: 16px; }
+  .custom-section { flex-direction: column; align-items: flex-start; gap: 8px; }
 }
 </style>

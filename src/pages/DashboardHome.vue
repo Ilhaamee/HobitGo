@@ -9,6 +9,7 @@ import StatsGrid    from '../components/inicio/StatsGrid.vue'
 import HobbyStack   from '../components/inicio/HobbyStack.vue'
 import PostsFeed    from '../components/inicio/PostsFeed.vue'
 import QuickNav     from '../components/inicio/QuickNav.vue'
+import CelebrationPopup from '../components/hobbies/CelebrationPopup.vue'
 
 const router = useRouter()
 const loading = ref(true)
@@ -19,6 +20,10 @@ const hobbies = ref([])
 const sessions = ref([])
 const posts = ref([])
 const challenges = ref([])
+
+// ── Celebración ─────────────────────────────────────────
+const showCelebration = ref(false)
+const celebrationData = ref({ hobbyName: '', points: 10 })
 
 async function load() {
   const { data: { user: u } } = await supabase.auth.getUser()
@@ -45,6 +50,21 @@ async function load() {
   loading.value = false
 }
 
+// ── Helpers para calcular días activos (misma lógica que HobbyCard) ──
+function getActiveDays(hobbyId) {
+  const daysSet = new Set()
+  sessions.value
+    .filter(s => s.hobby_id === hobbyId)
+    .forEach(s => daysSet.add(new Date(s.created_at).toDateString()))
+  return daysSet.size
+}
+
+function isHobbyCompleted(hobby) {
+  if (hobby.completed_at) return true
+  const total = hobby.total_days || 30
+  return getActiveDays(hobby.id) >= total && getActiveDays(hobby.id) > 0
+}
+
 const streak = computed(() => {
   if (!sessions.value.length) return 0
   const dates = [...new Set(sessions.value.map(s => new Date(s.created_at).toDateString()))]
@@ -62,7 +82,7 @@ const stats = computed(() => {
     .filter(s => new Date(s.created_at).toDateString() === today)
     .reduce((sum, s) => sum + (s.minutes || 0), 0)
   const totalMins = sessions.value.reduce((sum, s) => sum + (s.minutes || 0), 0)
-  
+
   return {
     hobbies: hobbies.value.length,
     sessions: sessions.value.length,
@@ -71,29 +91,90 @@ const stats = computed(() => {
   }
 })
 
+// ── Sesión rápida desde HobbyStack ─────────────────────
 async function quickSession(hobbyId, minutes) {
   if (!user.value) return
-  
-  await supabase.from('hobby_sessions').insert({
-    hobby_id: hobbyId,
-    user_id: user.value.id,
-    minutes,
-    note: 'Sesión rápida'
-  })
-  
+
+  // 1. Insertar sesión
+  const { data: newSession, error: insertErr } = await supabase
+    .from('hobby_sessions')
+    .insert({
+      hobby_id: hobbyId,
+      user_id: user.value.id,
+      minutes,
+      note: 'Sesión rápida'
+    })
+    .select()
+    .single()
+
+  if (insertErr) {
+    console.error('Error en sesión rápida:', insertErr)
+    return
+  }
+
+  // 2. Añadir a sesiones locales
+  if (newSession) {
+    sessions.value.unshift(newSession)
+  }
+
+  // 3. Recalcular total_minutes desde TODAS las sesiones
   const hobby = hobbies.value.find(h => h.id === hobbyId)
   if (hobby) {
-    const newTotal = (hobby.total_minutes || 0) + minutes
-    await supabase.from('hobbies').update({ total_minutes: newTotal }).eq('id', hobbyId)
+    const newTotal = sessions.value
+      .filter(s => s.hobby_id === hobbyId)
+      .reduce((sum, s) => sum + s.minutes, 0)
+
+    await supabase
+      .from('hobbies')
+      .update({ total_minutes: newTotal })
+      .eq('id', hobbyId)
+
     hobby.total_minutes = newTotal
+
+    // 4. Verificar si el reto se completó con ESTA sesión
+    const activeDays = getActiveDays(hobbyId)
+    const totalDays = hobby.total_days || 30
+    const wasAlreadyCompleted = !!hobby.completed_at
+    const nowCompleted = activeDays >= totalDays && activeDays > 0
+
+    if (nowCompleted && !wasAlreadyCompleted) {
+      // ¡Reto completado! Marcar en BD y mostrar celebración
+      const completedAt = new Date().toISOString()
+      await supabase
+        .from('hobbies')
+        .update({ completed_at: completedAt })
+        .eq('id', hobbyId)
+
+      hobby.completed_at = completedAt
+
+      // Mostrar popup de celebración
+      celebrationData.value = { 
+        hobbyName: hobby.name, 
+        points: 20 
+      }
+      showCelebration.value = true
+
+      // Guardar log de actividad
+      await supabase.from('activity_log').insert({
+        user_id: user.value.id,
+        type: 'achievement',
+        title: `Reto completado: "${hobby.name}"`,
+        points: 20,
+        activity_date: new Date().toISOString().split('T')[0]
+      })
+    }
+
+    // 5. Log de sesión normal (puntos)
+    if (!nowCompleted || wasAlreadyCompleted) {
+      await supabase.from('activity_log').insert({
+        user_id: user.value.id,
+        type: 'hobby',
+        title: `Sesión rápida: "${hobby.name}"`,
+        points: 5,
+        activity_date: new Date().toISOString().split('T')[0]
+      })
+    }
   }
-  
-  const { data: s } = await supabase
-    .from('hobby_sessions')
-    .select('*')
-    .eq('user_id', user.value.id)
-    .order('created_at', { ascending: false })
-  sessions.value = s || []
 }
 
 onMounted(load)
@@ -108,24 +189,24 @@ onMounted(load)
 
     <template v-else>
       <WelcomeBar :profile="profile" :streak="streak" />
-      
+
       <div class="dashboard-grid">
         <!-- Columna izquierda: Desktop -->
         <div class="col-left">
           <StreakCard :streak="streak" :sessions="sessions" />
           <StatsGrid :stats="stats" />
         </div>
-        
+
         <!-- Columna centro -->
         <div class="col-center">
           <!-- En móvil: StreakBar aparece aquí primero -->
           <div class="mobile-streak">
             <StreakCard :streak="streak" :sessions="sessions" />
           </div>
-          <HobbyStack :hobbies="hobbies" @quick-session="quickSession" />
+          <HobbyStack :hobbies="hobbies" :sessions="sessions" @quick-session="quickSession" />
           <PostsFeed :posts="posts" :current-user="user" @refresh="load" />
         </div>
-        
+
         <!-- Columna derecha: Desktop -->
         <div class="col-right">
           <div class="side-card challenges-card">
@@ -140,12 +221,12 @@ onMounted(load)
               </svg>
               <span>Retos grupales</span>
             </div>
-            
+
             <div v-if="challenges.length === 0" class="challenges-empty">
               <p>Aún no hay retos públicos</p>
               <button class="btn-mini" @click="router.push('/dashboard/chat')">Explorar retos</button>
             </div>
-            
+
             <div v-else class="challenges-list">
               <div 
                 v-for="challenge in challenges.slice(0, 4)" 
@@ -168,7 +249,7 @@ onMounted(load)
                 </svg>
               </div>
             </div>
-            
+
             <button class="btn-see-all" @click="router.push({ path: '/dashboard/chat', query: { tab: 'challenges' } })">
               Ver todos los retos
               <svg viewBox="0 0 24 24" fill="none" width="14" stroke="currentColor" stroke-width="2" stroke-linecap="round">
@@ -180,6 +261,14 @@ onMounted(load)
         </div>
       </div>
     </template>
+
+    <!-- Celebration Popup -->
+    <CelebrationPopup
+      v-if="showCelebration"
+      :hobby-name="celebrationData.hobbyName"
+      :points="celebrationData.points"
+      @close="showCelebration = false"
+    />
   </div>
 </template>
 
@@ -188,7 +277,7 @@ onMounted(load)
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 20px 0 4px;  /* ← antes era 28px 0 8px, ahora más compacto */
+  padding: 20px 0 4px;
 }
 .home {
   max-width: 1400px;
@@ -424,13 +513,13 @@ onMounted(load)
     overflow-y: visible;
     padding-right: 0;
   }
-  
+
   /* Mostrar streak compacto en móvil */
   .mobile-streak {
     display: block;
     order: -1;
   }
-  
+
   /* Ocultar QuickNav en móvil */
   .desktop-only {
     display: none;
