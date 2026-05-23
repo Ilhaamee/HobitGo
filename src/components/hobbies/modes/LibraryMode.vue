@@ -812,10 +812,10 @@ loadBooks()
 
 /* ── All books grid ── */
 .all-books-view { padding: 20px; }
-.all-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(90px, 1fr)); gap: 12px; }
-.all-book-item { background: none; border: none; padding: 0; cursor: pointer; text-align: left; transition: transform .18s; }
+.all-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+.all-book-item { background: none; border: none; padding: 0; cursor: pointer; text-align: left; transition: transform .18s; width: 100%; min-width: 0; overflow: hidden; }
 .all-book-item:hover { transform: translateY(-4px); }
-.all-cover { width: 100%; aspect-ratio: 2/3; border-radius: 4px 8px 8px 4px; overflow: hidden; box-shadow: 3px 4px 12px rgba(0,0,0,.2); margin-bottom: 8px; }
+.all-cover { width: 100%; height: 120px; border-radius: 4px 8px 8px 4px; overflow: hidden; box-shadow: 3px 4px 12px rgba(0,0,0,.2); margin-bottom: 6px; }
 .all-cover img { width: 100%; height: 100%; object-fit: cover; }
 .all-cover-ph { width: 100%; height: 100%; }
 .all-book-title { font-size: 12px; font-weight: 700; color: #1a1a2e; margin: 0 0 2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -1160,12 +1160,11 @@ loadBooks()
 /* ── Responsive ── */
 @media (max-width: 640px) {
   .all-books-view { padding: 12px; }
-  .all-grid {
-    grid-template-columns: repeat(4, 1fr);
-    gap: 8px;
-  }
-  .all-book-title { font-size: 10px; }
-  .all-book-author { font-size: 9px; }
+  .all-grid { grid-template-columns: repeat(4, 1fr); gap: 6px; }
+  .all-cover { height: 90px; margin-bottom: 4px; }
+  .all-book-title { font-size: 9px; }
+  .all-book-author { font-size: 8px; }
+  .all-status-dot { width: 5px; height: 5px; }
   .lp-book-card-inner {
     padding: 16px;
     gap: 14px;
@@ -1220,10 +1219,8 @@ loadBooks()
   .lp-btn-close {
     margin-left: 8px;
   }
-  .all-grid {
-    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
-    gap: 20px;
-  }
+  .all-grid { grid-template-columns: repeat(6, 1fr); gap: 16px; }
+  .all-cover { height: 150px; }
   .shelves-view { padding: 28px 32px; }
   .all-books-view { padding: 28px 32px; }
   .lp-section {
