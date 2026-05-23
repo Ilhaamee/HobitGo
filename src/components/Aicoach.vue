@@ -21,9 +21,8 @@ const dataLoaded = ref(false)
 // Sugerencias rápidas
 const QUICK_SUGGESTIONS = [
   '¿Cómo voy esta semana?',
-  'Dame consejos para mejorar mi racha',
-  '¿Qué hobby debería priorizar?',
   'Analiza mi progreso este mes',
+  '¿Qué hobby debería priorizar?',
 ]
 
 // ── Cargar datos del usuario desde Supabase ───────────

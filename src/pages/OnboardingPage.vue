@@ -3,10 +3,12 @@ import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import AppLogo from '../components/ui/AppLogo.vue'
 import { supabase } from '../lib/supabase'
+import { HOBBIES_LIST } from '../data/hobbiesData.js'
 
 const router = useRouter()
 const saving = ref(false)
 const checking = ref(true)
+const errorMsg = ref('')    // ← mensaje de error visible
 
 // ── Estado global ─────────────────────────────────────
 const current   = ref(0)
@@ -25,18 +27,18 @@ const goals = [
 ]
 
 const hobbies = [
-  { id: 'yoga',     label: 'Yoga' },
-  { id: 'read',     label: 'Lectura' },
-  { id: 'music',    label: 'Música' },
-  { id: 'photo',    label: 'Fotografía' },
-  { id: 'run',      label: 'Running' },
-  { id: 'cook',     label: 'Cocinar' },
-  { id: 'draw',     label: 'Dibujo' },
-  { id: 'meditate', label: 'Meditación' },
-  { id: 'write',    label: 'Escritura' },
-  { id: 'swim',     label: 'Natación' },
-  { id: 'dance',    label: 'Baile' },
-  { id: 'climb',    label: 'Escalada' },
+  { id: 'yoga',         label: 'Yoga' },
+  { id: 'reading',      label: 'Lectura' },
+  { id: 'music',        label: 'Música' },
+  { id: 'photography',  label: 'Fotografía' },
+  { id: 'running',      label: 'Running' },
+  { id: 'cooking',      label: 'Cocinar' },
+  { id: 'drawing',      label: 'Dibujo' },
+  { id: 'meditation',   label: 'Meditación' },
+  { id: 'writing',      label: 'Escritura' },
+  { id: 'swimming',     label: 'Natación' },
+  { id: 'dance',        label: 'Baile' },
+  { id: 'climbing',     label: 'Escalada' },
 ]
 
 const times = [
@@ -78,28 +80,99 @@ function toggleHobby(id) {
 async function finish() {
   if (saving.value) return
   saving.value = true
+  errorMsg.value = ''
 
   try {
     const { data: { user } } = await supabase.auth.getUser()
+    if (!user) {
+      errorMsg.value = 'No se encontró usuario. Inicia sesión de nuevo.'
+      saving.value = false
+      return
+    }
 
-    if (user) {
-      const { error } = await supabase.from('profiles').upsert({
-        id:                 user.id,
-        username:           user.email.split('@')[0],
-        onboarding_goal:    answers.value.goal,
-        onboarding_hobbies: answers.value.hobbies,
-        onboarding_time:    answers.value.time,
-        onboarding_done:    true
-      }, { onConflict: 'id' })
+    // ── 1. Guardar perfil ──────────────────────────────
+    const rawUsername = user.email.split('@')[0]
+    const username = rawUsername.replace(/[^a-zA-Z0-9_-]/g, '').slice(0, 20) || 'usuario'
 
-      if (error) {
-        console.error('Error guardando onboarding:', error)
-        saving.value = false
-        return
+    const profileData = {
+      id:              user.id,
+      username:        username,
+      onboarding_goal: answers.value.goal || null,
+      onboarding_hobbies: answers.value.hobbies.length > 0 ? answers.value.hobbies : null,
+      onboarding_time: answers.value.time || null,
+      onboarding_done: true
+    }
+
+    console.log('Guardando onboarding:', profileData)
+
+    const { error: profileError } = await supabase
+      .from('profiles')
+      .upsert(profileData, { onConflict: 'id' })
+
+    if (profileError) {
+      console.error('Error guardando perfil:', profileError)
+      errorMsg.value = `Error al guardar perfil: ${profileError.message}`
+      saving.value = false
+      return
+    }
+
+    // ── 2. Crear hobbies reales ────────────────────────
+    const selectedHobbyIds = answers.value.hobbies || []
+    const dailyMinutes = parseInt(answers.value.time) || 20
+
+    for (const hobbyId of selectedHobbyIds) {
+      const hobbyDef = HOBBIES_LIST.find(h => h.id === hobbyId)
+      if (!hobbyDef) {
+        console.warn(`Hobby no encontrado: ${hobbyId}`)
+        continue
+      }
+
+      // Verificar si ya existe este hobby para el usuario
+      const { data: existing } = await supabase
+        .from('hobbies')
+        .select('id')
+        .eq('user_id', user.id)
+        .eq('hobby_id', hobbyId)
+        .maybeSingle()
+
+      if (existing) {
+        console.log(`Hobby ${hobbyDef.name} ya existe, saltando`)
+        continue
+      }
+
+      // Crear el hobby
+      const { error: hobbyError } = await supabase
+        .from('hobbies')
+        .insert({
+          user_id:       user.id,
+          hobby_id:      hobbyId,
+          name:          hobbyDef.name,
+          category:      hobbyDef.category || 'creatividad',
+          gradient:      hobbyDef.gradient || ['#ff6b9d', '#ffb3c6'],
+          image_url:     hobbyDef.img || null,
+          total_minutes: 0,
+          total_days:    30,
+          daily_minutes: dailyMinutes,
+          difficulty:    'media',
+          is_public:     true,
+          motivation:    null,
+          reminder:      false,
+          reminder_time: null
+        })
+
+      if (hobbyError) {
+        console.warn(`Error creando hobby ${hobbyDef.name}:`, hobbyError)
+        // No bloqueamos el flujo si un hobby falla
+      } else {
+        console.log(`Hobby creado: ${hobbyDef.name}`)
       }
     }
+
+    console.log('Onboarding completado correctamente')
+
   } catch (e) {
-    console.error('Error:', e)
+    console.error('Error inesperado:', e)
+    errorMsg.value = `Error inesperado: ${e.message}`
     saving.value = false
     return
   }
@@ -293,6 +366,14 @@ onMounted(async () => {
           </div>
 
         </Transition>
+      </div>
+
+      <!-- Mensaje de error -->
+      <div v-if="errorMsg" class="error-banner">
+        <svg viewBox="0 0 16 16" fill="none" width="14" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+          <circle cx="8" cy="8" r="6"/><path d="M8 5v3M8 11h.01" stroke-linecap="round"/>
+        </svg>
+        {{ errorMsg }}
       </div>
 
       <!-- ══ BOTONES NAV ══════════════════════════════ -->
@@ -731,6 +812,25 @@ onMounted(async () => {
   box-shadow: 0 6px 20px rgba(255,107,157,.35);
 }
 .finish-btn:hover { box-shadow: 0 10px 28px rgba(255,107,157,.45); }
+
+/* ─── Error banner ─────────────────────────────────────── */
+.error-banner {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  background: rgba(239,68,68,.1);
+  border: 1.5px solid rgba(239,68,68,.2);
+  border-radius: 10px;
+  color: #dc2626;
+  font-size: 13px;
+  font-weight: 600;
+  animation: fadeIn .3s ease;
+}
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
 
 /* ─── Responsive web ─────────────────────────────────── */
 @media (min-width: 768px) {
