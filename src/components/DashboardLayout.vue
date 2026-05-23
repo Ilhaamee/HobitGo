@@ -360,16 +360,19 @@ onUnmounted(() => {
   position: fixed; bottom: 0; left: 0; right: 0;
   background: #22284E;
   z-index: 100;
-  padding: 8px 4px calc(8px + env(safe-area-inset-bottom));
+  padding: 8px 4px env(safe-area-inset-bottom);
+  padding-bottom: max(8px, env(safe-area-inset-bottom));
   border-top: 1px solid rgba(255,255,255,.08);
+  /* Asegura que el menú no quede detrás de la barra del navegador Safari */
+  height: calc(64px + env(safe-area-inset-bottom));
 }
 
 .bb-item {
   display: flex; flex-direction: column;
   align-items: center; gap: 3px;
   color: rgba(255,255,255,.4); text-decoration: none;
-  padding: 6px 4px; border-radius: 10px; flex: 1;
-  position: relative;
+  padding: 8px 4px 6px; border-radius: 10px; flex: 1;
+  position: relative; align-self: flex-start;
   transition: color .18s;
 }
 .bb-item.active { color: #ff6b9d; }
@@ -427,7 +430,7 @@ onUnmounted(() => {
 
 @media (max-width: 768px) {
   .sidebar { display: none; }
-  .dash-main { margin-left: 0; padding: 20px 16px 120px; overflow-x: hidden; width: 100%; box-sizing: border-box; }
+  .dash-main { margin-left: 0; padding: 20px 16px calc(80px + env(safe-area-inset-bottom)); overflow-x: hidden; width: 100%; box-sizing: border-box; }
   .bottombar { display: flex; }
 }
 </style>

@@ -1278,8 +1278,8 @@ onUnmounted(() => {
   .right-panel.hidden-mobile { display: none; }
   .right-panel.has-challenge {
     position: fixed; top: 0; left: 0; right: 0; bottom: 0;
-    z-index: 100; border-radius: 0; height: 100vh; max-height: 100vh;
-    padding-bottom: 70px;
+    z-index: 100; border-radius: 0; height: 100%; height: 100dvh; max-height: 100dvh;
+    padding-bottom: calc(70px + env(safe-area-inset-bottom));
   }
   .back-btn { display: flex; }
 }
