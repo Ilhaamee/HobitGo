@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">HobbitGo</string>
+    <string name="title_activity_main">HobbitGo</string>
+    <string name="package_name">com.hobbitgo.app</string>
+    <string name="custom_url_scheme">com.hobbitgo.app</string>
+</resources>
