@@ -1,12 +1,21 @@
 <script setup>
 import AICoach from './components/Aicoach.vue'
-import { computed } from 'vue'
+import { computed, watch } from 'vue'
 import { useRoute } from 'vue-router'
 
 const route = useRoute()
 
 // Solo mostrar en rutas del dashboard (usuario autenticado)
 const showCoach = computed(() => route.path.startsWith('/dashboard') && !route.path.includes('/chat'))
+
+// Scroll al inicio en cada cambio de ruta
+watch(() => route.path, () => {
+  window.scrollTo({ top: 0, behavior: 'instant' })
+  document.documentElement.scrollTop = 0
+  document.body.scrollTop = 0
+  const main = document.querySelector('.dash-main')
+  if (main) main.scrollTop = 0
+})
 </script>
 
 <template>

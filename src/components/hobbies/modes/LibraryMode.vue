@@ -507,8 +507,9 @@ loadBooks()
 .library-page {
   background: #ffffff;
   min-height: 100vh;
+  min-height: 100dvh;
   padding: 0;
-  padding-bottom: 80px;
+  padding-bottom: calc(80px + env(safe-area-inset-bottom));
   margin: 0;
   font-family: 'Inter', system-ui, -apple-system, sans-serif;
   color: #1a1a2e;
@@ -521,6 +522,7 @@ loadBooks()
   align-items: center;
   justify-content: space-between;
   padding: 12px 16px;
+  padding-top: max(12px, env(safe-area-inset-top));
   background: #faf8f5;
   border-bottom: 1px solid rgba(34,40,78,.08);
   position: sticky;

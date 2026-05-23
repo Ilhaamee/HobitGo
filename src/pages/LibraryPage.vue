@@ -9,11 +9,14 @@ const router = useRouter()
 const hobby  = ref(null)
 
 onMounted(async () => {
-  window.scrollTo(0, 0)
+  window.scrollTo({ top: 0, behavior: 'instant' })
+  document.body.scrollTop = 0
+  document.documentElement.scrollTop = 0
   const main = document.querySelector('.dash-main')
   if (main) {
     main.dataset.prevPadding = main.style.padding
     main.style.padding = '0'
+    main.scrollTop = 0
   }
   
   const { data, error } = await supabase
@@ -55,7 +58,7 @@ async function onAddSession(sessionData) {
 }
 </script>
 
-<<template>
+<template>
   <div v-if="hobby">
     <LibraryMode
       :hobby="hobby"
