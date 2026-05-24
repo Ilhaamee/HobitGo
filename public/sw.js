@@ -1,15 +1,24 @@
 // public/sw.js
 // Service Worker — HobbitGo Push Notifications
+// Soporta: Chrome, Firefox, Edge, Safari iOS 16.4+ (PWA instalada)
 
 const CACHE_NAME = 'hobbitgo-v1'
 
 // ── Install ───────────────────────────────
-self.addEventListener('install', () => {
-  self.skipWaiting()
+self.addEventListener('install', e => {
+  e.waitUntil(self.skipWaiting())
 })
 
 self.addEventListener('activate', e => {
-  e.waitUntil(self.clients.claim())
+  e.waitUntil(
+    Promise.all([
+      self.clients.claim(),
+      // Limpiar caches viejos
+      caches.keys().then(keys =>
+        Promise.all(keys.filter(k => k !== CACHE_NAME).map(k => caches.delete(k)))
+      )
+    ])
+  )
 })
 
 // ── Push ──────────────────────────────────
@@ -26,8 +35,7 @@ self.addEventListener('push', e => {
     data:    { url: data.url || '/dashboard' },
     vibrate: [100, 50, 100],
     actions: [
-      { action: 'open',   title: '¡Abrir app!' },
-      { action: 'snooze', title: 'En 1 hora' },
+      { action: 'snooze', title: 'Posponer 1h' },
     ],
   }
 
@@ -38,19 +46,23 @@ self.addEventListener('push', e => {
 self.addEventListener('notificationclick', e => {
   e.notification.close()
 
-  if (e.action === 'snooze') return // ignorar snooze por ahora
+  // snooze: no hacer nada
+  if (e.action === 'snooze') return
 
+  // 'open' action o clic directo en la notificación → abrir la app
   const url = e.notification.data?.url || '/dashboard'
+  const fullUrl = self.location.origin + url
 
   e.waitUntil(
     self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then(clients => {
-      const existing = clients.find(c => c.url.includes(self.location.origin))
+      // Buscar una pestaña/ventana ya abierta de la app
+      const existing = clients.find(c => c.url.startsWith(self.location.origin))
       if (existing) {
         existing.focus()
-        existing.navigate(url)
-      } else {
-        self.clients.openWindow(url)
+        return existing.navigate(fullUrl)
       }
+      // Si no hay ninguna abierta, abrir nueva
+      return self.clients.openWindow(fullUrl)
     })
   )
 })

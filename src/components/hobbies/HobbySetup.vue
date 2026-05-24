@@ -95,6 +95,17 @@ function clampMinutes(e) {
   dailyMinutes.value = v
 }
 
+function toggleReminder() {
+  reminder.value = !reminder.value
+  if (reminder.value) {
+    // Scroll al campo de hora para que se vea
+    setTimeout(() => {
+      const el = document.querySelector('.reminder-field')
+      if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' })
+    }, 150)
+  }
+}
+
 function confirm() {
   if (props.hobby.custom && !customName.value.trim()) return
   emit('confirm', {
@@ -282,7 +293,7 @@ function confirm() {
         </div>
 
         <!-- Recordatorio -->
-        <div class="field reminder-field">
+        <div class="field reminder-field" :class="{ active: reminder }">
           <div class="reminder-row">
             <div>
               <span class="reminder-title">Recordatorio diario</span>
@@ -294,7 +305,7 @@ function confirm() {
               class="toggle-btn"
               :class="{ on: reminder }"
               :disabled="!pushSupported"
-              @click="reminder = !reminder"
+              @click="toggleReminder"
             >
               <div class="toggle-knob"></div>
             </button>
@@ -416,7 +427,18 @@ function confirm() {
 .vis-label { font-size: 13px; font-weight: 700; color: inherit; }
 .vis-desc { font-size: 10px; color: rgba(34,40,78,.4); line-height: 1.3; word-break: break-word; }
 
-.reminder-field { gap: 12px; }
+.reminder-field {
+  gap: 12px;
+  padding: 14px;
+  border-radius: 16px;
+  background: rgba(34,40,78,.03);
+  border: 1.5px solid rgba(34,40,78,.08);
+  transition: background .3s, border-color .3s;
+}
+.reminder-field.active {
+  background: rgba(255,107,157,.06);
+  border-color: rgba(255,107,157,.3);
+}
 .reminder-row { display: flex; align-items: center; justify-content: space-between; }
 .reminder-title { display: block; font-size: 14px; font-weight: 700; color: #22284E; }
 .reminder-desc { display: block; font-size: 12px; color: rgba(34,40,78,.45); margin-top: 2px; }
