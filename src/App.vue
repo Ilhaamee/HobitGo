@@ -1,5 +1,6 @@
 <script setup>
 import AICoach from './components/Aicoach.vue'
+import ReminderBanner from './components/ReminderBanner.vue'
 import { computed, watch } from 'vue'
 import { useRoute } from 'vue-router'
 
@@ -21,6 +22,7 @@ watch(() => route.path, () => {
 <template>
   <router-view />
   <AICoach v-if="showCoach" />
+  <ReminderBanner v-if="showCoach" />
 </template>
 
 <style>
