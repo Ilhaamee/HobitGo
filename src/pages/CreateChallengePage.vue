@@ -174,14 +174,14 @@ async function handleGoogle() {
             <div class="qr-card">
               <div class="qr-img-wrap">
                 <img
-                  src="https://api.qrserver.com/v1/create-qr-code/?size=120x120&color=22284E&bgcolor=ffffff&data=https://hobitgo.com/app"
+                  src="https://api.qrserver.com/v1/create-qr-code/?size=180x180&color=22284E&bgcolor=ffffff&data=https://hobbitgo.vercel.app"
                   alt="QR HobitGo"
                   width="90" height="90"
                 />
               </div>
               <div class="qr-text">
                 <strong>Escanea con tu cámara</strong>
-                <p>Descarga directa sin buscar en la tienda</p>
+                <p>Abre HobbitGo directamente en tu móvil</p>
               </div>
             </div>
 
