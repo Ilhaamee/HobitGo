@@ -1,5 +1,6 @@
 <script setup>
 import { ref, computed, watch, onMounted } from 'vue'
+import { useNotifications } from '../funciones/useNotifications.js'
 
 const props = defineProps({
   hobby: { type: Object, required: true }
@@ -18,6 +19,22 @@ const reminderTime  = ref('08:00')
 const motivation    = ref('')       // Por qué quiero este hobby
 const difficulty    = ref('media')  // fácil / media / difícil
 const isPublic      = ref(true)     // visible en comunidad
+const { subscribe, unsubscribe, supported: pushSupported } = useNotifications()
+
+// Al activar reminder, pedir permiso de notificaciones
+watch(reminder, async (val) => {
+  if (val && pushSupported.value) {
+    const result = await subscribe()
+    if (result.ok === false && result.reason === 'denied') {
+      // El usuario rechazó, desactivar el toggle
+      reminder.value = false
+      alert('Activa las notificaciones en los ajustes del navegador para recibir recordatorios.')
+    }
+  } else if (!val) {
+    await unsubscribe()
+  }
+})
+
 
 function syncFromProps() {
   const h = props.hobby || {}
