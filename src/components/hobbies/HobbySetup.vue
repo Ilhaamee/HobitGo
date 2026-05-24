@@ -1,5 +1,6 @@
 <script setup>
 import { ref, computed, watch, onMounted } from 'vue'
+import { useNotifications } from '../../funciones/useNotifications.js'
 
 const props = defineProps({
   hobby: { type: Object, required: true }
@@ -13,21 +14,36 @@ const customImage   = ref(null)
 const previewUrl    = ref(null)
 const days          = ref(30)
 const dailyMinutes  = ref(20)
+
+const { subscribe, unsubscribe, supported: pushSupported } = useNotifications()
+
 const reminder      = ref(false)
 const reminderTime  = ref('08:00')
-const motivation    = ref('')       // Por qué quiero este hobby
-const difficulty    = ref('media')  // fácil / media / difícil
-const isPublic      = ref(true)     // visible en comunidad
+
+// Al activar reminder, pedir permiso de notificaciones
+watch(reminder, async (val) => {
+  if (val && pushSupported.value) {
+    const result = await subscribe()
+    if (result.ok === false && result.reason === 'denied') {
+      reminder.value = false
+      alert('Activa las notificaciones en los ajustes del navegador para recibir recordatorios.')
+    }
+  } else if (!val) {
+    await unsubscribe()
+  }
+})
+
+const motivation    = ref('')
+const difficulty    = ref('media')
+const isPublic      = ref(true)
 
 function syncFromProps() {
   const h = props.hobby || {}
-  
   customName.value   = h.name || ''
   customColor1.value = h.gradient?.[0] || '#ff6b9d'
   customColor2.value = h.gradient?.[1] || '#ffb3c6'
   previewUrl.value   = h.img || h.imagePreview || null
   customImage.value  = null
-  
   days.value         = h.totalDays ?? 30
   dailyMinutes.value = h.dailyMinutes ?? 20
   reminder.value     = h.reminder ?? false
@@ -40,8 +56,8 @@ function syncFromProps() {
 onMounted(syncFromProps)
 watch(() => props.hobby, syncFromProps, { deep: true, immediate: true })
 
-const displayName    = computed(() => customName.value.trim() || props.hobby.name || 'Mi hobby')
-const previewImage   = computed(() => previewUrl.value || props.hobby.img || null)
+const displayName     = computed(() => customName.value.trim() || props.hobby.name || 'Mi hobby')
+const previewImage    = computed(() => previewUrl.value || props.hobby.img || null)
 const currentGradient = computed(() => `linear-gradient(135deg, ${customColor1.value}, ${customColor2.value})`)
 
 const palettes = [
@@ -50,11 +66,10 @@ const palettes = [
   ['#f97316','#fb923c'], ['#ec4899','#f472b6'], ['#14b8a6','#2dd4bf'],
   ['#22284E','#3d4570'],
 ]
-
 const difficulties = [
-  { key: 'facil',  label: 'Fácil',   desc: 'Sin presión, a mi ritmo' },
-  { key: 'media',  label: 'Media',   desc: 'Reto equilibrado' },
-  { key: 'dificil',label: 'Difícil', desc: 'Máximo compromiso' },
+  { key: 'facil',   label: 'Fácil',   desc: 'Sin presión, a mi ritmo' },
+  { key: 'media',   label: 'Media',   desc: 'Reto equilibrado' },
+  { key: 'dificil', label: 'Difícil', desc: 'Máximo compromiso' },
 ]
 
 function selectPalette(p) { customColor1.value = p[0]; customColor2.value = p[1] }
@@ -63,7 +78,7 @@ function onImageUpload(e) {
   const file = e.target.files[0]
   if (!file) return
   customImage.value = file
-  previewUrl.value = URL.createObjectURL(file)
+  previewUrl.value  = URL.createObjectURL(file)
 }
 function removeImage() { customImage.value = null; previewUrl.value = null }
 
@@ -102,7 +117,6 @@ function confirm() {
 <template>
   <div class="overlay" @click.self="emit('close')">
     <div class="setup">
-
       <div class="setup-header">
         <button class="back-btn" @click="emit('back')">
           <svg viewBox="0 0 16 16" fill="none" width="14">
@@ -119,7 +133,6 @@ function confirm() {
       </div>
 
       <div class="setup-body">
-
         <!-- Preview -->
         <div class="preview-card" :style="{ background: previewImage ? 'transparent' : currentGradient }">
           <img v-if="previewImage" :src="previewImage" class="preview-img" :alt="displayName" />
@@ -185,7 +198,7 @@ function confirm() {
           </div>
         </div>
 
-        <!-- Duración — ancho completo -->
+        <!-- Duración -->
         <div class="field">
           <label>Duración del reto</label>
           <div class="counter-row full">
@@ -201,7 +214,7 @@ function confirm() {
           </div>
         </div>
 
-        <!-- Tiempo diario — ancho completo -->
+        <!-- Tiempo diario -->
         <div class="field">
           <label>Tiempo diario</label>
           <div class="counter-row full">
@@ -249,27 +262,21 @@ function confirm() {
         <div class="field">
           <label>¿Mostrar en tu perfil público?</label>
           <div class="visibility-row">
-            <button
-              class="vis-btn" :class="{ active: isPublic }"
-              @click="isPublic = true"
-            >
+            <button class="vis-btn" :class="{ active: isPublic }" @click="isPublic = true">
               <svg viewBox="0 0 20 20" fill="none" width="16">
                 <circle cx="10" cy="10" r="8" stroke="currentColor" stroke-width="1.6"/>
                 <path d="M2 10h16M10 2a14 14 0 010 16M10 2a14 14 0 000 16" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
               </svg>
               <span class="vis-label">Público</span>
-              <span class="vis-desc">Otros usuarios pueden ver este hobby en tu perfil e invitarte a retos grupales</span>
+              <span class="vis-desc">Otros usuarios pueden ver este hobby en tu perfil</span>
             </button>
-            <button
-              class="vis-btn" :class="{ active: !isPublic }"
-              @click="isPublic = false"
-            >
+            <button class="vis-btn" :class="{ active: !isPublic }" @click="isPublic = false">
               <svg viewBox="0 0 20 20" fill="none" width="16">
                 <rect x="3" y="9" width="14" height="10" rx="2" stroke="currentColor" stroke-width="1.6"/>
                 <path d="M7 9V6a3 3 0 016 0v3" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
               </svg>
               <span class="vis-label">Privado</span>
-              <span class="vis-desc">Solo tú verás este hobby. No aparece en tu perfil ni en retos grupales.</span>
+              <span class="vis-desc">Solo tú verás este hobby</span>
             </button>
           </div>
         </div>
@@ -279,9 +286,16 @@ function confirm() {
           <div class="reminder-row">
             <div>
               <span class="reminder-title">Recordatorio diario</span>
-              <span class="reminder-desc">Te avisamos para que no te olvides</span>
+              <span class="reminder-desc">
+                {{ pushSupported ? 'Te avisamos para que no te olvides' : 'No disponible en este navegador' }}
+              </span>
             </div>
-            <button class="toggle-btn" :class="{ on: reminder }" @click="reminder = !reminder">
+            <button
+              class="toggle-btn"
+              :class="{ on: reminder }"
+              :disabled="!pushSupported"
+              @click="reminder = !reminder"
+            >
               <div class="toggle-knob"></div>
             </button>
           </div>
@@ -289,7 +303,6 @@ function confirm() {
             <input v-if="reminder" v-model="reminderTime" type="time" class="input time-input" />
           </Transition>
         </div>
-
       </div>
 
       <div class="setup-footer">
@@ -300,7 +313,6 @@ function confirm() {
           Añadir hobby
         </button>
       </div>
-
     </div>
   </div>
 </template>
@@ -318,7 +330,6 @@ function confirm() {
   display: flex; flex-direction: column;
   box-shadow: 0 -12px 48px rgba(34,40,78,.2); overflow: hidden;
 }
-
 .setup-header {
   display: flex; align-items: center; gap: 10px;
   padding: 16px 16px 0; flex-shrink: 0; margin-bottom: 12px;
@@ -338,10 +349,8 @@ function confirm() {
   cursor: pointer; color: rgba(34,40,78,.5); transition: background .2s;
 }
 .close-btn:hover { background: rgba(255,107,157,.12); color: #ff6b9d; }
-
 .setup-body { flex: 1; overflow-y: auto; padding: 0 16px; display: flex; flex-direction: column; gap: 14px; }
 
-/* Preview */
 .preview-card { position: relative; height: 130px; border-radius: 16px; overflow: hidden; flex-shrink: 0; }
 .preview-img { width: 100%; height: 100%; object-fit: cover; display: block; }
 .preview-overlay { position: absolute; inset: 0; background: linear-gradient(to bottom, transparent 30%, rgba(20,22,50,.75) 100%); }
@@ -353,19 +362,17 @@ function confirm() {
 .diff-badge.media   { background: rgba(245,158,11,.25); color: #f59e0b; }
 .diff-badge.dificil { background: rgba(239,68,68,.25);  color: #ef4444; }
 
-/* Fields */
 .field { display: flex; flex-direction: column; gap: 8px; }
 .field label { font-size: 12px; font-weight: 700; color: rgba(34,40,78,.5); text-transform: uppercase; letter-spacing: .05em; }
 .input {
   padding: 11px 14px; border: 1.5px solid rgba(34,40,78,.1); border-radius: 12px;
-  font-size: 14px; color: #22284E; background: #fafafa;
-  font-family: inherit; box-sizing: border-box; transition: border-color .2s;
+  font-size: 16px; color: #22284E; background: #fafafa;
+  font-family: inherit; box-sizing: border-box; transition: border-color .2s; width: 100%;
 }
 .input:focus { outline: none; border-color: #ff6b9d; background: #fff; }
 .textarea { resize: none; line-height: 1.6; }
 .char-count { font-size: 11px; color: rgba(34,40,78,.3); text-align: right; margin-top: -4px; }
 
-/* Imagen */
 .img-options { display: flex; gap: 10px; flex-wrap: wrap; }
 .img-opt { position: relative; width: 80px; height: 64px; border-radius: 10px; overflow: hidden; border: 2px solid #ff6b9d; }
 .img-opt img { width: 100%; height: 100%; object-fit: cover; }
@@ -374,145 +381,63 @@ function confirm() {
 .img-upload-btn { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; width: 80px; height: 64px; border-radius: 10px; border: 1.5px dashed rgba(34,40,78,.2); cursor: pointer; color: rgba(34,40,78,.4); font-size: 11px; font-weight: 600; transition: border-color .2s, color .2s; }
 .img-upload-btn:hover { border-color: #ff6b9d; color: #ff6b9d; }
 
-/* Paletas */
 .palettes { display: flex; flex-wrap: wrap; gap: 8px; }
 .palette-btn { width: 36px; height: 36px; border-radius: 10px; border: 2px solid transparent; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: transform .15s, border-color .15s; }
 .palette-btn:hover { transform: scale(1.1); }
 .palette-btn.active { border-color: #22284E; transform: scale(1.12); }
 
-/* Counter — ancho completo con flex */
-.counter-row {
-  display: flex; align-items: center; gap: 10px;
-}
-.counter-row.full {
-  width: 100%;
-}
-.counter-btn {
-  width: 40px; height: 40px; border-radius: 10px; flex-shrink: 0;
-  background: rgba(34,40,78,.06); border: 1.5px solid rgba(34,40,78,.1);
-  font-size: 20px; font-weight: 700; cursor: pointer; color: #22284E;
-  display: flex; align-items: center; justify-content: center;
-  transition: background .2s, border-color .2s;
-}
+.counter-row { display: flex; align-items: center; gap: 10px; }
+.counter-row.full { width: 100%; }
+.counter-btn { width: 40px; height: 40px; border-radius: 10px; flex-shrink: 0; background: rgba(34,40,78,.06); border: 1.5px solid rgba(34,40,78,.1); font-size: 20px; font-weight: 700; cursor: pointer; color: #22284E; display: flex; align-items: center; justify-content: center; transition: background .2s, border-color .2s; }
 .counter-btn:hover { background: rgba(255,107,157,.1); border-color: #ff6b9d; color: #ff6b9d; }
-.counter-input {
-  flex: 1;                  /* ocupa todo el espacio del medio */
-  min-width: 0;
-  padding: 8px 10px; text-align: center;
-  border: 1.5px solid rgba(34,40,78,.1); border-radius: 10px;
-  font-size: 20px; font-weight: 800; color: #22284E;
-  background: #fafafa; font-family: inherit;
-  -moz-appearance: textfield;
-}
-.counter-input::-webkit-inner-spin-button,
-.counter-input::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+.counter-input { flex: 1; min-width: 0; padding: 8px 10px; text-align: center; border: 1.5px solid rgba(34,40,78,.1); border-radius: 10px; font-size: 20px; font-weight: 800; color: #22284E; background: #fafafa; font-family: inherit; -moz-appearance: textfield; }
+.counter-input::-webkit-inner-spin-button, .counter-input::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
 .counter-input:focus { outline: none; border-color: #ff6b9d; background: #fff; }
 .counter-unit { font-size: 13px; font-weight: 600; color: rgba(34,40,78,.4); flex-shrink: 0; white-space: nowrap; }
 
-/* Presets */
 .presets { display: flex; gap: 5px; flex-wrap: wrap; }
-.preset-btn { padding: 5px 11px; border-radius: 99px; border: 1.5px solid rgba(34,40,78,.1); background: transparent; font-size: 12px; font-weight: 600; color: rgba(34,40,78,.5); cursor: pointer; transition: all .15s; }
+.preset-btn { padding: 5px 10px; border-radius: 99px; border: 1.5px solid rgba(34,40,78,.1); background: transparent; font-size: 12px; font-weight: 600; color: rgba(34,40,78,.5); cursor: pointer; transition: all .15s; }
 .preset-btn:hover { border-color: #ff6b9d; color: #ff6b9d; }
 .preset-btn.active { background: #22284E; border-color: #22284E; color: #fff59e; }
 
-/* Dificultad */
 .diff-options { display: flex; gap: 6px; }
-.diff-btn {
-  flex: 1; display: flex; flex-direction: column; align-items: center; gap: 3px;
-  padding: 12px 8px; border-radius: 14px; cursor: pointer;
-  border: 2px solid rgba(34,40,78,.1); background: #fafafa;
-  transition: all .18s;
-}
+.diff-btn { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 10px 5px; border-radius: 14px; cursor: pointer; border: 2px solid rgba(34,40,78,.1); background: #fafafa; transition: all .18s; }
 .diff-btn:hover { border-color: rgba(34,40,78,.25); }
 .diff-btn.active.facil   { border-color: #22c55e; background: rgba(34,197,94,.06); }
 .diff-btn.active.media   { border-color: #f59e0b; background: rgba(245,158,11,.06); }
 .diff-btn.active.dificil { border-color: #ef4444; background: rgba(239,68,68,.06); }
 .diff-label { font-size: 13px; font-weight: 700; color: #22284E; }
-.diff-desc  { font-size: 10px; color: rgba(34,40,78,.45); text-align: center; line-height: 1.3; }
+.diff-desc  { font-size: 9px; color: rgba(34,40,78,.45); text-align: center; line-height: 1.3; }
 
-/* Visibilidad */
 .visibility-row { display: flex; gap: 10px; }
-.vis-btn {
-  flex: 1; display: flex; flex-direction: column; align-items: center; gap: 6px;
-  padding: 14px 10px; border-radius: 14px; cursor: pointer;
-  border: 2px solid rgba(34,40,78,.1); background: #fafafa;
-  color: rgba(34,40,78,.5); transition: all .18s;
-}
+.vis-btn { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 12px 8px; border-radius: 14px; cursor: pointer; border: 2px solid rgba(34,40,78,.1); background: #fafafa; color: rgba(34,40,78,.5); transition: all .18s; text-align: center; }
 .vis-btn:hover { border-color: rgba(34,40,78,.25); }
 .vis-btn.active { border-color: #ff6b9d; background: rgba(255,107,157,.06); color: #22284E; }
-.vis-desc { font-size: 10px; color: rgba(34,40,78,.4); }
+.vis-label { font-size: 13px; font-weight: 700; color: inherit; }
+.vis-desc { font-size: 10px; color: rgba(34,40,78,.4); line-height: 1.3; word-break: break-word; }
 
-/* Recordatorio */
 .reminder-field { gap: 12px; }
 .reminder-row { display: flex; align-items: center; justify-content: space-between; }
 .reminder-title { display: block; font-size: 14px; font-weight: 700; color: #22284E; }
 .reminder-desc { display: block; font-size: 12px; color: rgba(34,40,78,.45); margin-top: 2px; }
-.toggle-btn { width: 46px; height: 26px; border-radius: 99px; background: rgba(34,40,78,.12); border: none; position: relative; cursor: pointer; transition: background .25s; }
+.toggle-btn { width: 46px; height: 26px; border-radius: 99px; background: rgba(34,40,78,.12); border: none; position: relative; cursor: pointer; transition: background .25s; flex-shrink: 0; }
 .toggle-btn.on { background: #ff6b9d; }
+.toggle-btn:disabled { opacity: .4; cursor: not-allowed; }
 .toggle-knob { position: absolute; top: 3px; left: 3px; width: 20px; height: 20px; border-radius: 50%; background: #fff; box-shadow: 0 1px 4px rgba(0,0,0,.2); transition: transform .25s cubic-bezier(.4,0,.2,1); }
 .toggle-btn.on .toggle-knob { transform: translateX(20px); }
 .time-input { max-width: 140px; }
 
-/* Footer */
 .setup-footer { padding: 12px 16px calc(12px + env(safe-area-inset-bottom)); border-top: 1px solid rgba(34,40,78,.06); flex-shrink: 0; }
-.btn-confirm {
-  width: 100%; padding: 14px;
-  background: linear-gradient(135deg, #22284E, #3d4570);
-  color: #fff59e; border: none; border-radius: 14px;
-  font-size: 15px; font-weight: 800; cursor: pointer;
-  display: flex; align-items: center; justify-content: center; gap: 8px;
-  box-shadow: 0 6px 20px rgba(34,40,78,.28);
-  transition: transform .18s, box-shadow .18s, opacity .2s;
-}
+.btn-confirm { width: 100%; padding: 14px; background: linear-gradient(135deg, #22284E, #3d4570); color: #fff59e; border: none; border-radius: 14px; font-size: 15px; font-weight: 800; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; box-shadow: 0 6px 20px rgba(34,40,78,.28); transition: transform .18s, box-shadow .18s, opacity .2s; }
 .btn-confirm:hover { transform: translateY(-1px); box-shadow: 0 10px 28px rgba(34,40,78,.36); }
 .btn-confirm:disabled { opacity: .4; cursor: not-allowed; transform: none; }
 
 .fade-enter-active, .fade-leave-active { transition: opacity .2s, transform .2s; }
 .fade-enter-from, .fade-leave-to { opacity: 0; transform: translateY(-6px); }
 
-/* Visibilidad mejorada */
-.vis-label {
-  font-size: 13px;
-  font-weight: 700;
-  color: inherit;
-}
-.vis-btn {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 4px;
-  padding: 14px 10px;
-  border-radius: 14px;
-  cursor: pointer;
-  border: 2px solid rgba(34,40,78,.1);
-  background: #fafafa;
-  color: rgba(34,40,78,.5);
-  transition: all .18s;
-  text-align: center;
-}
-.vis-btn svg {
-  margin-bottom: 2px;
-}
-.vis-desc {
-  font-size: 10px;
-  color: rgba(34,40,78,.4);
-  line-height: 1.3;
-  max-width: 100%;
-  word-break: break-word;
-}
-.vis-btn.active {
-  border-color: #ff6b9d;
-  background: rgba(255,107,157,.06);
-  color: #22284E;
-}
-.vis-btn.active .vis-desc {
-  color: rgba(34,40,78,.55);
-}
-
 @media (min-width: 600px) {
   .overlay { align-items: center; padding: 20px; }
-  .setup { border-radius: 24px; max-height: 88vh; max-height: 88dvh; }
+  .setup { border-radius: 24px; max-height: 88vh; max-height: 88dvh; padding-bottom: 0; }
   .setup-body { padding: 0 20px; gap: 18px; }
   .setup-header { padding: 20px 20px 0; }
   .setup-footer { padding: 16px 20px calc(16px + env(safe-area-inset-bottom)); }
@@ -526,7 +451,6 @@ function confirm() {
   .diff-desc { font-size: 9px; }
   .visibility-row { gap: 7px; }
   .vis-btn { padding: 10px 7px; }
-  .vis-desc { font-size: 9px; }
   .preset-btn { padding: 4px 8px; font-size: 11px; }
   .palettes { gap: 6px; }
   .palette-btn { width: 30px; height: 30px; border-radius: 8px; }
