@@ -18,6 +18,7 @@ import {
   useDeleteChallenge,
   useChallengeInvites,
   useChallengePendingInvites,
+  POPULAR_LOCATIONS,
 } from '../../funciones/useChallenges.js'
 import ChatMessageList from './ChatMessageList.vue'
 import ChatReplyBar from './ChatReplyBar.vue'
@@ -41,7 +42,7 @@ const { initials, formatDate } = useFormatters()
 const { CHALLENGE_CATEGORIES, categoryColor, categoryLabel } = useChallengeCategories()
 
 const {
-  challenges, myMemberships, loading, viewMode, searchQuery,
+  challenges, myMemberships, loading, viewMode, searchQuery, locationFilter,
   filteredChallenges,
   loadChallenges, isMember, isAdmin, toggleMember,
 } = useChallengesList({ currentUserId: props.currentUser.id })
@@ -73,11 +74,11 @@ const { avatarInput, uploadingAvatar, updateAvatar } = useChallengeAvatar()
 
 const { deleteChallenge: doDeleteChallenge } = useDeleteChallenge()
 
-const { invites, loadInvites, inviteUser } = useChallengeInvites({
+const { invites, loadInvites, inviteUser, respondInvite } = useChallengeInvites({
   currentUserId: props.currentUser.id
 })
 
-const { pendingInvites, loadPendingInvites } = useChallengePendingInvites({
+const { pendingInvites, loadPendingInvites, subscribeInvites, cleanupInvites } = useChallengePendingInvites({
   currentUserId: props.currentUser.id
 })
 
@@ -259,35 +260,20 @@ function isOwn(msg) {
 
 // ── Invitar miembros ──────────────────────────────────
 async function doInviteUser(user) {
-  const { data: existing } = await supabase
-    .from('challenge_invites')
-    .select('id, status')
-    .eq('challenge_id', activeChallenge.value.id)
-    .eq('invited_user_id', user.id)
-    .maybeSingle()
-
-  if (existing?.status === 'pending') {
-    alert(`${user.username} ya tiene una invitación pendiente`)
-    return
-  }
-  if (existing?.status === 'rejected') {
-    alert(`${user.username} rechazó una invitación anterior`)
-    return
-  }
-
+  if (!activeChallenge.value) return
   const ok = await inviteUser({ 
     challengeId: activeChallenge.value.id, 
     userId: user.id 
   })
   if (ok) {
-    alert(`Invitación enviada a ${user.username}`)
+    alert(`✅ Invitación enviada a ${user.username}`)
   } else {
-    alert('Error al enviar invitación')
+    // El composable devuelve false si ya existe una pendiente o rechazada
+    alert(`${user.username} ya tiene una invitación pendiente o anterior`)
   }
 }
 
 async function respondToInvite(inviteId, status) {
-  const { respondInvite } = useChallengeInvites({ currentUserId: props.currentUser.id })
   const ok = await respondInvite({ inviteId, status })
   if (ok) {
     if (status === 'accepted') {
@@ -339,10 +325,15 @@ async function confirmDeleteChallenge() {
   showDeleteChallengeModal.value = false
   challengesToDelete.value = null
 }
+function locationLabel(key) {
+  return POPULAR_LOCATIONS.find(l => l.key === key)?.label || key
+}
+
 // ── Lifecycle ─────────────────────────────────────────
 onMounted(async () => {
   await loadChallenges()
-  loadPendingInvites()
+  await loadPendingInvites()
+  subscribeInvites()
   if (props.initialChallengeId) {
     const target = challenges.value.find(c => c.id === props.initialChallengeId)
     if (target) await openChallenge(target)
@@ -350,6 +341,7 @@ onMounted(async () => {
 })
 onUnmounted(() => {
   cleanupMessages()
+  cleanupInvites()
 })
 </script>
 
@@ -411,14 +403,22 @@ onUnmounted(() => {
         <button :class="{ active: viewMode === 'explore' }" @click="viewMode = 'explore'">Explorar</button>
       </div>
 
-      <!-- Búsqueda -->
-      <div v-if="viewMode === 'explore'" class="search-box">
-        <input
-          v-model="searchQuery"
-          type="text"
-          class="cf-input search-input"
-          placeholder="Buscar retos..."
-        />
+      <!-- Filtros explorar: ubicación + búsqueda -->
+      <div v-if="viewMode === 'explore' && !showCreate" class="explore-filters">
+        <div class="filter-row">
+          <select v-model="locationFilter" class="cf-input filter-select">
+            <option value="">📍 Todas</option>
+            <option v-for="loc in POPULAR_LOCATIONS" :key="loc.key" :value="loc.key">
+              {{ loc.label }}
+            </option>
+          </select>
+          <input
+            v-model="searchQuery"
+            type="text"
+            class="cf-input search-input"
+            placeholder="Buscar retos..."
+          />
+        </div>
       </div>
 
       <!-- Formulario crear reto -->
@@ -448,6 +448,12 @@ onUnmounted(() => {
               >{{ d }}d</button>
             </div>
           </div>
+          <select v-model="form.location" class="cf-input location-select">
+            <option value="">📍 Sin ubicación (global)</option>
+            <option v-for="loc in POPULAR_LOCATIONS" :key="loc.key" :value="loc.key">
+              {{ loc.label }}
+            </option>
+          </select>
           <label class="cf-private">
             <input type="checkbox" v-model="form.is_private" />
             <span>Reto privado (solo por invitación)</span>
@@ -495,7 +501,7 @@ onUnmounted(() => {
           <div class="ci-info">
             <span class="ci-title">{{ c.title }}</span>
             <span class="ci-meta">
-              {{ c.total_days }}d · {{ categoryLabel(c.category) }} {{ c.is_private ? '· 🔒' : '' }}
+              {{ c.total_days }}d · {{ categoryLabel(c.category) }} {{ c.is_private ? '· 🔒' : '' }} {{ c.location ? '· ' + locationLabel(c.location) : '' }}
             </span>
           </div>
           <div class="ci-right">
@@ -562,7 +568,7 @@ onUnmounted(() => {
             <span class="ct-meta">
               {{ members.length }} participante{{ members.length !== 1 ? 's' : '' }}
               · {{ daysLeft }} días restantes
-              {{ activeChallenge.is_private ? '· Privado 🔒' : '' }}
+              {{ activeChallenge.is_private ? '· Privado 🔒' : '' }} {{ activeChallenge.location ? '· ' + locationLabel(activeChallenge.location) : '' }}
             </span>
           </div>
 
@@ -610,8 +616,9 @@ onUnmounted(() => {
               :current-user-id="currentUser.id"
               :exclude-ids="memberIds"
               mode="invite"
+              invite-label="Invitar al reto"
               placeholder="Buscar usuario para invitar..."
-              @message="doInviteUser"
+              @invite="doInviteUser"
               @close="showInvites = false"
             />
           </div>
@@ -866,9 +873,25 @@ onUnmounted(() => {
   background: #22284E; color: #fff; border-color: #22284E;
 }
 
-/* Búsqueda */
-.search-box { padding: 0 12px 10px; flex-shrink: 0; }
-.search-input { width: 100%; box-sizing: border-box; }
+/* Filtros explorar */
+.explore-filters { padding: 0 12px 10px; flex-shrink: 0; }
+.filter-row { display: flex; gap: 8px; align-items: center; }
+.filter-select {
+  flex: 0 0 110px;
+  min-width: 0;
+  appearance: none; -webkit-appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2322284E' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat; background-position: right 8px center;
+  padding-right: 24px; cursor: pointer; font-size: 11px;
+}
+.search-input { flex: 1; min-width: 0; box-sizing: border-box; }
+/* Select ubicación en formulario crear */
+.location-select {
+  appearance: none; -webkit-appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2322284E' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat; background-position: right 12px center;
+  padding-right: 32px; cursor: pointer;
+}
 
 /* Formulario crear */
 .create-form {

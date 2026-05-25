@@ -25,6 +25,7 @@ import ChatReplyBar from './ChatReplyBar.vue'
 import ChatEditBar from './ChatEditBar.vue'
 import ChatImagePreview from './ChatImagePreview.vue'
 import ChatInputBar from './ChatInputBar.vue'
+import ChatSearch from './ChatSearch.vue'
 import ConfirmModal from '../ConfirmModal.vue'
 
 // ═══════════════════════════════════════════════════════
@@ -96,6 +97,8 @@ const { unreadCounts, loadUnread, markAsRead } = useCommunityUnread({
 
 const { members, loadMembers } = useCommunityMembers({ currentUserId: props.currentUser.id })
 
+const memberIds = computed(() => members.value.map(m => m.id))
+
 
 // ═══════════════════════════════════════════════════════
 // 3. ESTADO LOCAL
@@ -104,9 +107,6 @@ const activeCommunity = ref(null)
 const showLeftPanel   = ref(true)
 const showInvites     = ref(false)
 const showMembers     = ref(false)
-const inviteSearch    = ref('')
-const inviteResults   = ref([])
-const inviteLoading   = ref(false)
 const newMessage      = ref('')
 const imagePreview    = ref(null)
 const selectedImage   = ref(null)
@@ -184,8 +184,6 @@ async function openCommunity(community) {
   activeCommunity.value = community
   showLeftPanel.value   = false
   showInvites.value     = false
-  inviteSearch.value    = ''
-  inviteResults.value   = []
   await loadMessages(community.id)
   await loadMembers(community.id)
   await scrollToBottom()
@@ -258,8 +256,6 @@ function backToList() {
   messages.value        = []
   showLeftPanel.value   = true
   showInvites.value     = false
-  inviteSearch.value    = ''
-  inviteResults.value   = []
   cleanupMessages()
   cleanupTyping()
 }
@@ -284,42 +280,6 @@ function clearImage() {
 }
 
 // ── Invitar miembros ──────────────────────────────────
-async function searchUsersToInvite() {
-  if (!inviteSearch.value.trim() || inviteSearch.value.length < 3) return
-  if (!activeCommunity.value) return
-  inviteLoading.value = true
-
-  const { data } = await supabase
-    .from('profiles')
-    .select('id, username, avatar_url')
-    .ilike('username', `%${inviteSearch.value}%`)
-    .limit(10)
-
-  if (data) {
-    const { data: currentMembers } = await supabase
-      .from('chat_group_members')
-      .select('user_id')
-      .eq('group_id', activeCommunity.value.id)
-
-    const memberIds = (currentMembers || []).map(m => m.user_id)
-
-    const { data: existingInvites } = await supabase
-      .from('chat_group_invites')
-      .select('invited_user_id')
-      .eq('group_id', activeCommunity.value.id)
-      .eq('status', 'pending')
-
-    const invitedIds = (existingInvites || []).map(i => i.invited_user_id)
-
-    inviteResults.value = data.filter(u =>
-      !memberIds.includes(u.id) &&
-      !invitedIds.includes(u.id) &&
-      u.id !== props.currentUser.id
-    )
-  }
-  inviteLoading.value = false
-}
-
 async function doInviteUser(user) {
   const { data: existing } = await supabase
     .from('chat_group_invites')
@@ -339,7 +299,6 @@ async function doInviteUser(user) {
 
   const ok = await inviteUser({ groupId: activeCommunity.value.id, userId: user.id })
   if (ok) {
-    inviteResults.value = inviteResults.value.filter(u => u.id !== user.id)
     alert(`Invitación enviada a ${user.username}`)
   } else {
     alert('Error al enviar invitación. ¿Eres el creador de la comunidad?')
@@ -396,14 +355,6 @@ watch(newMessage, (val) => {
   }
 })
 
-let inviteSearchTimer = null
-watch(inviteSearch, (val) => {
-  clearTimeout(inviteSearchTimer)
-  inviteResults.value = []
-  if (!val.trim() || val.length < 3) return
-  inviteLoading.value = true
-  inviteSearchTimer = setTimeout(() => searchUsersToInvite(), 400)
-})
 
 function locationLabel(key) {
   return POPULAR_LOCATIONS.find(l => l.key === key)?.label || key
@@ -472,11 +423,11 @@ function locationLabel(key) {
         <button :class="{ active: viewMode === 'explore' }" @click="viewMode = 'explore'">Explorar</button>
       </div>
 
-      <!-- Filtros de Explorar: ubicación + búsqueda en la misma línea -->
+      <!-- Filtros de Explorar: ubicación + búsqueda -->
       <div v-if="viewMode === 'explore' && !showCreate" class="explore-filters">
         <div class="filter-row">
           <select v-model="locationFilter" class="cf-input filter-select">
-            <option value="">📍 Todas las ubicaciones</option>
+            <option value="">📍 Todas</option>
             <option v-for="loc in POPULAR_LOCATIONS" :key="loc.key" :value="loc.key">
               {{ loc.label }}
             </option>
@@ -485,7 +436,7 @@ function locationLabel(key) {
             v-model="searchQuery"
             type="text"
             class="cf-input search-input"
-            placeholder="Buscar comunidades..."
+            placeholder="Buscar comunidad..."
           />
         </div>
       </div>
@@ -686,47 +637,15 @@ function locationLabel(key) {
         <!-- Panel de invitaciones -->
         <Transition name="slide-down">
           <div v-if="showInvites" class="invite-panel">
-            <p class="ip-title">Invitar miembros</p>
-            <div class="invite-search-row">
-              <input
-                v-model="inviteSearch"
-                type="text"
-                class="cf-input"
-                placeholder="Buscar usuario por nombre..."
-                @keyup.enter="searchUsersToInvite"
-              />
-              <button class="invite-search-btn" @click="searchUsersToInvite" :disabled="inviteLoading">
-                <svg v-if="!inviteLoading" viewBox="0 0 20 20" fill="none" width="14">
-                  <circle cx="9" cy="9" r="5.5" stroke="currentColor" stroke-width="1.7"/>
-                  <path d="M14 14l3 3" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/>
-                </svg>
-                <span v-else class="mini-spinner" style="width:14px;height:14px;border-width:2px;"></span>
-              </button>
-            </div>
-
-            <div v-if="inviteResults.length" class="invite-results">
-              <div
-                v-for="user in inviteResults"
-                :key="user.id"
-                class="invite-user"
-                @click="doInviteUser(user)"
-              >
-                <div class="iu-avatar">
-                  <img v-if="user.avatar_url" :src="user.avatar_url" />
-                  <span v-else>{{ initials(user.username) }}</span>
-                </div>
-                <span class="iu-name">{{ user.username }}</span>
-                <button class="iu-btn">Invitar</button>
-              </div>
-            </div>
-            <div v-else-if="inviteSearch.length >= 3 && !inviteLoading" class="ip-empty">
-              No se encontraron usuarios disponibles
-            </div>
-            <div v-else-if="inviteSearch.length < 3" class="ip-hint">
-              Escribe al menos 3 caracteres y pulsa Enter o el botón buscar
-            </div>
-
-            <button class="ip-close" @click="showInvites = false; inviteSearch = ''; inviteResults = []">Cerrar</button>
+            <ChatSearch
+              :current-user-id="currentUser.id"
+              :exclude-ids="memberIds"
+              mode="invite"
+              invite-label="Invitar a la comunidad"
+              placeholder="Buscar usuario para invitar..."
+              @invite="doInviteUser"
+              @close="showInvites = false"
+            />
           </div>
         </Transition>
 
@@ -885,9 +804,48 @@ function locationLabel(key) {
   background: #22284E; color: #fff; border-color: #22284E;
 }
 
-/* Búsqueda explorar */
-.search-box { padding: 0 12px 10px; flex-shrink: 0; }
-.search-input { width: 100%; box-sizing: border-box; }
+/* ══ FILTROS DE EXPLORAR ════════════════════════════ */
+.explore-filters {
+  padding: 0 12px 10px;
+  flex-shrink: 0;
+}
+
+.filter-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.filter-select {
+  flex: 0 0 110px;
+  min-width: 0;
+  appearance: none;
+  -webkit-appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2322284E' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 8px center;
+  padding-right: 24px;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 600;
+  color: #22284E;
+}
+
+.search-input {
+  flex: 1;
+  min-width: 0;
+}
+
+/* Select de ubicación en el formulario de crear */
+.location-select {
+  appearance: none;
+  -webkit-appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2322284E' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  padding-right: 32px;
+  cursor: pointer;
+}
 
 /* Formulario crear */
 .create-form {
@@ -1058,50 +1016,9 @@ function locationLabel(key) {
 
 /* Panel invitaciones */
 .invite-panel {
-  padding: 12px 16px;
-  border-bottom: 1px solid rgba(34,40,78,.06);
-  flex-shrink: 0; background: rgba(34,40,78,.02);
+  border-bottom: 1px solid rgba(34,40,78,.07);
+  max-height: 280px; flex-shrink: 0; overflow: hidden;
 }
-.ip-title { font-size: 12px; font-weight: 700; color: rgba(34,40,78,.5); margin: 0 0 8px; }
-.invite-search-row { display: flex; gap: 6px; }
-.invite-search-btn {
-  width: 38px; height: 38px; border-radius: 10px;
-  background: #22284E; border: none; color: #fff;
-  display: flex; align-items: center; justify-content: center;
-  cursor: pointer; flex-shrink: 0; transition: opacity .2s;
-}
-.invite-search-btn:disabled { opacity: .5; cursor: not-allowed; }
-.invite-search-btn svg { display: block; }
-.ip-hint { font-size: 11px; color: rgba(34,40,78,.35); padding: 8px 0; }
-.ip-close {
-  padding: 6px 12px; border: 1.5px solid rgba(34,40,78,.1);
-  border-radius: 8px; background: transparent;
-  font-size: 12px; color: rgba(34,40,78,.5); cursor: pointer; margin-top: 8px;
-}
-.invite-results {
-  display: flex; flex-direction: column; gap: 6px;
-  margin: 8px 0; max-height: 180px; overflow-y: auto;
-}
-.invite-user {
-  display: flex; align-items: center; gap: 8px;
-  padding: 8px; border-radius: 10px;
-  cursor: pointer; transition: background .15s;
-}
-.invite-user:hover { background: rgba(34,40,78,.04); }
-.iu-avatar {
-  width: 28px; height: 28px; border-radius: 50%;
-  background: linear-gradient(135deg, #ff6b9d, #ffb3c6);
-  color: #fff; display: flex; align-items: center; justify-content: center;
-  font-size: 10px; font-weight: 700; overflow: hidden; flex-shrink: 0;
-}
-.iu-avatar img { width: 100%; height: 100%; object-fit: cover; }
-.iu-name { flex: 1; font-size: 13px; font-weight: 600; color: #22284E; }
-.iu-btn {
-  padding: 4px 10px; border-radius: 6px;
-  background: #22284E; color: #fff;
-  font-size: 11px; font-weight: 700; border: none; cursor: pointer;
-}
-.ip-empty { font-size: 12px; color: rgba(34,40,78,.4); text-align: center; padding: 8px 0; }
 
 /* Preview fullscreen */
 .img-fullscreen {
@@ -1229,9 +1146,7 @@ function locationLabel(key) {
   overflow-y: auto;
 }
 .mb-item {
-  display: flex;
-  align-items: center;
-  gap: 8px;
+  display: flex; align-items: center; gap: 8px;
   padding: 6px 8px;
   border-radius: 10px;
   transition: background .15s;
@@ -1271,46 +1186,6 @@ function locationLabel(key) {
 .mb-role.me {
   background: rgba(34,40,78,.08);
   color: rgba(34,40,78,.5);
-}
-
-/* ══ FILTROS DE EXPLORAR ════════════════════════════ */
-.explore-filters {
-  padding: 0 12px 10px;
-  flex-shrink: 0;
-}
-
-.filter-row {
-  display: flex;
-  gap: 8px;
-  align-items: center;
-}
-
-.filter-select {
-  flex: 0 0 140px;        /* Ancho fijo para el select */
-  appearance: none;
-  -webkit-appearance: none;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2322284E' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
-  background-repeat: no-repeat;
-  background-position: right 10px center;
-  padding-right: 28px;
-  cursor: pointer;
-  font-size: 12px;
-}
-
-.search-input {
-  flex: 1;                /* Ocupa el resto del espacio */
-  min-width: 0;
-}
-
-/* Select de ubicación en el formulario de crear */
-.location-select {
-  appearance: none;
-  -webkit-appearance: none;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2322284E' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
-  background-repeat: no-repeat;
-  background-position: right 12px center;
-  padding-right: 32px;
-  cursor: pointer;
 }
 
 /* ══ RESPONSIVE MÓVIL ═══════════════════════════════ */

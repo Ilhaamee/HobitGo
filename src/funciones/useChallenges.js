@@ -14,6 +14,18 @@ export const CHALLENGE_CATEGORIES = [
 
 export const DAY_PRESETS = [7, 14, 21, 30, 60, 90]
 
+export const POPULAR_LOCATIONS = [
+  { key: 'madrid',      label: 'Madrid' },
+  { key: 'barcelona',   label: 'Barcelona' },
+  { key: 'valencia',    label: 'Valencia' },
+  { key: 'sevilla',     label: 'Sevilla' },
+  { key: 'bilbao',      label: 'Bilbao' },
+  { key: 'zaragoza',    label: 'Zaragoza' },
+  { key: 'malaga',      label: 'Málaga' },
+  { key: 'alicante',    label: 'Alicante' },
+  { key: 'remote',      label: 'Online / Remoto' },
+]
+
 // ═══════════════════════════════════════════════════════════════════
 // 1. CATEGORÍAS
 // ═══════════════════════════════════════════════════════════════════
@@ -35,6 +47,7 @@ export function useChallengesList({ currentUserId }) {
   const myMemberships = ref([])
   const loading       = ref(false)
   const searchQuery   = ref('')
+  const locationFilter = ref('')
   const viewMode      = ref('mine') // 'mine' | 'explore'
 
   async function loadChallenges() {
@@ -80,6 +93,10 @@ export function useChallengesList({ currentUserId }) {
       const q = searchQuery.value.toLowerCase()
       result = result.filter(c => c.title.toLowerCase().includes(q))
     }
+    // Filtro de ubicación
+    if (locationFilter.value) {
+      result = result.filter(c => c.location === locationFilter.value)
+    }
     return result
   })
 
@@ -106,7 +123,7 @@ export function useChallengesList({ currentUserId }) {
   }
 
   return {
-    challenges, myMemberships, loading, viewMode, searchQuery,
+    challenges, myMemberships, loading, viewMode, searchQuery, locationFilter,
     filteredChallenges,
     loadChallenges, isMember, isAdmin, toggleMember
   }
@@ -125,6 +142,7 @@ export function useCreateChallenge({ currentUserId, onCreated }) {
     category: 'general',
     total_days: 30,
     is_private: false,
+    location: '',
   })
 
   async function createChallenge() {
@@ -144,6 +162,7 @@ export function useCreateChallenge({ currentUserId, onCreated }) {
         total_days:  form.value.total_days,
         creator_id:  currentUserId,
         is_private:  form.value.is_private,
+        location:    form.value.location || null,
         starts_at:   new Date().toISOString(),
       })
       .select()
@@ -570,34 +589,71 @@ export function useChallengeInvites({ currentUserId }) {
 // ═══════════════════════════════════════════════════════════════════
 export function useChallengePendingInvites({ currentUserId }) {
   const pendingInvites = ref([])
+  let inviteSub = null
 
   async function loadPendingInvites() {
-    const { data } = await supabase
+    // Step 1: get pending invites for this user
+    const { data, error } = await supabase
       .from('challenge_invites')
-      .select(`
-        id,
-        challenge_id,
-        invited_by,
-        status,
-        created_at,
-        challenge:group_challenges(id, title),
-        inviter:profiles!challenge_invites_invited_by_fkey(username)
-      `)
+      .select('id, challenge_id, invited_by, status, created_at')
       .eq('invited_user_id', currentUserId)
       .eq('status', 'pending')
       .order('created_at', { ascending: false })
 
-    if (data) {
-      pendingInvites.value = data.map(inv => ({
-        id: inv.id,
-        challenge_id: inv.challenge_id,
-        challenge_name: inv.challenge?.title || 'Reto',
-        invited_by_name: inv.inviter?.username || 'Alguien',
-        status: inv.status,
-        created_at: inv.created_at
-      }))
+    if (error) {
+      console.error('[loadPendingInvites] Error:', error)
+      return
     }
+    if (!data || data.length === 0) {
+      pendingInvites.value = []
+      return
+    }
+
+    // Step 2: enrich with challenge title and inviter username
+    const challengeIds = [...new Set(data.map(i => i.challenge_id))]
+    const inviterIds   = [...new Set(data.map(i => i.invited_by).filter(Boolean))]
+
+    const [{ data: challenges }, { data: inviters }] = await Promise.all([
+      supabase.from('group_challenges').select('id, title').in('id', challengeIds),
+      supabase.from('profiles').select('id, username').in('id', inviterIds),
+    ])
+
+    const challengeMap = Object.fromEntries((challenges || []).map(c => [c.id, c]))
+    const inviterMap   = Object.fromEntries((inviters   || []).map(p => [p.id, p]))
+
+    pendingInvites.value = data.map(inv => ({
+      id:              inv.id,
+      challenge_id:    inv.challenge_id,
+      challenge_name:  challengeMap[inv.challenge_id]?.title || 'Reto',
+      invited_by_name: inviterMap[inv.invited_by]?.username  || 'Alguien',
+      status:          inv.status,
+      created_at:      inv.created_at,
+    }))
   }
 
-  return { pendingInvites, loadPendingInvites }
+  // Realtime: reload when a new invite arrives for this user
+  function subscribeInvites() {
+    if (inviteSub) supabase.removeChannel(inviteSub)
+    inviteSub = supabase
+      .channel(`challenge-invites-${currentUserId}`)
+      .on('postgres_changes', {
+        event: 'INSERT',
+        schema: 'public',
+        table: 'challenge_invites',
+        filter: `invited_user_id=eq.${currentUserId}`,
+      }, () => loadPendingInvites())
+      .on('postgres_changes', {
+        event: 'UPDATE',
+        schema: 'public',
+        table: 'challenge_invites',
+        filter: `invited_user_id=eq.${currentUserId}`,
+      }, () => loadPendingInvites())
+      .subscribe()
+  }
+
+  function cleanupInvites() {
+    if (inviteSub) supabase.removeChannel(inviteSub)
+  }
+
+  return { pendingInvites, loadPendingInvites, subscribeInvites, cleanupInvites }
 }

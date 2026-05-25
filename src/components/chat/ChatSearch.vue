@@ -9,6 +9,7 @@ const props = defineProps({
   placeholder:   { type: String, default: 'Buscar usuarios...' },
   excludeIds:    { type: Array,  default: () => [] },
   mode:          { type: String, default: 'direct' }, // 'direct' | 'invite' | 'view'
+  inviteLabel:   { type: String, default: 'Invitar' },
 })
 
 const emit = defineEmits(['message', 'invite', 'close'])
@@ -146,6 +147,7 @@ onMounted(() => { setTimeout(() => input.value?.focus(), 60) })
       :user-id="previewUser.id"
       :current-user-id="currentUserId"
       :mode="mode"
+      :invite-label="inviteLabel"
       @message="onMessage"
       @invite="onInvite"
       @close="previewUser = null"

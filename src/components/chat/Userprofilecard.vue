@@ -6,6 +6,7 @@ const props = defineProps({
   userId:        { type: String, required: true },
   currentUserId: { type: String, required: true },
   mode:          { type: String, default: 'direct' },
+  inviteLabel:   { type: String, default: 'Invitar' },
 })
 
 const emit = defineEmits(['message', 'invite', 'close'])
@@ -258,8 +259,9 @@ watch(() => props.userId, load, { immediate: true })
 
           <!-- Acciones -->
           <div class="upc-actions">
+            <!-- Mensaje: solo en modo direct -->
             <button
-              v-if="mode !== 'view' && userId !== currentUserId"
+              v-if="mode === 'direct' && userId !== currentUserId"
               class="upc-btn-primary"
               @click="emit('message')"
             >
@@ -270,15 +272,16 @@ watch(() => props.userId, load, { immediate: true })
               Mensaje
             </button>
 
+            <!-- Invitar: texto personalizable según contexto -->
             <button
-              v-if="mode === 'invite'"
-              class="upc-btn-secondary"
+              v-if="mode === 'invite' && userId !== currentUserId"
+              class="upc-btn-primary"
               @click="emit('invite')"
             >
               <svg viewBox="0 0 16 16" fill="none" width="14">
                 <path d="M8 3v10M3 8h10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
               </svg>
-              Invitar al reto
+              {{ inviteLabel }}
             </button>
 
             <button
