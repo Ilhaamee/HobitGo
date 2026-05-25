@@ -339,10 +339,29 @@ async function confirmDeleteChallenge() {
   showDeleteChallengeModal.value = false
   challengesToDelete.value = null
 }
+// ── Realtime invitaciones pendientes ─────────────────
+let invitesSub = null
+
+function subscribeInvites() {
+  if (invitesSub) supabase.removeChannel(invitesSub)
+  invitesSub = supabase
+    .channel(`challenge-invites-${props.currentUser.id}`)
+    .on('postgres_changes', {
+      event: 'INSERT',
+      schema: 'public',
+      table: 'challenge_invites',
+      filter: `invited_user_id=eq.${props.currentUser.id}`
+    }, () => {
+      loadPendingInvites()
+    })
+    .subscribe()
+}
+
 // ── Lifecycle ─────────────────────────────────────────
 onMounted(async () => {
   await loadChallenges()
   loadPendingInvites()
+  subscribeInvites()
   if (props.initialChallengeId) {
     const target = challenges.value.find(c => c.id === props.initialChallengeId)
     if (target) await openChallenge(target)
@@ -350,10 +369,11 @@ onMounted(async () => {
 })
 onUnmounted(() => {
   cleanupMessages()
+  if (invitesSub) supabase.removeChannel(invitesSub)
 })
 </script>
 
-<<template>
+<template>
   <div class="cgc">
 
     <!-- ══ PANEL IZQUIERDO ════════════════════════════ -->
