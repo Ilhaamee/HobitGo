@@ -339,29 +339,10 @@ async function confirmDeleteChallenge() {
   showDeleteChallengeModal.value = false
   challengesToDelete.value = null
 }
-// ── Realtime invitaciones pendientes ─────────────────
-let invitesSub = null
-
-function subscribeInvites() {
-  if (invitesSub) supabase.removeChannel(invitesSub)
-  invitesSub = supabase
-    .channel(`challenge-invites-${props.currentUser.id}`)
-    .on('postgres_changes', {
-      event: 'INSERT',
-      schema: 'public',
-      table: 'challenge_invites',
-      filter: `invited_user_id=eq.${props.currentUser.id}`
-    }, () => {
-      loadPendingInvites()
-    })
-    .subscribe()
-}
-
 // ── Lifecycle ─────────────────────────────────────────
 onMounted(async () => {
   await loadChallenges()
   loadPendingInvites()
-  subscribeInvites()
   if (props.initialChallengeId) {
     const target = challenges.value.find(c => c.id === props.initialChallengeId)
     if (target) await openChallenge(target)
@@ -369,11 +350,10 @@ onMounted(async () => {
 })
 onUnmounted(() => {
   cleanupMessages()
-  if (invitesSub) supabase.removeChannel(invitesSub)
 })
 </script>
 
-<template>
+<<template>
   <div class="cgc">
 
     <!-- ══ PANEL IZQUIERDO ════════════════════════════ -->
@@ -1298,8 +1278,8 @@ onUnmounted(() => {
   .right-panel.hidden-mobile { display: none; }
   .right-panel.has-challenge {
     position: fixed; top: 0; left: 0; right: 0; bottom: 0;
-    z-index: 100; border-radius: 0; height: 100%; height: 100dvh; max-height: 100dvh;
-    padding-bottom: calc(70px + env(safe-area-inset-bottom));
+    z-index: 100; border-radius: 0; height: 100vh; max-height: 100vh;
+    padding-bottom: 70px;
   }
   .back-btn { display: flex; }
 }

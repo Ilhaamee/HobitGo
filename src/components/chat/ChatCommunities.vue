@@ -380,34 +380,14 @@ async function confirmDeleteCommunity() {
   communityToDelete.value = null
 }
 
-// ── Realtime invitaciones pendientes ─────────────────
-let invitesSub = null
-
-function subscribeInvites() {
-  if (invitesSub) supabase.removeChannel(invitesSub)
-  invitesSub = supabase
-    .channel(`community-invites-${props.currentUser.id}`)
-    .on('postgres_changes', {
-      event: 'INSERT',
-      schema: 'public',
-      table: 'chat_group_invites',
-      filter: `invited_user_id=eq.${props.currentUser.id}`
-    }, () => {
-      loadPendingInvites()
-    })
-    .subscribe()
-}
-
 // ── Lifecycle ─────────────────────────────────────────
 onMounted(() => {
   loadCommunities()
   loadPendingInvites()
-  subscribeInvites()
 })
 onUnmounted(() => {
   cleanupMessages()
   cleanupTyping()
-  if (invitesSub) supabase.removeChannel(invitesSub)
 })
 
 watch(newMessage, (val) => {
@@ -430,7 +410,7 @@ function locationLabel(key) {
 }
 </script>
 
-<template>
+<<template>
   <div class="communities">
 
     <!-- ══ PANEL IZQUIERDO ════════════════════════════ -->
@@ -1315,13 +1295,6 @@ function locationLabel(key) {
   padding-right: 28px;
   cursor: pointer;
   font-size: 12px;
-  font-family: inherit;
-}
-
-/* Forzar font-size en selects nativos (algunos browsers ignoran herencia) */
-select.cf-input, select.filter-select, select.location-select {
-  font-size: 13px;
-  font-family: inherit;
 }
 
 .search-input {
@@ -1351,8 +1324,8 @@ select.cf-input, select.filter-select, select.location-select {
   .right-panel.hidden-mobile { display: none; }
   .right-panel.has-community {
     position: fixed; top: 0; left: 0; right: 0; bottom: 0;
-    z-index: 100; border-radius: 0; height: 100%; height: 100dvh; max-height: 100dvh;
-    padding-bottom: calc(70px + env(safe-area-inset-bottom));
+    z-index: 100; border-radius: 0; height: 100vh; max-height: 100vh;
+    padding-bottom: 70px;
   }
   .back-btn { display: flex; }
 }
