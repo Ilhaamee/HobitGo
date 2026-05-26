@@ -20,10 +20,6 @@ const adding      = ref(false)
 const justAdded   = ref(false)
 const cardRef     = ref(null)
 
-// ═══════════════════════════════════════════════════════════════
-// COMPUTEDS
-// ═══════════════════════════════════════════════════════════════
-
 const sessionsByDay = computed(() => {
   const map = {}
   props.sessions
@@ -106,10 +102,6 @@ const difficultyInfo = computed(() => {
   return { label: labels[d], color: colors[d] }
 })
 
-// ═══════════════════════════════════════════════════════════════
-// WATCHES
-// ═══════════════════════════════════════════════════════════════
-
 watch(isCompleted, (newVal, oldVal) => {
   if (newVal && !oldVal && !props.hobby.completed_at) {
     emit('celebrate', {
@@ -118,10 +110,6 @@ watch(isCompleted, (newVal, oldVal) => {
     })
   }
 })
-
-// ═══════════════════════════════════════════════════════════════
-// HOOKS Y FUNCIONES
-// ═══════════════════════════════════════════════════════════════
 
 onMounted(() => {
   if (!cardRef.value) return
@@ -186,7 +174,7 @@ function onRestart() {
 <template>
   <div class="hcard" ref="cardRef">
 
-    <!-- ══ HERO ══════════════════════════════════════ -->
+    <!-- HERO -->
     <div class="hcard-hero"
       :style="hobby.image_url
         ? { backgroundImage: `url(${hobby.image_url})` }
@@ -248,7 +236,6 @@ function onRestart() {
       </div>
     </div>
 
-    <!-- ══ RETO ══════════════════════════════════════ -->
     <div class="reto-section" :class="{ completed: isCompleted }">
       <div class="reto-stats">
 
@@ -302,17 +289,17 @@ function onRestart() {
       </div>
     </div>
 
-    <!-- ══ LOGROS ══════════════════════════════════ -->
+    <!-- LOGROS -->
     <div class="badges-row">
       <AchievementBadge v-for="a in achievements" :key="a.name" v-bind="a" :color="cardColor" />
     </div>
 
-    <!-- ══ GRÁFICA ═════════════════════════════════ -->
+    <!-- GRÁFICA -->
     <div class="chart-section">
       <WeekChart :sessions="hobbySessions" :color="cardColor" />
     </div>
 
-    <!-- ══ REGISTRAR SESIÓN (siempre disponible) ═══ -->
+    <!-- REGISTRAR SESIÓN -->
     <div class="session-block">
 
       <button
@@ -418,7 +405,7 @@ function onRestart() {
 </template>
 
 <style scoped>
-/* ── Modal ── */
+/* Modal */
 .mode-overlay {
   position: fixed; inset: 0;
   background: #f5f0e8;
@@ -429,7 +416,7 @@ function onRestart() {
 .fade-up-enter-active, .fade-up-leave-active { transition: opacity .25s, transform .25s; }
 .fade-up-enter-from, .fade-up-leave-to { opacity: 0; transform: translateY(20px); }
 
-/* ── Card ── */
+/* Card */
 .hcard {
   background: #fff; border-radius: 22px; overflow: hidden;
   box-shadow: 0 4px 24px rgba(34,40,78,.09);
@@ -440,7 +427,7 @@ function onRestart() {
 }
 .hcard:hover { box-shadow: 0 16px 40px rgba(34,40,78,.14); }
 
-/* ── Hero ── */
+/* Hero */
 .hcard-hero {
   position: relative; height: 185px;
   background-size: cover; background-position: center;
@@ -582,16 +569,16 @@ function onRestart() {
 .reto-bar-fill  { height: 100%; border-radius: 99px; min-width: 6px; transition: width .7s cubic-bezier(.4,0,.2,1), background .3s; }
 .reto-bar-fill.completed { box-shadow: 0 0 8px rgba(245,158,11,.3); }
 .reto-pct { font-size: 11px; font-weight: 700; color: rgba(34,40,78,.35); white-space: nowrap; }
-/* ── Badges ── */
+/* Badges */
 .badges-row {
   display: flex; gap: 5px; flex-wrap: wrap;
   padding: 10px 14px; border-bottom: 1px solid rgba(34,40,78,.06);
 }
 
-/* ── Chart ── */
+/* Chart */
 .chart-section { padding: 10px 14px; border-bottom: 1px solid rgba(34,40,78,.06); }
 
-/* ── Session block ── */
+/* Session block */
 .session-block { overflow: hidden; }
 
 .session-trigger {

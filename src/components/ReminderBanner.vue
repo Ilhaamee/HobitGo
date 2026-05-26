@@ -27,13 +27,11 @@ const { checkTodayReminders } = useNotifications()
 const show          = ref(false)
 const pendingHobbies = ref([])
 
-// Clave para no mostrar el banner más de una vez por sesión
 const SESSION_KEY = 'reminder_banner_shown_' + new Date().toDateString()
 
 onMounted(async () => {
   if (sessionStorage.getItem(SESSION_KEY)) return
 
-  // Esperar 3s para no interferir con la carga inicial
   await new Promise(r => setTimeout(r, 3000))
 
   pendingHobbies.value = await checkTodayReminders()
@@ -118,7 +116,6 @@ function goToDashboard() {
 }
 .banner-btn.close:hover { background: rgba(255,255,255,.2); }
 
-/* Animación */
 .banner-slide-enter-active, .banner-slide-leave-active {
   transition: all .3s cubic-bezier(.34,1.56,.64,1);
 }

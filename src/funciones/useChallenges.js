@@ -26,9 +26,7 @@ export const POPULAR_LOCATIONS = [
   { key: 'remote',      label: 'Online / Remoto' },
 ]
 
-// ═══════════════════════════════════════════════════════════════════
 // 1. CATEGORÍAS
-// ═══════════════════════════════════════════════════════════════════
 export function useChallengeCategories() {
   function categoryColor(key) {
     return CHALLENGE_CATEGORIES.find(c => c.key === key)?.color || '#6366f1'
@@ -39,9 +37,7 @@ export function useChallengeCategories() {
   return { CHALLENGE_CATEGORIES, categoryColor, categoryLabel }
 }
 
-// ═══════════════════════════════════════════════════════════════════
 // 2. LISTA DE RETOS (mis retos / explorar / privados / públicos)
-// ═══════════════════════════════════════════════════════════════════
 export function useChallengesList({ currentUserId }) {
   const challenges    = ref([])
   const myMemberships = ref([])
@@ -129,9 +125,7 @@ export function useChallengesList({ currentUserId }) {
   }
 }
 
-// ═══════════════════════════════════════════════════════════════════
 // 3. CREAR RETO
-// ═══════════════════════════════════════════════════════════════════
 export function useCreateChallenge({ currentUserId, onCreated }) {
   const showCreate = ref(false)
   const creating   = ref(false)
@@ -196,9 +190,7 @@ export function useCreateChallenge({ currentUserId, onCreated }) {
   return { showCreate, creating, formError, form, createChallenge }
 }
 
-// ═══════════════════════════════════════════════════════════════════
 // 4. MIEMBROS DEL RETO
-// ═══════════════════════════════════════════════════════════════════
 export function useChallengeMembers({ currentUserId }) {
   const members = ref([])
 
@@ -260,9 +252,7 @@ export function useChallengeMembers({ currentUserId }) {
   return { members, loadMembers }
 }
 
-// ═══════════════════════════════════════════════════════════════════
 // 5. MENSAJES DEL RETO
-// ═══════════════════════════════════════════════════════════════════
 export function useChallengeMessages({ currentUserId, profile, emitUnread }) {
   const messages    = ref([])
   const messagesRef = ref(null)
@@ -401,9 +391,7 @@ export function useChallengeMessages({ currentUserId, profile, emitUnread }) {
   }
 }
 
-// ═══════════════════════════════════════════════════════════════════
 // 6. CHECK-IN DIARIO
-// ═══════════════════════════════════════════════════════════════════
 export function useChallengeCheckIn({ currentUserId }) {
   const checkingIn = ref(false)
 
@@ -421,7 +409,7 @@ export function useChallengeCheckIn({ currentUserId }) {
       .eq('check_date', today)
       .maybeSingle()
 
-    if (existing) return false // Ya hizo check-in hoy
+    if (existing) return false
 
     checkingIn.value = true
 
@@ -433,7 +421,7 @@ export function useChallengeCheckIn({ currentUserId }) {
         check_date: today
       })
 
-      // Calcular días totales (count de check-ins)
+      // Calcular días totales
       const { count } = await supabase
         .from('challenge_checkins')
         .select('*', { count: 'exact', head: true })
@@ -471,9 +459,7 @@ export function useChallengeCheckIn({ currentUserId }) {
   return { checkingIn, checkIn }
 }
 
-// ═══════════════════════════════════════════════════════════════════
 // 7. AVATAR DEL RETO
-// ═══════════════════════════════════════════════════════════════════
 export function useChallengeAvatar() {
   const avatarInput     = ref(null)
   const uploadingAvatar = ref(false)
@@ -507,9 +493,7 @@ export function useChallengeAvatar() {
   return { avatarInput, uploadingAvatar, updateAvatar }
 }
 
-// ═══════════════════════════════════════════════════════════════════
 // 8. ELIMINAR RETO
-// ═══════════════════════════════════════════════════════════════════
 export function useDeleteChallenge() {
   async function deleteChallenge(challenge) {
     if (!challenge) return false
@@ -524,9 +508,7 @@ export function useDeleteChallenge() {
   return { deleteChallenge }
 }
 
-// ═══════════════════════════════════════════════════════════════════
 // 9. INVITACIONES A RETOS
-// ═══════════════════════════════════════════════════════════════════
 export function useChallengeInvites({ currentUserId }) {
   const invites = ref([])
   const loading = ref(false)
@@ -584,15 +566,12 @@ export function useChallengeInvites({ currentUserId }) {
   return { invites, loading, loadInvites, inviteUser, respondInvite }
 }
 
-// ═══════════════════════════════════════════════════════════════════
 // 10. INVITACIONES PENDIENTES (para el usuario actual)
-// ═══════════════════════════════════════════════════════════════════
 export function useChallengePendingInvites({ currentUserId }) {
   const pendingInvites = ref([])
   let inviteSub = null
 
   async function loadPendingInvites() {
-    // Step 1: get pending invites for this user
     const { data, error } = await supabase
       .from('challenge_invites')
       .select('id, challenge_id, invited_by, status, created_at')
@@ -609,7 +588,6 @@ export function useChallengePendingInvites({ currentUserId }) {
       return
     }
 
-    // Step 2: enrich with challenge title and inviter username
     const challengeIds = [...new Set(data.map(i => i.challenge_id))]
     const inviterIds   = [...new Set(data.map(i => i.invited_by).filter(Boolean))]
 
@@ -631,7 +609,6 @@ export function useChallengePendingInvites({ currentUserId }) {
     }))
   }
 
-  // Realtime: reload when a new invite arrives for this user
   function subscribeInvites() {
     if (inviteSub) supabase.removeChannel(inviteSub)
     inviteSub = supabase

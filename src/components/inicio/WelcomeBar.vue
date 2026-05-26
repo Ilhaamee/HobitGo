@@ -63,7 +63,6 @@ const initial = computed(() => (props.profile?.username || '?')[0].toUpperCase()
       <div class="arc-glow"></div>
     </div>
 
-    <!-- Conejito kawaii que se asoma -->
     <Transition name="rabbit">
       <div v-if="showRabbit" class="rabbit-popup" :class="{ 'rabbit-leave': rabbitGone }">
         <div class="rabbit-container">
@@ -122,7 +121,6 @@ const initial = computed(() => (props.profile?.username || '?')[0].toUpperCase()
 </template>
 
 <style scoped>
-/* ═══ CONTENEDOR ═══ */
 .welcome-arc {
   position: relative;
   overflow: hidden;
@@ -170,7 +168,6 @@ const initial = computed(() => (props.profile?.username || '?')[0].toUpperCase()
   z-index: 1;
 }
 
-/* ═══ FONDO ═══ */
 .arc-bg { position: absolute; inset: 0; overflow: hidden; border-radius: inherit; pointer-events: none; z-index: 0; }
 .arc-wave { position: absolute; bottom: 0; left: 0; right: 0; height: 60px; opacity: 0.07; }
 .wave-1 {
@@ -195,7 +192,6 @@ const initial = computed(() => (props.profile?.username || '?')[0].toUpperCase()
 }
 @keyframes glowFloat { 0%,100% { transform: translate(0,0) scale(1); } 50% { transform: translate(-10px,10px) scale(1.1); } }
 
-/* ═══ CONEJITO POPUP ═══ */
 .rabbit-popup {
   position: fixed;
   bottom: 0;
@@ -237,7 +233,6 @@ const initial = computed(() => (props.profile?.username || '?')[0].toUpperCase()
   50%      { transform: translateY(-6px) rotate(1deg); }
 }
 
-/* Burbuja typewriter */
 .rabbit-bubble {
   position: absolute;
   top: -16px;
@@ -300,11 +295,9 @@ const initial = computed(() => (props.profile?.username || '?')[0].toUpperCase()
   100% { opacity: 0; transform: translateY(-20px) scale(0.8); }
 }
 
-/* Vue transition */
 .rabbit-enter-active, .rabbit-leave-active { transition: all 0.5s ease; }
 .rabbit-enter-from, .rabbit-leave-to { opacity: 0; }
 
-/* ═══ CONTENIDO PRINCIPAL ═══ */
 .arc-content {
   position: relative; z-index: 2;
   display: flex; align-items: center; justify-content: space-between;
@@ -345,7 +338,6 @@ const initial = computed(() => (props.profile?.username || '?')[0].toUpperCase()
 }
 .arc-quote { font-size: 13px; color: rgba(34,40,78,.4); margin: 4px 0 0; font-weight: 500; line-height: 1.5; max-width: 280px; }
 
-/* ═══ AVATAR ═══ */
 .arc-right { flex-shrink: 0; }
 .avatar-orbit { position: relative; width: 64px; height: 64px; display: flex; align-items: center; justify-content: center; }
 .orbit-ring {
@@ -371,7 +363,6 @@ const initial = computed(() => (props.profile?.username || '?')[0].toUpperCase()
 }
 .avatar-main img { width: 100%; height: 100%; object-fit: cover; }
 
-/* ═══ RESPONSIVE ═══ */
 @media (max-width: 768px) {
   .arc-content { padding: 22px 20px 26px; }
   .arc-greeting { font-size: 20px; }

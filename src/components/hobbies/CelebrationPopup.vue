@@ -13,7 +13,7 @@ onMounted(() => {
 })
 </script>
 
-<<template>
+<template>
   <Transition name="celebrate">
     <div class="celebration-overlay" @click.self="emit('close')">
       <div class="celebration-card">

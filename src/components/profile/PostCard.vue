@@ -1,12 +1,9 @@
 <template>
   <div class="post-card" :class="{ featured, 'text-only': !post.image_url }">
-
-    <!-- Media: SOLO si hay imagen real -->
     <div v-if="post.image_url" class="post-media" :style="mediaStyle" @click="imageExpanded = true">
       <img :src="post.image_url" :alt="post.hobby_name" class="media-img"/>
       <div class="media-overlay"></div>
 
-      <!-- Info encima de la imagen -->
       <div class="media-top">
         <span v-if="post.hobby_name" class="hobby-badge" :style="{ background: post.hobby_color || '#ff6b9d' }">
           {{ post.hobby_name }}
@@ -98,7 +95,7 @@
 
     </div>
 
-    <!-- ── Comentarios inline ── -->
+    <!-- Comentarios inline -->
     <Transition name="comments-slide">
       <div v-if="showComments" class="comments-section" @click.stop>
 
@@ -210,18 +207,18 @@ const props = defineProps({
 
 const emit = defineEmits(['like', 'delete', 'edit', 'comment-count'])
 
-// ── UI state ──────────────────────────────
+// UI state
 const showLikesModal  = ref(false)
 const imageExpanded   = ref(false)
 
-// ── Comentarios ───────────────────────────
+// Comentarios
 const showComments      = ref(false)
 const commentsData      = ref([])
 const commentsLoading   = ref(false)
 const newComment        = ref('')
 const submittingComment = ref(false)
 
-// Usuario y avatar propios — no depende del prop para evitar null en primer render
+// Usuario y avatar propios 
 const myProfile = ref(null)
 const myUserId  = ref(null)
 
@@ -302,7 +299,7 @@ async function deleteComment(commentId) {
 onMounted(() => { loadMyProfile() })
 watch(() => props.currentUser?.id, (id) => { if (id) loadMyProfile() })
 
-// ── Likes / tiempo ────────────────────────
+// Likes / tiempo 
 const mediaStyle = computed(() => ({}))
 
 function handleLike() {
@@ -323,7 +320,7 @@ function timeAgo(ts) {
 </script>
 
 <style scoped>
-/* ── Card base ──────────────────────────── */
+/* Card base */
 .post-card {
   background: #fff;
   border-radius: 18px;
@@ -339,7 +336,7 @@ function timeAgo(ts) {
 .post-card.text-only { border-radius: 16px; }
 .post-card.text-only .post-body { padding: 16px; gap: 12px; }
 
-/* ── Media ──────────────────────────────── */
+/* Media */
 .post-media { position: relative; overflow: hidden; cursor: pointer; }
 .post-card:not(.featured) .post-media { height: 140px; }
 .post-card.featured        .post-media { height: 260px; }
@@ -357,7 +354,7 @@ function timeAgo(ts) {
 .btn-delete:hover { background: rgba(239,68,68,.7); }
 .streak-badge { position: absolute; bottom: 10px; right: 10px; background: rgba(0,0,0,.45); backdrop-filter: blur(6px); color: #fff; font-size: 11px; font-weight: 700; padding: 3px 9px; border-radius: 99px; }
 
-/* ── Header texto ───────────────────────── */
+/* Header texto */
 .post-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 4px; }
 .hobby-badge-inline { font-size: 10px; font-weight: 800; color: #fff; padding: 4px 10px; border-radius: 99px; letter-spacing: .04em; text-transform: uppercase; box-shadow: 0 2px 8px rgba(0,0,0,.15); }
 .header-actions { display: flex; gap: 5px; opacity: 0; transition: opacity .2s; }
@@ -366,7 +363,7 @@ function timeAgo(ts) {
 .btn-edit-inline:hover { background: rgba(255,107,157,.15); color: #ff6b9d; }
 .btn-delete-inline:hover { background: rgba(239,68,68,.15); color: #ef4444; }
 
-/* ── Body ───────────────────────────────── */
+/* Body */
 .post-body { padding: 12px 14px; display: flex; flex-direction: column; gap: 8px; }
 .post-text { font-size: 14px; color: rgba(34,40,78,.85); line-height: 1.55; margin: 0; }
 .post-text.clamped { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
@@ -399,7 +396,7 @@ function timeAgo(ts) {
 .likes-count { font-size: 12px; font-weight: 700; color: rgba(34,40,78,.4); cursor: pointer; padding: 4px; transition: color .2s; }
 .likes-count:hover { color: #ff6b9d; }
 
-/* ── Comentarios inline ── */
+/* Comentarios inline */
 .comments-section {
   border-top: 1px solid rgba(34,40,78,.06);
   padding: 12px 14px;
@@ -438,14 +435,14 @@ function timeAgo(ts) {
 .spinner-xs { width: 13px; height: 13px; border-radius: 50%; border: 2px solid rgba(34,40,78,.1); border-top-color: #ff6b9d; animation: spin .8s linear infinite; display: inline-block; }
 @keyframes spin { to { transform: rotate(360deg); } }
 
-/* ── Lightbox ───────────────────────────── */
+/* Lightbox */
 .lightbox { position: fixed; inset: 0; background: rgba(0,0,0,.92); display: flex; align-items: center; justify-content: center; z-index: 500; cursor: pointer; padding: 20px; }
 .lightbox img { max-width: 100%; max-height: 90vh; object-fit: contain; border-radius: 12px; }
 .lb-close { position: absolute; top: 16px; right: 16px; width: 36px; height: 36px; border-radius: 50%; background: rgba(255,255,255,.12); border: none; display: flex; align-items: center; justify-content: center; cursor: pointer; }
 .fade-enter-active, .fade-leave-active { transition: opacity .22s; }
 .fade-enter-from, .fade-leave-to { opacity: 0; }
 
-/* ── Modal likes ────────────────────────── */
+/* Modal likes */
 .likes-modal { position: fixed; inset: 0; background: rgba(0,0,0,.5); display: flex; align-items: flex-end; justify-content: center; z-index: 400; }
 @media (min-width: 600px) { .likes-modal { align-items: center; padding: 20px; } }
 .likes-content { background: #fff; border-radius: 24px 24px 0 0; width: 100%; max-width: 400px; max-height: 70vh; overflow-y: auto; padding: 20px; }

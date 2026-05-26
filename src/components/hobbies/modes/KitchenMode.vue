@@ -8,7 +8,6 @@ const props = defineProps({
 })
 const emit = defineEmits(['close', 'add-session'])
 
-// ── Estado ───────────────────────────────────────────
 const isBaking     = computed(() => props.hobby.hobby_id === 'baking')
 const activeView   = ref('browse')
 const selectedMeal = ref(null)
@@ -128,7 +127,7 @@ function logCookingSession() {
   resetTimer()
 }
 
-// ── Categorías ───────────────────────────────────────
+//Categorías
 const COOKING_CATS = [
   { key: 'Beef',       label: 'Carne' },
   { key: 'Chicken',    label: 'Pollo' },
@@ -295,10 +294,10 @@ onMounted(() => {
 onUnmounted(() => clearInterval(timerInterval))
 </script>
 
-<<template>
+<template>
 <div class="kitchen-page">
 
-  <!-- ══ HEADER ═══════════════════════════════════════ -->
+  <!-- HEADER -->
   <div class="kp-header">
     <div class="kp-header-left">
       <button class="kp-btn-close" @click="activeView === 'detail' ? goBack() : emit('close')">
@@ -325,7 +324,7 @@ onUnmounted(() => clearInterval(timerInterval))
     </div>
   </div>
 
-  <!-- ══ SEARCH BAR ════════════════════════════════════ -->
+  <!-- SEARCH BAR -->
   <Transition name="sd">
   <div v-if="showSearch" class="kp-search-wrap">
     <div class="kp-search-inner">
@@ -340,7 +339,7 @@ onUnmounted(() => clearInterval(timerInterval))
   </div>
   </Transition>
 
-  <!-- ══ CATEGORÍAS + ALEATORIO ════════════════════════ -->
+  <!-- CATEGORÍAS + ALEATORIO -->
   <div v-if="activeView !== 'saved' && activeView !== 'detail'" class="kp-cats">
     <button
       v-for="cat in categories" :key="cat.key"
@@ -354,7 +353,7 @@ onUnmounted(() => clearInterval(timerInterval))
     </button>
   </div>
 
-  <!-- ══ BROWSE VIEW ════════════════════════════════════ -->
+  <!-- BROWSE VIEW -->
   <div v-if="activeView === 'browse'" class="kp-browse">
     <div v-if="loading" class="kp-loading">
       <div class="kp-spinner" :style="{ borderTopColor: color }"></div>
@@ -386,7 +385,7 @@ onUnmounted(() => clearInterval(timerInterval))
     </div>
   </div>
 
-  <!-- ══ SAVED VIEW ════════════════════════════════════ -->
+  <!-- SAVED VIEW -->
   <div v-if="activeView === 'saved'" class="kp-saved-view">
     <div v-if="savedRecipes.length === 0" class="kp-empty">
       <svg viewBox="0 0 48 48" fill="none" width="48">
@@ -417,13 +416,12 @@ onUnmounted(() => clearInterval(timerInterval))
     </div>
   </div>
 
-  <!-- ══ DETAIL VIEW ════════════════════════════════════ -->
+  <!-- DETAIL VIEW -->
   <div v-if="activeView === 'detail' && selectedMeal" class="kp-detail">
     <div v-if="loading" class="kp-loading">
       <div class="kp-spinner" :style="{ borderTopColor: color }"></div>
     </div>
     <template v-else>
-      <!-- Hero imagen (clickable para lightbox) -->
       <div class="kp-detail-hero" @click="showImageLightbox = true">
         <img :src="selectedMeal.strMealThumb" :alt="selectedMeal.strMeal" />
         <div class="kp-detail-hero-overlay"></div>
@@ -555,7 +553,7 @@ onUnmounted(() => clearInterval(timerInterval))
     </template>
   </div>
 
-  <!-- ══ MODO COCINANDO OVERLAY ════════════════════════ -->
+  <!-- MODO COCINANDO OVERLAY -->
   <Transition name="sd">
     <div v-if="cookingMode" class="kp-cooking-overlay">
       <div class="kp-cooking-header">
@@ -588,7 +586,6 @@ onUnmounted(() => clearInterval(timerInterval))
     </div>
   </Transition>
 
-  <!-- ══ LIGHTBOX IMAGEN (FUERA del cookingMode) ════════ -->
   <Transition name="sd">
     <div v-if="showImageLightbox" class="kp-lightbox" @click="showImageLightbox = false">
       <button class="kp-lightbox-close" @click.stop="showImageLightbox = false">✕</button>
@@ -678,7 +675,7 @@ onUnmounted(() => clearInterval(timerInterval))
 }
 .kp-btn-search:hover { background: rgba(34,40,78,.14); }
 
-/* ── Search ── */
+/* Search */
 .kp-search-wrap {
   padding: 12px 20px;
   background: #ffffff;
@@ -733,7 +730,7 @@ onUnmounted(() => clearInterval(timerInterval))
   color: #374151;
 }
 
-/* ── Categorías + Aleatorio ── */
+/* Categorías + Aleatorio */
 .kp-cats {
   display: flex;
   gap: 10px;
@@ -774,7 +771,6 @@ onUnmounted(() => clearInterval(timerInterval))
   font-weight: 700;
 }
 
-/* Aleatorio con emoji */
 .kp-random-btn {
   background: #fef3c7;
   border-color: #fbbf24;
@@ -785,7 +781,7 @@ onUnmounted(() => clearInterval(timerInterval))
   border-color: #f59e0b;
 }
 
-/* ── Grid recetas ── */
+/* Grid recetas  */
 .kp-browse,
 .kp-saved-view {
   padding: 20px;
@@ -873,7 +869,7 @@ onUnmounted(() => clearInterval(timerInterval))
   letter-spacing: 0.05em;
 }
 
-/* ── Loading / Empty ── */
+/* Loading / Empty */
 .kp-loading {
   display: flex;
   flex-direction: column;
@@ -907,9 +903,6 @@ onUnmounted(() => clearInterval(timerInterval))
   font-weight: 500;
 }
 
-/* ═══════════════════════════════════════════════════
-   DETAIL VIEW — COMPACTO + SIN RATING/SHARE
-   ═══════════════════════════════════════════════════ */
 .kp-detail {
   padding-bottom: 32px;
   overflow: hidden;
@@ -996,7 +989,7 @@ onUnmounted(() => clearInterval(timerInterval))
   animation: spin 0.8s linear infinite;
 }
 
-/* ── Secciones ── */
+/* Secciones */
 .kp-section {
   padding: 20px 20px 0;
 }
@@ -1336,9 +1329,6 @@ onUnmounted(() => clearInterval(timerInterval))
   background: #fef2f2;
 }
 
-/* ═══════════════════════════════════════════════════
-   MODO COCINANDO — BOTONES MÁS PEQUEÑOS EN MOBILE
-   ═══════════════════════════════════════════════════ */
 .kp-cooking-overlay {
   position: fixed;
   inset: 0;
@@ -1467,7 +1457,7 @@ onUnmounted(() => clearInterval(timerInterval))
   border-radius: 3px;
 }
 
-/* ── Transitions ── */
+/* Transitions */
 .sd-enter-active,
 .sd-leave-active {
   transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
@@ -1478,7 +1468,7 @@ onUnmounted(() => clearInterval(timerInterval))
   transform: translateY(-8px);
 }
 
-/* ── Responsive ── */
+/* Responsive */
 @media (max-width: 640px) {
   .kp-grid {
     grid-template-columns: repeat(2, 1fr);
@@ -1515,7 +1505,6 @@ onUnmounted(() => clearInterval(timerInterval))
     padding: 12px 16px;
   }
   
-  /* MODO COCINANDO MOBILE — BOTONES MÁS PEQUEÑOS */
   .kp-cooking-overlay {
     padding: 12px;
   }
@@ -1605,7 +1594,7 @@ onUnmounted(() => clearInterval(timerInterval))
 
 /* Lightbox imagen */
 .kp-detail-hero {
-  cursor: zoom-in; /* Indica que se puede clickar */
+  cursor: zoom-in; 
 }
 
 .kp-lightbox {

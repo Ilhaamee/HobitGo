@@ -15,8 +15,7 @@ const mousePos = ref({ x: 250, y: 190 })
 const time = ref(0)
 const audioContext = ref(null)
 
-// Animación de celebración por planeta
-const celebratingPlanet = ref(null)  // { id, startTime, progress }
+const celebratingPlanet = ref(null)  
 
 let animFrame
 
@@ -25,12 +24,11 @@ function sd(n) {
   return x - Math.floor(x)
 }
 
-// ===== SONIDOS ESPACIALES =====
+// SONIDOS ESPACIALES 
 function initAudio() {
   if (!audioContext.value) {
     audioContext.value = new (window.AudioContext || window.webkitAudioContext)()
   }
-  // iOS/Android require resuming after user gesture
   if (audioContext.value.state === 'suspended') {
     audioContext.value.resume()
   }
@@ -84,7 +82,6 @@ function handleOpen() {
   playOpenSound()
 }
 
-// ===== CELEBRACIÓN: detectar hobbies completados =====
 const prevCompletedIds = ref(new Set())
 
 watch(hobbies, (newHobbies) => {
@@ -106,7 +103,6 @@ watch(hobbies, (newHobbies) => {
 function startPlanetCelebration(planetId, name) {
   celebratingPlanet.value = { id: planetId, name, startTime: Date.now() }
   
-  // Auto-limpiar después de 4 segundos
   setTimeout(() => {
     if (celebratingPlanet.value?.id === planetId) {
       celebratingPlanet.value = null
@@ -114,7 +110,7 @@ function startPlanetCelebration(planetId, name) {
   }, 4000)
 }
 
-// ===== DATOS DE HOBBIES =====
+// DATOS DE HOBBIES 
 const hobbyData = computed(() => {
   return hobbies.value.map((h, idx) => {
     const ms = sessions.value.filter(s => s.hobby_id === h.id)  
@@ -142,7 +138,6 @@ const hobbyData = computed(() => {
       prevDate = d
     }
 
-    // TODAS las sesiones (no solo del mes) para el tamaño del planeta
     const allSessions = ms.length
 
     const seed = h.name.split('').reduce((a,c) => a + c.charCodeAt(0), idx * 999)
@@ -180,7 +175,6 @@ const hobbyData = computed(() => {
     const orbitOffset = sd(seed * 47) * Math.PI * 2
     const orbitInclination = (sd(seed * 23) - 0.5) * 0.4
 
-    // Tamaño basado en TODAS las sesiones (más grande con más práctica)
     const size = Math.min(40, 14 + allSessions * 1.2)
 
     const hasRing = rarity !== 'common' || sd(seed * 13) > 0.6
@@ -190,7 +184,7 @@ const hobbyData = computed(() => {
 
     const surfaceType = Math.floor(sd(seed * 67) * 3)
 
-    // Usar completed_at de la BD (fuente de verdad)
+    // Usar completed_at de la BD 
     const isCompleted = !!h.completed_at
     const uniqueDates = [...new Set(ms.map(s => new Date(s.created_at).toDateString()))]
 
@@ -200,8 +194,8 @@ const hobbyData = computed(() => {
       color: baseColor,
       midColor,
       darkColor,
-      sessions: allSessions,           // ← CORREGIDO: todas las sesiones
-      totalSessions: allSessions,       // ← consistente
+      sessions: allSessions,           
+      totalSessions: allSessions,       
       activeStreak,
       maxStreak,
       rarity,
@@ -233,7 +227,6 @@ const planetsWithPosition = computed(() => {
     const y = 190 + Math.sin(angle) * h.orbitRadius * (1 - Math.abs(h.orbitInclination))
     const z = Math.sin(angle)
     
-    // Si está celebrando, aplicar efecto visual
     const isCelebrating = celebratingPlanet.value?.id === h.id
     const celebrationProgress = isCelebrating 
       ? Math.min(1, (Date.now() - celebratingPlanet.value.startTime) / 3000)
@@ -253,7 +246,6 @@ const maxStreak = computed(() => Math.max(0, ...hobbyData.value.map(h => h.activ
 const epicCount = computed(() => hobbyData.value.filter(h => h.rarity === 'epic' || h.rarity === 'legendary').length)
 const legendaryCount = computed(() => hobbyData.value.filter(h => h.rarity === 'legendary').length)
 
-// Estrellas con parallax
 const stars = computed(() => {
   return Array.from({ length: 150 }, (_, i) => {
     const s = sd(i * 77)
@@ -345,7 +337,6 @@ const dustParticles = computed(() => {
   })
 })
 
-// Partículas de celebración (confeti dorado)
 const celebrationParticles = computed(() => {
   if (!celebratingPlanet.value) return []
   
@@ -465,7 +456,6 @@ onUnmounted(() => {
     </svg>
   </button>
 
-  <!-- FAB Grande -->
   <div v-else class="cosmos-fab-wrap">
     <div class="cosmos-pulse r1"></div>
     <div class="cosmos-pulse r2"></div>
@@ -815,7 +805,7 @@ onUnmounted(() => {
 </template>
 
 <style scoped>
-/* ── Variables ───────────────────────── */
+/* Variables */
 .cosmos-fab-wrap {
   --primary: #6366f1;
   --primary-glow: rgba(99,102,241,.4);
@@ -830,7 +820,7 @@ onUnmounted(() => {
   justify-content: center;
 }
 
-/* ── FAB ─────────────────────────────── */
+/* FAB */
 .cosmos-pulse {
   position: absolute;
   border-radius: 50%;
@@ -908,7 +898,7 @@ onUnmounted(() => {
   to { transform: rotate(360deg); }
 }
 
-/* ── Botón Inline ────────────────────── */
+/* Botón Inline */
 .cosmos-inline-btn {
   position: relative;
   width: 36px;
@@ -950,7 +940,7 @@ onUnmounted(() => {
   50% { opacity: 1; }
 }
 
-/* ── Backdrop & Modal ────────────────── */
+/* Backdrop & Modal */
 .cosmos-backdrop {
   position: fixed;
   inset: 0;
@@ -995,7 +985,7 @@ onUnmounted(() => {
   }
 }
 
-/* ── Header ──────────────────────────── */
+/* Header */
 .cosmos-header {
   display: flex;
   justify-content: space-between;
@@ -1053,7 +1043,7 @@ onUnmounted(() => {
   transform: scale(1.1);
 }
 
-/* ── Stats ───────────────────────────── */
+/* Stats */
 .cosmos-stats {
   display: flex;
   gap: 10px;
@@ -1105,7 +1095,7 @@ onUnmounted(() => {
   color: rgba(0,0,0,.35);
 }
 
-/* ── Misión ─────────────────── */
+/* Misión */
 .cosmos-mission {
   margin: 0 24px 12px;
   padding: 10px 16px;
@@ -1125,7 +1115,7 @@ onUnmounted(() => {
   color: rgba(0,0,0,.75);
 }
 
-/* ── Universe ────────────────────────── */
+/* Universe */
 .cosmos-universe {
   flex: 1;
   min-height: 0;
@@ -1194,7 +1184,7 @@ onUnmounted(() => {
   to { transform: rotate(360deg); }
 }
 
-/* ── Legend ──────────────────────────── */
+/* Legend */
 .cosmos-legend {
   display: flex;
   justify-content: center;
@@ -1223,7 +1213,7 @@ onUnmounted(() => {
   box-shadow: 0 0 8px currentColor;
 }
 
-/* ── Transitions ─────────────────────── */
+/* Transitions */
 .cosmos-fade-enter-active,
 .cosmos-fade-leave-active {
   transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1);
@@ -1235,7 +1225,7 @@ onUnmounted(() => {
   transform: translateY(30px) scale(0.95);
 }
 
-/* ── Responsive ──────────────────────── */
+/* Responsive */
 @media (max-width: 480px) {
   .cosmos-header { padding: 14px 16px 8px; }
   .cosmos-title { font-size: 18px; }

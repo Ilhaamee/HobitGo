@@ -72,7 +72,7 @@ onMounted(async () => {
 })
 </script>
 
-<<template>
+<template>
   <div class="lb-wrap">
 
     <div class="lb-header">
@@ -87,8 +87,6 @@ onMounted(async () => {
     </template>
 
     <template v-else>
-
-      <!-- Podio -->
       <div class="podium">
         <div
           v-for="(u, i) in podiumOrder"
@@ -160,7 +158,6 @@ onMounted(async () => {
 .loading    { text-align: center; color: #888; padding: 60px; }
 .empty-text { text-align: center; color: #aaa; padding: 60px; font-size: 14px; }
 
-/* Podio */
 .podium {
   display: flex; align-items: flex-end; justify-content: center;
   gap: 12px; margin-bottom: 2rem; padding: 0 1rem;

@@ -5,7 +5,7 @@
       <div class="spinner"></div>
     </div>
 
-    <!-- Perfil privado (no owner + no público) -->
+    <!-- Perfil privado -->
     <div v-else-if="!isOwner && !isPublic" class="private-profile">
       <div class="private-icon">🔒</div>
       <h2>Perfil privado</h2>
@@ -123,8 +123,6 @@ const {
   load, uploadAvatar, saveProfile, changePassword, logout,
 } = useProfile()
 
-// ── Sesiones (para racha y stats) ────────────────────────────
-// hobby_sessions sigue siendo la fuente de sesiones puras
 const sessions = ref([])
 
 async function loadSessions(userId = null) {
@@ -138,7 +136,7 @@ async function loadSessions(userId = null) {
   if (data) sessions.value = data
 }
 
-/* ── Racha por hobby ─────────────────────────────────────── */
+/*  Racha por hobby  */
 function getHobbyStreak(hobbyId) {
   if (!hobbyId || !sessions.value.length) return 0
   const today = new Date(); today.setHours(0,0,0,0)
@@ -170,7 +168,6 @@ function getHobbyStreak(hobbyId) {
   return streak
 }
 
-/* ── Posts — ahora desde la tabla `posts` ────────────────── */
 const posts = ref([])
 const submittingPost = ref(false)
 
@@ -211,7 +208,7 @@ async function loadPosts(userId = null) {
   await loadCommentsCount()
 }
 
-/* ── Conteo de comentarios ─────────────────────────────────── */
+/* Conteo de comentarios */
 async function loadCommentsCount() {
   if (!posts.value.length) return
   const postIds = posts.value.map(p => p.id)
@@ -222,7 +219,7 @@ async function loadCommentsCount() {
   posts.value.forEach(post => { post.comments = countMap[post.id] || 0 })
 }
 
-/* ── Likes persistentes ──────────────────────────────────── */
+/* Likes persistentes */
 async function loadLikesForPosts() {
   if (!posts.value.length) return
   const postIds = posts.value.map(p => p.id)
@@ -263,7 +260,6 @@ async function onLikePost(postId) {
 
   const isLiking = !post.liked
 
-  // Optimistic UI
   post.liked = isLiking
   post.likes += isLiking ? 1 : -1
 
@@ -292,7 +288,7 @@ async function onLikePost(postId) {
   await loadLikesForPosts()
 }
 
-/* ── +10 puntos por post ─────────────────────────────────── */
+/* +10 puntos por post */
 async function addActivityPoints(userId, title, points = 10) {
   await supabase.from('activity_log').insert({
     user_id:       userId,
@@ -303,7 +299,7 @@ async function addActivityPoints(userId, title, points = 10) {
   })
 }
 
-/* ── Crear post — INSERT en tabla posts ──────────────────── */
+/* Crear post — INSERT en tabla posts */
 async function onSubmitPost(data) {
   if (!isOwner.value) return
 
@@ -325,7 +321,6 @@ async function onSubmitPost(data) {
     }
   }
 
-  // INSERT en posts (ya no en hobby_sessions)
   const { data: newPost, error: insertErr } = await supabase
     .from('posts')
     .insert({
@@ -345,7 +340,6 @@ async function onSubmitPost(data) {
   }
 
   if (newPost) {
-    // También registrar sesión en hobby_sessions para stats/racha
     await supabase.from('hobby_sessions').insert({
       user_id:  user.id,
       hobby_id: data.hobbyId,
@@ -378,7 +372,7 @@ async function onSubmitPost(data) {
   submittingPost.value = false
 }
 
-/* ── Borrar post ─────────────────────────────────────────── */
+/* Borrar post */
 async function onDeletePost(id) {
   if (!isOwner.value) return
   const { error } = await supabase.from('posts').delete().eq('id', id)
@@ -387,7 +381,7 @@ async function onDeletePost(id) {
   }
 }
 
-/* ── Editar post ─────────────────────────────────────────── */
+/* Editar post */
 const editingPost = ref(null)
 const savingEdit  = ref(false)
 
@@ -440,13 +434,11 @@ async function onEditPost(data) {
   savingEdit.value  = false
 }
 
-/* ── Comentarios: actualizar conteo desde PostCard ─────── */
 function onCommentCount({ postId, delta }) {
   const post = posts.value.find(p => p.id === postId)
   if (post) post.comments = Math.max(0, (post.comments || 0) + delta)
 }
 
-/* ── Tabs ────────────────────────────────────────────────── */
 const activeTab = ref('posts')
 
 const tabs = computed(() => [
@@ -472,7 +464,7 @@ const maxStreak = computed(() => {
   return streak
 })
 
-/* ── Privacidad ──────────────────────────────────────────── */
+/* Privacidad */
 async function togglePrivacy() {
   if (!isOwner.value) return
   const newValue = !isPublic.value
@@ -485,7 +477,7 @@ async function togglePrivacy() {
   }
 }
 
-/* ── Handlers ajustes ────────────────────────────────────── */
+/* Handlers ajustes */
 function onSaveProfile({ username, bio }) {
   editUsername.value = username
   editBio.value      = bio
@@ -498,7 +490,7 @@ function onSavePassword({ password, confirm }) {
   changePassword()
 }
 
-/* ── Init ────────────────────────────────────────────────── */
+/* Init */
 async function init() {
   await load(props.username)
   const userId = profile.value?.id || currentUser.value?.id
@@ -515,14 +507,12 @@ watch(() => props.username, () => {
 </script>
 
 <style scoped>
-/* ── MOBILE (default) ───────────────────── */
 .page {
   width: 100%;
   margin: 0 auto;
   padding: 0 0 60px;
 }
 
-/* ── DESKTOP (solo expandir, nada más) ───── */
 @media (min-width: 768px) {
   .page {
     max-width: 720px;

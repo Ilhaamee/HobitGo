@@ -20,7 +20,6 @@ const { subscribe, unsubscribe, supported: pushSupported } = useNotifications()
 const reminder      = ref(false)
 const reminderTime  = ref('08:00')
 
-// Al activar reminder, pedir permiso de notificaciones
 watch(reminder, async (val) => {
   if (val && pushSupported.value) {
     const result = await subscribe()
@@ -98,7 +97,6 @@ function clampMinutes(e) {
 function toggleReminder() {
   reminder.value = !reminder.value
   if (reminder.value) {
-    // Scroll al campo de hora para que se vea
     setTimeout(() => {
       const el = document.querySelector('.reminder-field')
       if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' })
@@ -144,7 +142,6 @@ function confirm() {
       </div>
 
       <div class="setup-body">
-        <!-- Preview -->
         <div class="preview-card" :style="{ background: previewImage ? 'transparent' : currentGradient }">
           <img v-if="previewImage" :src="previewImage" class="preview-img" :alt="displayName" />
           <div class="preview-overlay"></div>

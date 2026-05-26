@@ -9,7 +9,7 @@ const props = defineProps({
 })
 const emit = defineEmits(['add-event', 'delete-event', 'toggle-session'])
 
-/* ── formato fecha ─────────────────────────────────── */
+//formato fecha 
 const MONTH_NAMES = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic']
 const DAY_NAMES   = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado']
 
@@ -18,7 +18,7 @@ const formattedDate = computed(() => {
   return `${DAY_NAMES[d.getDay()]} ${d.getDate()} de ${MONTH_NAMES[d.getMonth()]}`
 })
 
-/* ── añadir evento ─────────────────────────────────── */
+//añadir evento
 const showForm  = ref(false)
 const newTitle  = ref('')
 const newTime   = ref('')
@@ -41,7 +41,7 @@ async function submitEvent() {
   showForm.value = false; saving.value = false
 }
 
-/* ── color del hobby ───────────────────────────────── */
+//color del hobby
 function hobbyColor(h) {
   return Array.isArray(h.gradient) ? h.gradient[0] : '#ff6b9d'
 }

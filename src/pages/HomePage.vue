@@ -40,7 +40,6 @@ function openAuth(mode = 'signin') {
     @signin="openAuth"
   />
 
-  <!-- Solo visible en web (768px o más) -->
   <div class="solo-web">
     <FeaturesSection />
     <HowItWorksSection />
@@ -64,12 +63,10 @@ function openAuth(mode = 'signin') {
 </template>
 
 <style>
-/* Por defecto (móvil) — ocultar secciones web */
 .solo-web {
   display: none;
 }
 
-/* En pantalla grande (768px o más) — mostrar */
 @media (min-width: 768px) {
   .solo-web {
     display: block;

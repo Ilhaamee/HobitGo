@@ -28,18 +28,14 @@ import ChatInputBar from './ChatInputBar.vue'
 import ChatSearch from './ChatSearch.vue'
 import ConfirmModal from '../ConfirmModal.vue'
 
-// ═══════════════════════════════════════════════════════
 // 1. PROPS Y EMITS
-// ═══════════════════════════════════════════════════════
 const props = defineProps({
   currentUser: { type: Object, required: true },
   profile:     { type: Object, required: true },
 })
 const emit = defineEmits(['unread'])
 
-// ═══════════════════════════════════════════════════════
 // 2. COMPOSABLES
-// ═══════════════════════════════════════════════════════
 const { initials, formatDate } = useFormatters()
 const { COMMUNITY_CATEGORIES, categoryColor, categoryLabel } = useCommunityCategories()
 
@@ -99,10 +95,7 @@ const { members, loadMembers } = useCommunityMembers({ currentUserId: props.curr
 
 const memberIds = computed(() => members.value.map(m => m.id))
 
-
-// ═══════════════════════════════════════════════════════
 // 3. ESTADO LOCAL
-// ═══════════════════════════════════════════════════════
 const activeCommunity = ref(null)
 const showLeftPanel   = ref(true)
 const showInvites     = ref(false)
@@ -177,9 +170,7 @@ async function respondToInvite(inviteId, status) {
   }
 }
 
-// ═══════════════════════════════════════════════════════
 // 4. FUNCIONES
-// ═══════════════════════════════════════════════════════
 async function openCommunity(community) {
   activeCommunity.value = community
   showLeftPanel.value   = false
@@ -279,7 +270,7 @@ function clearImage() {
   imagePreview.value  = null
 }
 
-// ── Invitar miembros ──────────────────────────────────
+// Invitar miembros
 async function doInviteUser(user) {
   const { data: existing } = await supabase
     .from('chat_group_invites')
@@ -314,7 +305,7 @@ function openDeleteMsgModal(msg) {
 // Confirmar eliminación de mensaje (llama al composable)
 async function confirmDeleteMessage() {
   if (!msgToDelete.value) return
-  await deleteMsgAction(msgToDelete.value) // ← usa la función del composable
+  await deleteMsgAction(msgToDelete.value) 
   showDeleteMsgModal.value = false
   msgToDelete.value = null
 }
@@ -339,7 +330,7 @@ async function confirmDeleteCommunity() {
   communityToDelete.value = null
 }
 
-// ── Lifecycle ─────────────────────────────────────────
+// Lifecycle
 onMounted(() => {
   loadCommunities()
   loadPendingInvites()
@@ -361,10 +352,10 @@ function locationLabel(key) {
 }
 </script>
 
-<<template>
+<template>
   <div class="communities">
 
-    <!-- ══ PANEL IZQUIERDO ════════════════════════════ -->
+    <!-- PANEL IZQUIERDO -->
     <div class="left-panel" :class="{ 'hidden-mobile': !showLeftPanel }">
 
       <div class="panel-head">
@@ -523,7 +514,7 @@ function locationLabel(key) {
       </div>
     </div>
 
-    <!-- ══ PANEL DERECHO ══════════════════════════════ -->
+    <!-- PANEL DERECHO -->
     <div class="right-panel" :class="{ 'hidden-mobile': showLeftPanel, 'has-community': activeCommunity }">
 
       <div v-if="!activeCommunity" class="panel-empty">
@@ -649,7 +640,7 @@ function locationLabel(key) {
           </div>
         </Transition>
 
-        <!-- Messages (componente extraído) -->
+        <!-- Messages -->
         <ChatMessageList
           ref="messagesRef"
           :messages="groupedMessages"
@@ -666,7 +657,7 @@ function locationLabel(key) {
           @image-click="previewImageUrl = $event"
         />
 
-        <!-- Reply bar (componente extraído) -->
+        <!-- Reply bar -->
         <ChatReplyBar
           :replying-to="replyingTo"
           :author-name="activeCommunity?.name"
@@ -674,7 +665,7 @@ function locationLabel(key) {
           @cancel="cancelReply"
         />
 
-        <!-- Edit bar (componente extraído) -->
+        <!-- Edit bar -->
         <ChatEditBar
           v-if="editingMsg"
           v-model="editText"
@@ -682,14 +673,14 @@ function locationLabel(key) {
           @cancel="cancelEdit"
         />
 
-        <!-- Image preview (componente extraído) -->
+        <!-- Image preview -->
         <ChatImagePreview
           v-if="imagePreview"
           :src="imagePreview"
           @clear="clearImage"
         />
 
-        <!-- Input (componente extraído) -->
+        <!-- Input -->
         <ChatInputBar
           v-if="isMember(activeCommunity.id)"
           v-model="newMessage"
@@ -746,7 +737,7 @@ function locationLabel(key) {
 </template>
 
 <style scoped>
-/* ══ LAYOUT PRINCIPAL ═════════════════════════════════ */
+/* LAYOUT PRINCIPAL */
 .communities {
   display: grid;
   grid-template-columns: 280px 1fr;
@@ -760,7 +751,7 @@ function locationLabel(key) {
   border: 1px solid rgba(34,40,78,.06);
 }
 
-/* ══ PANEL IZQUIERDO ══════════════════════════════════ */
+/* PANEL IZQUIERDO */
 .left-panel {
   display: flex;
   flex-direction: column;
@@ -804,7 +795,7 @@ function locationLabel(key) {
   background: #22284E; color: #fff; border-color: #22284E;
 }
 
-/* ══ FILTROS DE EXPLORAR ════════════════════════════ */
+/* FILTROS DE EXPLORAR */
 .explore-filters {
   padding: 0 12px 10px;
   flex-shrink: 0;
@@ -935,7 +926,7 @@ function locationLabel(key) {
 .ci-badge.member { color: #fff; }
 .ci-badge svg { display: block; }
 
-/* ══ PANEL DERECHO ══════════════════════════════════ */
+/* PANEL DERECHO */
 .right-panel {
   display: flex; flex-direction: column;
   overflow: hidden; background: #fff;
@@ -1188,7 +1179,7 @@ function locationLabel(key) {
   color: rgba(34,40,78,.5);
 }
 
-/* ══ RESPONSIVE MÓVIL ═══════════════════════════════ */
+/* RESPONSIVE MÓVIL */
 @media (max-width: 768px) {
   .communities {
     grid-template-columns: 1fr;

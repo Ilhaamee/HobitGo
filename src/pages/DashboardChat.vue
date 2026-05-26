@@ -45,8 +45,6 @@ async function loadProfile() {
   } else {
     needsUsername.value = true
   }
-
-  // Si viene challengeId en la URL, ir directo al tab de retos
   if (route.query.challengeId) {
     initialChallengeId.value = route.query.challengeId
     activeTab.value = 'challenges'
@@ -77,7 +75,6 @@ async function saveUsername() {
 
 function setTab(key) {
   activeTab.value = key
-  // Al cambiar de tab manualmente, limpiar el initialChallengeId
   if (key !== 'challenges') initialChallengeId.value = null
 }
 
@@ -121,7 +118,6 @@ onMounted(loadProfile)
     <!-- Chat principal -->
     <template v-else-if="profile">
 
-      <!-- Header con tabs -->
       <div class="chat-header">
         <div class="chat-title">
           <h1>Chat</h1>
@@ -194,7 +190,6 @@ onMounted(loadProfile)
 </template>
 
 <style scoped>
-/* ══ LAYOUT PRINCIPAL ═════════════════════════════════ */
 .chat-page {
   max-width: 1200px;
   margin: 0 auto;
@@ -207,7 +202,6 @@ onMounted(loadProfile)
   box-sizing: border-box;
 }
 
-/* ── Username setup ── */
 .username-setup {
   flex: 1;
   display: flex;
@@ -251,7 +245,6 @@ onMounted(loadProfile)
 .setup-btn:disabled { opacity: .6; cursor: not-allowed; }
 .setup-btn:hover:not(:disabled) { opacity: .9; }
 
-/* ── Header ── */
 .chat-header {
   display: flex;
   align-items: flex-start;
@@ -264,7 +257,6 @@ onMounted(loadProfile)
 .chat-title h1 { font-size: 26px; font-weight: 900; color: #22284E; letter-spacing: -1px; margin: 0 0 3px; }
 .chat-title p  { font-size: 13px; color: rgba(34,40,78,.45); margin: 0; }
 
-/* Tabs */
 .chat-tabs {
   display: flex;
   gap: 6px;
@@ -310,7 +302,6 @@ onMounted(loadProfile)
   padding: 0 4px;
 }
 
-/* ══ CONTENIDO ═══════════════════════════════════════ */
 .chat-content-wrapper {
   flex: 1;
   min-height: 0;
@@ -320,7 +311,6 @@ onMounted(loadProfile)
   overflow: hidden;
 }
 
-/* Responsive */
 @media (max-width: 768px) {
   .chat-page {
     padding: 0;

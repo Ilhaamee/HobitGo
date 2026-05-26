@@ -19,14 +19,14 @@ onMounted(async () => {
   }
 
   if (session) {
-    await redirect(session)  // ← añade await
+    await redirect(session)  
     return
   }
 
   const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
     if (event === 'SIGNED_IN' && session) {
       subscription.unsubscribe()
-      await redirect(session)  // ← añade await
+      await redirect(session) 
     }
   })
 

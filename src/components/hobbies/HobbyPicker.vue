@@ -70,7 +70,6 @@ function openCustom() {
         >{{ cat.name }}</button>
       </div>
 
-      <!-- Grid area — tamaño fijo siempre -->
       <div class="grid-wrap">
         <div class="hobbies-grid">
           <button
@@ -110,7 +109,6 @@ function openCustom() {
   z-index: 1000;
 }
 
-/* Móvil: ocupa 90vh desde abajo */
 .picker {
   background: #fff; border-radius: 24px 24px 0 0;
   width: 100%; max-width: 620px;
@@ -159,7 +157,6 @@ function openCustom() {
 .cat-btn:hover { border-color: #ff6b9d; color: #ff6b9d; }
 .cat-btn.active { background: #22284E; color: #fff59e; border-color: transparent; }
 
-/* CLAVE: grid-wrap siempre ocupa el espacio restante con scroll */
 .grid-wrap {
   flex: 1;
   min-height: 0;
@@ -213,7 +210,6 @@ function openCustom() {
 }
 .custom-btn:hover { background: rgba(255,107,157,.15); }
 
-/* Web: centrado, tamaño fijo */
 @media (min-width: 600px) {
   .overlay { align-items: center; padding: 20px; }
   .picker {

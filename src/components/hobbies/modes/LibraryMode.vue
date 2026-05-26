@@ -8,7 +8,6 @@ const props = defineProps({
 })
 const emit = defineEmits(['close', 'add-session'])
 
-// ── Estado ──────────────────────────────────────────────────────────────
 const books         = ref([])
 const searchQuery   = ref('')
 const searchResults = ref([])
@@ -21,13 +20,9 @@ const timerActive   = ref(false)
 const timerSeconds  = ref(0)
 let timerInterval   = null
 
-// NUEVO: Modo lectora
 const readerMode    = ref(false)
-
-// NUEVO: Feedback al guardar
 const justSaved     = ref(false)
-
-// NUEVO: Editar páginas total
+//Editar páginas total
 const editingPages  = ref(false)
 
 const SPINES = ['#1d4ed8','#7c3aed','#dc2626','#15803d','#b45309','#0891b2','#be185d','#374151','#0f766e','#92400e','#d97706','#4c1d95']
@@ -39,7 +34,6 @@ const shelves = [
   { key: 'read',     label: 'Terminados' },
 ]
 
-// ── Computed ────────────────────────────────────────────────────────────
 const readingBooks  = computed(() => books.value.filter(b => b.status === 'reading'))
 const wishlistBooks = computed(() => books.value.filter(b => b.status === 'wishlist'))
 const readBooks     = computed(() => books.value.filter(b => b.status === 'read'))
@@ -61,7 +55,7 @@ const readingProgress = computed(() => {
   return Math.round(selectedBook.value.current_page / selectedBook.value.total_pages * 100)
 })
 
-// ── Timer ───────────────────────────────────────────────────────────────
+// Timer
 function startTimer() {
   if (timerActive.value) return
   timerActive.value = true
@@ -76,7 +70,6 @@ function logSession() {
   resetTimer()
 }
 
-// NUEVO: Modo lectora
 function toggleReaderMode() {
   readerMode.value = !readerMode.value
   if (readerMode.value) {
@@ -85,7 +78,7 @@ function toggleReaderMode() {
   }
 }
 
-// ── API Supabase ────────────────────────────────────────────────────────
+// API Supabase
 async function loadBooks() {
   loading.value = true
   const { data: { user } } = await supabase.auth.getUser()
@@ -127,7 +120,7 @@ async function removeBook(id) {
   selectedBook.value = null
 }
 
-// ── Search ──────────────────────────────────────────────────────────────
+// Search
 let searchTimer = null
 function onSearchInput() {
   clearTimeout(searchTimer)
@@ -158,7 +151,7 @@ function addBook(apiBook, status = 'wishlist') {
   showSearch.value = false; searchQuery.value = ''; searchResults.value = []
 }
 
-// ── Book detail (inline) ────────────────────────────────────────────────
+// ── Book detail
 function openBook(book) {
   selectedBook.value = { ...book }
   editingPages.value = false
@@ -182,7 +175,6 @@ async function updateBook() {
   const idx = books.value.findIndex(b => b.id === selectedBook.value.id)
   if (idx !== -1) books.value[idx] = { ...selectedBook.value }
 
-  // NUEVO: Feedback visual
   justSaved.value = true
   setTimeout(() => justSaved.value = false, 2000)
 }
@@ -207,10 +199,9 @@ loadBooks()
 <template>
 <div class="library-page">
 
-  <!-- ══ HEADER (IGUAL QUE KITCHENMODE) ════════════════════════ -->
+  <!-- HEADER-->
   <div class="lp-header">
     <div class="lp-header-left">
-      <!-- Botón volver: si hay libro seleccionado vuelve a la biblioteca, si no cierra el modo -->
       <button class="lp-btn-close" @click="selectedBook ? closeBook() : emit('close')">
         <svg viewBox="0 0 16 16" fill="none" width="16">
           <path d="M10 3L5 8l5 5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
@@ -235,7 +226,7 @@ loadBooks()
     </div>
   </div>
 
-  <!-- ══ SEARCH BAR (IGUAL QUE KITCHENMODE) ════════════════════ -->
+  <!-- SEARCH BAR -->
   <Transition name="sd">
     <div v-if="showSearch" class="lp-search-wrap">
       <div class="lp-search-inner">
@@ -273,7 +264,6 @@ loadBooks()
     </div>
   </Transition>
 
-  <!-- ══ CONTENIDO: SHELVES / ALL (solo cuando NO hay libro seleccionado) ══ -->
   <div v-if="!selectedBook" class="lp-content">
 
     <!-- SHELVES VIEW -->
@@ -339,7 +329,6 @@ loadBooks()
     </div>
   </div>
 
-  <!-- ══ DETAIL VIEW (reemplaza todo cuando hay libro seleccionado) ══ -->
   <div v-if="selectedBook" class="lp-detail">
     <!-- Info del libro: imagen + datos -->
     <div class="lp-section lp-book-card">
@@ -457,7 +446,7 @@ loadBooks()
     </div>
   </div>
 
-  <!-- ══ MODO LECTORA OVERLAY ═════════════ -->
+  <!-- MODO LECTORA OVERLAY -->
   <Transition name="sd">
     <div v-if="readerMode" class="lp-reader-overlay" @click="toggleReaderMode">
       <button class="lp-reader-close" @click.stop="toggleReaderMode">✕</button>
@@ -500,10 +489,6 @@ loadBooks()
 </template>
 
 <style scoped>
-/* ════════════════════════════════════════════════════════════════════════
-   LIBRARYMODE - MISMO DISEÑO QUE KITCHENMODE
-   ════════════════════════════════════════════════════════════════════════ */
-
 .library-page {
   background: #ffffff;
   min-height: 100vh;
@@ -516,7 +501,7 @@ loadBooks()
   -webkit-font-smoothing: antialiased;
 }
 
-/* ── Header (IGUAL QUE KITCHENMODE) ── */
+/* Header */
 .lp-header {
   display: flex;
   align-items: center;
@@ -585,7 +570,7 @@ loadBooks()
 }
 .lp-btn-search:hover { background: rgba(34,40,78,.14); }
 
-/* ── Search (IGUAL QUE KITCHENMODE) ── */
+/* Search*/
 .lp-search-wrap {
   padding: 12px 20px;
   background: #ffffff;
@@ -700,7 +685,7 @@ loadBooks()
   font-size: 14px;
 }
 
-/* ── Loading / Empty ── */
+/* Loading / Empty */
 .lp-loading {
   display: flex;
   flex-direction: column;
@@ -734,7 +719,7 @@ loadBooks()
   font-weight: 500;
 }
 
-/* ── Shelves view ── */
+/* Shelves view */
 .shelves-view { padding: 20px; display: flex; flex-direction: column; gap: 32px; }
 
 .shelf-block { }
@@ -810,7 +795,7 @@ loadBooks()
   box-shadow: 0 4px 10px rgba(0,0,0,.18), inset 0 1px 0 rgba(255,255,255,.2);
 }
 
-/* ── All books grid ── */
+/* All books grid */
 .all-books-view { padding: 20px; }
 .all-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
 .all-book-item { background: none; border: none; padding: 0; cursor: pointer; text-align: left; transition: transform .18s; width: 100%; min-width: 0; overflow: hidden; }
@@ -825,15 +810,12 @@ loadBooks()
 .all-status-dot.wishlist { background: #f59e0b; }
 .all-status-dot.read     { background: #10b981; }
 
-/* ═══════════════════════════════════════════════════
-   DETAIL VIEW — MISMO ESTILO QUE KITCHENMODE
-   ═══════════════════════════════════════════════════ */
 .lp-detail {
   padding-bottom: 32px;
   overflow: hidden;
 }
 
-/* ── Secciones ── */
+/* Secciones */
 .lp-section {
   padding: 20px 20px 0;
 }
@@ -848,7 +830,7 @@ loadBooks()
   gap: 6px;
 }
 
-/* Book card (reemplaza el hero) */
+/* Book card */
 .lp-book-card {
   padding-top: 20px;
 }
@@ -944,7 +926,7 @@ loadBooks()
 }
 .lp-edit-ok:hover { opacity: .85; }
 
-/* Timer (IGUAL QUE KITCHENMODE) */
+/* Timer*/
 .lp-timer-box {
   display: flex;
   align-items: center;
@@ -1068,9 +1050,6 @@ loadBooks()
 .lp-act.del  { background: #f3f4f6; color: #6b7280; }
 .lp-act:hover { opacity: .85; transform: translateY(-1px); }
 
-/* ═══════════════════════════════════════════════════
-   MODO LECTORA OVERLAY
-   ═══════════════════════════════════════════════════ */
 .lp-reader-overlay {
   position: fixed; inset: 0; background: #1a1a2e;
   z-index: 1000;
@@ -1146,7 +1125,7 @@ loadBooks()
 .lp-reader-prog-fill { height: 100%; border-radius: 99px; transition: width .3s; }
 .lp-reader-progress p { font-size: 13px; color: rgba(255,255,255,.5); margin: 0; }
 
-/* ── Transitions ── */
+/* Transitions */
 .sd-enter-active,
 .sd-leave-active {
   transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
@@ -1157,7 +1136,7 @@ loadBooks()
   transform: translateY(-8px);
 }
 
-/* ── Responsive ── */
+/* Responsive */
 @media (max-width: 640px) {
   .all-books-view { padding: 12px; }
   .all-grid { grid-template-columns: repeat(4, 1fr); gap: 6px; }

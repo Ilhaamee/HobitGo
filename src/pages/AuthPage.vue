@@ -32,7 +32,6 @@ async function handleForgot() {
   if (error) { forgotError.value = error.message; return }
   forgotSent.value = true
 
-  // Desaparece a los 4 segundos
   setTimeout(() => {
     forgotSent.value  = false
     showForgot.value  = false
@@ -40,7 +39,6 @@ async function handleForgot() {
   }, 4000)
 }
 
-// Si el padre cambia initialMode (ej: desde login a signin) lo aplicamos
 import { watch } from 'vue'
 watch(() => props.initialMode, val => { 
   mode.value = val 
@@ -74,8 +72,6 @@ async function handleSubmit() {
           ? 'Ya existe una cuenta con este email. Prueba a iniciar sesión.'
           : 'No se pudo crear la cuenta: ' + signUpError.message
       } else if (data?.user) {
-        // Siempre redirigir al onboarding si se creó el usuario
-        // (con o sin confirmación de email, el usuario existe)
         emit('close')
         router.push('/onboarding')
       }
@@ -86,7 +82,6 @@ async function handleSubmit() {
       })
       if (signInError) throw signInError
 
-      // Consultar Supabase como fuente de verdad
       const { data: { user } } = await supabase.auth.getUser()
       const { data } = await supabase
         .from('profiles')
@@ -135,7 +130,6 @@ async function handleGoogleLogin() {
     >
       <div class="modal">
 
-        <!-- Línea decorativa arriba -->
         <div class="modal-top-line"></div>
 
         <!-- Cerrar -->
@@ -266,7 +260,6 @@ async function handleGoogleLogin() {
 </template>
 
 <style scoped>
-/* ─── Transición ─────────────────────────────────────── */
 .modal-fade-enter-active,
 .modal-fade-leave-active { transition: opacity .25s ease; }
 .modal-fade-enter-active .modal,
@@ -275,7 +268,6 @@ async function handleGoogleLogin() {
 .modal-fade-enter-from .modal,
 .modal-fade-leave-to .modal { opacity: 0; transform: scale(.96) translateY(14px); }
 
-/* ─── Overlay ────────────────────────────────────────── */
 .overlay {
   position: fixed; inset: 0;
   background: rgba(34,40,78,.45);
@@ -284,7 +276,6 @@ async function handleGoogleLogin() {
   z-index: 1000; padding: 20px;
 }
 
-/* ─── Modal ──────────────────────────────────────────── */
 .modal {
   background: #fff;
   width: 100%; max-width: 400px;
@@ -295,7 +286,6 @@ async function handleGoogleLogin() {
   max-height: 92vh; overflow-y: auto;
 }
 
-/* Línea rosa decorativa arriba */
 .modal-top-line {
   position: absolute;
   top: 0; left: 12%; right: 12%; height: 3px;
@@ -303,7 +293,6 @@ async function handleGoogleLogin() {
   border-radius: 0 0 4px 4px;
 }
 
-/* ─── Cerrar ─────────────────────────────────────────── */
 .close-btn {
   position: absolute; top: 14px; right: 14px;
   width: 30px; height: 30px; border-radius: 50%;
@@ -314,10 +303,8 @@ async function handleGoogleLogin() {
 }
 .close-btn:hover { background: rgba(255,107,157,.12); color: #ff6b9d; }
 
-/* ─── Logo ───────────────────────────────────────────── */
 .modal-logo { margin-bottom: 20px; display: flex; justify-content: center; }
 
-/* ─── Toggle ─────────────────────────────────────────── */
 .toggle {
   display: flex; justify-content: center;
   background: rgba(34,40,78,.06);
@@ -337,7 +324,6 @@ async function handleGoogleLogin() {
   box-shadow: 0 3px 10px rgba(34,40,78,.22);
 }
 
-/* ─── Título ─────────────────────────────────────────── */
 .subtitle {
   font-size: 19px; font-weight: 700;
   color: #22284E; margin-bottom: 4px;
@@ -347,7 +333,6 @@ async function handleGoogleLogin() {
   margin-bottom: 22px;
 }
 
-/* ─── Campos ─────────────────────────────────────────── */
 .field {
   text-align: left; margin-bottom: 14px;
 }
@@ -382,7 +367,6 @@ async function handleGoogleLogin() {
 }
 .eye-btn:hover { color: #ff6b9d; }
 
-/* ─── Mensajes ───────────────────────────────────────── */
 .msg {
   padding: 10px 14px; border-radius: 10px;
   font-size: 13px; margin-bottom: 12px; text-align: left;
@@ -390,7 +374,6 @@ async function handleGoogleLogin() {
 .msg.error   { background: rgba(255,107,157,.1); color: #c0294a; border: 1px solid rgba(255,107,157,.2); }
 .msg.success { background: rgba(34,197,94,.1);   color: #166534; border: 1px solid rgba(34,197,94,.2); }
 
-/* ─── Botón principal ────────────────────────────────── */
 .btn-primary {
   width: 100%;
   background: linear-gradient(135deg, #ff6b9d, #ffb3c6);
@@ -405,7 +388,6 @@ async function handleGoogleLogin() {
 .btn-primary:active { transform: translateY(0); }
 .btn-primary:disabled { opacity: .6; cursor: not-allowed; transform: none; }
 
-/* ─── Separador ──────────────────────────────────────── */
 .divider {
   display: flex; align-items: center; gap: 10px;
   font-size: 12px; color: rgba(34,40,78,.35);
@@ -416,7 +398,6 @@ async function handleGoogleLogin() {
   background: rgba(34,40,78,.1);
 }
 
-/* ─── Google ─────────────────────────────────────────── */
 .btn-google {
   width: 100%; display: flex;
   align-items: center; justify-content: center; gap: 10px;
@@ -431,7 +412,6 @@ async function handleGoogleLogin() {
 .btn-google:hover { box-shadow: 0 4px 14px rgba(0,0,0,.1); border-color: rgba(34,40,78,.24); }
 .btn-google:disabled { opacity: .6; cursor: not-allowed; }
 
-/* ─── Términos ───────────────────────────────────────── */
 .terms {
   font-size: 11px; color: rgba(34,40,78,.38);
   line-height: 1.6; margin: 0;

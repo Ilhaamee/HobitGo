@@ -119,7 +119,6 @@ const totalScore = computed(() => {
 
       <svg :viewBox="`0 0 ${CX * 2} ${CY * 2}`" class="sg-svg">
 
-        <!-- Track background per segment -->
         <path
           v-for="seg in segments" :key="seg.key + '-track'"
           :d="arcPath(CX, CY, R, seg.startAngle, seg.endAngle)"
@@ -130,7 +129,6 @@ const totalScore = computed(() => {
           opacity="0.25"
         />
 
-        <!-- Filled arc (progress) -->
         <path
           v-for="seg in segments" :key="seg.key + '-fill'"
           :d="fillPath(seg)"
@@ -142,7 +140,6 @@ const totalScore = computed(() => {
           :opacity="hovered && hovered !== seg.key ? 0.35 : 1"
         />
 
-        <!-- Invisible hit zone -->
         <path
           v-for="seg in segments" :key="seg.key + '-hit'"
           :d="arcPath(CX, CY, R, seg.startAngle, seg.endAngle)"
@@ -156,7 +153,6 @@ const totalScore = computed(() => {
           @touchstart.prevent="hovered = hovered === seg.key ? null : seg.key"
         />
 
-        <!-- Icon bubbles outside ring -->
         <g
           v-for="seg in segments"
           :key="seg.key + '-icon'"
@@ -180,7 +176,6 @@ const totalScore = computed(() => {
 
       </svg>
 
-      <!-- Center display -->
       <div class="sg-center">
         <template v-if="activeSegment">
           <span class="sg-center-num" :style="{ color: activeSegment.iconColor }">

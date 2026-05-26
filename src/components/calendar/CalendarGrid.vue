@@ -27,7 +27,6 @@ const days = computed(() => {
   const last  = new Date(props.year, props.month + 1, 0)
   const out   = []
 
-  // días del mes anterior para rellenar
   let dow = first.getDay() - 1; if (dow < 0) dow = 6
   for (let i = dow - 1; i >= 0; i--) {
     const d = new Date(props.year, props.month, -i)
@@ -40,7 +39,6 @@ const days = computed(() => {
     const sessions = props.sessionsByDate[ds] || []
     const hasEvent = !!(props.eventsByDate[ds]?.length)
 
-    // estado del día según sesiones
     let status = null
     if (sessions.length > 0) {
       const minsByHobby = {}
@@ -86,7 +84,6 @@ const days = computed(() => {
     out.push({ date: ds, num: i, other: false, status, hasEvent, hobbyColors, isToday: ds === todayStr })
   }
 
-  // rellenar hasta completar la última semana
   const rem = 7 - (out.length % 7)
   if (rem < 7) {
     for (let i = 1; i <= rem; i++) {

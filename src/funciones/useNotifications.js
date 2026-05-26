@@ -1,9 +1,6 @@
-// src/funciones/useNotifications.js
 import { ref } from 'vue'
 import { supabase } from '../lib/supabase.js'
 
-// VAPID public key — genera las tuyas en: https://vapidkeys.com/
-// Pega aquí la PUBLIC key (la privada va en la Edge Function)
 const VAPID_PUBLIC_KEY = 'BD9XuLGWJuaB7jiuQCIu7eb_mCDl4_l-oP_8scFM5zs5p7DlR8vKs19eCyenkgzsLHIbcf0fM7lckGsLk6SAzL4'
 
 function urlBase64ToUint8Array(base64String) {
@@ -18,7 +15,6 @@ export function useNotifications() {
   const supported   = ref('serviceWorker' in navigator && 'PushManager' in window)
   const subscribing = ref(false)
 
-  // ── Registrar SW y suscribir al push ────
   async function subscribe() {
     if (!supported.value) return { ok: false, reason: 'not_supported' }
     subscribing.value = true
@@ -68,7 +64,7 @@ export function useNotifications() {
     }
   }
 
-  // ── Cancelar suscripción ─────────────────
+  // Cancelar suscripción
   async function unsubscribe() {
     try {
       const reg = await navigator.serviceWorker.getRegistration('/sw.js')
@@ -92,7 +88,6 @@ export function useNotifications() {
     }
   }
 
-  // ── Comprobar si ya está suscrito ────────
   async function isSubscribed() {
     if (!supported.value) return false
     try {
@@ -103,7 +98,6 @@ export function useNotifications() {
     } catch { return false }
   }
 
-  // ── Check in-app: ¿hay hobby pendiente hoy? ──
   async function checkTodayReminders() {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return []
@@ -111,7 +105,6 @@ export function useNotifications() {
     const now     = new Date()
     const nowMins = now.getHours() * 60 + now.getMinutes()
 
-    // Cargar hobbies con reminder activo
     const { data: hobbies } = await supabase
       .from('hobbies')
       .select('id, name, reminder, reminder_time, daily_minutes, gradient')
@@ -120,7 +113,6 @@ export function useNotifications() {
 
     if (!hobbies?.length) return []
 
-    // Ver cuáles ya tienen sesión hoy
     const today = now.toISOString().split('T')[0]
     const { data: sessions } = await supabase
       .from('hobby_sessions')
@@ -133,7 +125,6 @@ export function useNotifications() {
       doneMap[s.hobby_id] = (doneMap[s.hobby_id] || 0) + s.minutes
     })
 
-    // Filtrar los que toca ahora (±30 min del reminder_time) y no están completados
     const pending = hobbies.filter(h => {
       if (!h.reminder_time) return false
       const [hh, mm] = h.reminder_time.split(':').map(Number)

@@ -204,7 +204,7 @@ defineExpose({ close })
 </script>
 
 <style scoped>
-/* ── Trigger ────────────────────────────── */
+/* Trigger */
 .create-trigger {
   display: flex; align-items: center; justify-content: space-between;
   background: #fff;
@@ -229,7 +229,7 @@ defineExpose({ close })
 .ct-placeholder { font-size: 14px; color: rgba(34,40,78,.35); }
 .ct-icon { color: rgba(34,40,78,.3); }
 
-/* ── Overlay ─────────────────────────────── */
+/* Overlay */
 .overlay {
   position: fixed; inset: 0;
   background: rgba(34,40,78,.5); backdrop-filter: blur(10px);
@@ -241,7 +241,7 @@ defineExpose({ close })
   .modal   { border-radius: 24px; max-height: 88vh; }
 }
 
-/* ── Modal ──────────────────────────────── */
+/* Modal */
 .modal {
   background: #fff;
   border-radius: 24px 24px 0 0;
@@ -265,7 +265,7 @@ defineExpose({ close })
 }
 .btn-close:hover { background: rgba(255,107,157,.12); color: #ff6b9d; }
 
-/* ── Imagen ──────────────────────────────── */
+/* Imagen */
 .img-zone {
   height: 140px; border-radius: 16px;
   border: 2px dashed rgba(34,40,78,.12);
@@ -287,7 +287,7 @@ defineExpose({ close })
   cursor: pointer; color: #fff;
 }
 
-/* ── Fields ──────────────────────────────── */
+/* Fields */
 .field { display: flex; flex-direction: column; gap: 7px; }
 .field label {
   font-size: 11px; font-weight: 700;
@@ -359,14 +359,14 @@ defineExpose({ close })
 .btn-post:hover:not(:disabled) { transform: translateY(-1px); box-shadow: 0 10px 26px rgba(255,107,157,.4); }
 .btn-post:disabled { opacity: .5; cursor: not-allowed; transform: none; }
 
-/* ── Dots loader ─────────────────────────── */
+/* Dots loader */
 .dots { display: flex; gap: 3px; align-items: center; }
 .dots i { display: block; width: 5px; height: 5px; border-radius: 50%; background: currentColor; animation: dot .8s ease-in-out infinite; }
 .dots i:nth-child(2) { animation-delay: .15s; }
 .dots i:nth-child(3) { animation-delay: .30s; }
 @keyframes dot { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-4px)} }
 
-/* ── Transición modal ────────────────────── */
+/* Transición modal */
 .modal-enter-active, .modal-leave-active { transition: opacity .25s; }
 .modal-enter-from,  .modal-leave-to      { opacity: 0; }
 </style>

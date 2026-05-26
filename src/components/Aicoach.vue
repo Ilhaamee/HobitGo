@@ -2,12 +2,9 @@
 import { ref, computed, nextTick, onMounted } from 'vue'
 import { supabase } from '../lib/supabase'
 
-// ── Config ────────────────────────────────────────────
-// Pon tu API key aquí o en .env como VITE_GEMINI_API_KEY
 const GEMINI_API_KEY = import.meta.env.VITE_GEMINI_API_KEY || ''
 const GEMINI_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`
 
-// ── State ─────────────────────────────────────────────
 const open      = ref(false)
 const messages  = ref([])
 const input     = ref('')
@@ -26,7 +23,7 @@ const QUICK_SUGGESTIONS = [
   'Eventos de running en Madrid',
 ]
 
-// ── Cargar datos del usuario desde Supabase ───────────
+// Cargar datos del usuario desde Supabase 
 async function loadUserData() {
   if (dataLoaded.value) return
 
@@ -94,7 +91,7 @@ async function loadUserData() {
   dataLoaded.value = true
 }
 
-// ── Construir el contexto del sistema ─────────────────
+// Construir el contexto del sistema 
 function buildSystemPrompt() {
   if (!userData.value) {
     return `Eres AI Coach de HobitGo, asistente personal de hábitos, hobbies y bienestar.
@@ -134,7 +131,7 @@ INSTRUCCIONES:
 - Nunca rechaces una pregunta por no estar relacionada con hobbies; si puedes ayudar, ayuda`
 }
 
-// ── Llamar a Gemini ───────────────────────────────────
+// Llamar a Gemini
 async function callGemini(userMessage) {
   if (!GEMINI_API_KEY) {
     return '⚠️ Falta la API key de Gemini. Añade VITE_GEMINI_API_KEY en tu .env'
@@ -180,7 +177,7 @@ async function callGemini(userMessage) {
   return data.candidates?.[0]?.content?.parts?.[0]?.text || 'No pude generar una respuesta.'
 }
 
-// ── Enviar mensaje ────────────────────────────────────
+// Enviar mensaje
 async function sendMessage(text = null) {
   const msg = (text || input.value).trim()
   if (!msg || loading.value) return
@@ -206,7 +203,7 @@ async function sendMessage(text = null) {
   }
 }
 
-// ── Abrir / cerrar ────────────────────────────────────
+// Abrir / cerrar
 async function toggleOpen() {
   open.value = !open.value
   if (open.value) {
@@ -247,7 +244,7 @@ function sendWelcomeMessage() {
   messages.value.push({ role: 'ai', text: welcome, id: Date.now() })
 }
 
-// ── Scroll ────────────────────────────────────────────
+// Scroll 
 async function scrollToBottom() {
   await nextTick()
   if (messagesRef.value) {
@@ -389,7 +386,6 @@ function handleKeydown(e) {
 </template>
 
 <style scoped>
-/* ── FAB ─────────────────────────────────────────────── */
 .coach-fab-wrap {
   position: fixed;
   bottom: calc(74px + env(safe-area-inset-bottom));
@@ -444,7 +440,6 @@ function handleKeydown(e) {
   white-space: nowrap;
 }
 
-/* ── Modal ───────────────────────────────────────────── */
 .coach-modal {
   position: fixed;
   bottom: calc(144px + env(safe-area-inset-bottom));
@@ -471,7 +466,6 @@ function handleKeydown(e) {
   transform: translateY(20px) scale(0.95);
 }
 
-/* ── Header ──────────────────────────────────────────── */
 .coach-header {
   background: #22284E;
   padding: 14px 16px;
@@ -529,7 +523,6 @@ function handleKeydown(e) {
 }
 .coach-close:hover { background: rgba(255, 255, 255, 0.2); }
 
-/* ── Mensajes ────────────────────────────────────────── */
 .coach-messages {
   flex: 1;
   overflow-y: auto;
@@ -542,7 +535,6 @@ function handleKeydown(e) {
 .coach-messages::-webkit-scrollbar { width: 4px; }
 .coach-messages::-webkit-scrollbar-thumb { background: rgba(34,40,78,.1); border-radius: 99px; }
 
-/* Sugerencias iniciales */
 .coach-suggestions {
   display: flex;
   flex-direction: column;
@@ -576,7 +568,6 @@ function handleKeydown(e) {
 }
 .sugg-btn:hover { background: rgba(255, 107, 157, 0.06); border-color: rgba(255, 107, 157, 0.2); }
 
-/* Filas de mensajes */
 .msg-row {
   display: flex;
   gap: 8px;
@@ -610,7 +601,6 @@ function handleKeydown(e) {
 .msg-bubble.user { background: #ff6b9d; color: #fff; border-radius: 16px 4px 16px 16px; }
 .msg-bubble.error { background: rgba(239, 68, 68, 0.08); color: #dc2626; border: 1px solid rgba(239, 68, 68, 0.2); }
 
-/* Typing indicator */
 .typing-bubble {
   background: rgba(34, 40, 78, 0.05);
   border-radius: 4px 16px 16px 16px;
@@ -634,7 +624,6 @@ function handleKeydown(e) {
   40%           { transform: scale(1);   opacity: 1; }
 }
 
-/* Sugerencias rápidas debajo de mensajes */
 .quick-actions {
   display: flex;
   gap: 6px;
@@ -654,7 +643,6 @@ function handleKeydown(e) {
 }
 .quick-btn:hover { border-color: #ff6b9d; color: #ff6b9d; background: rgba(255,107,157,0.05); }
 
-/* ── Input ───────────────────────────────────────────── */
 .coach-input-area {
   padding: 12px 14px;
   border-top: 1px solid rgba(34, 40, 78, 0.07);
@@ -700,11 +688,9 @@ function handleKeydown(e) {
 .coach-send:hover:not(:disabled) { transform: scale(1.08); }
 .coach-send:disabled { opacity: 0.35; cursor: not-allowed; }
 
-/* Transición icono FAB */
 .icon-flip-enter-active, .icon-flip-leave-active { transition: all 0.2s ease; }
 .icon-flip-enter-from, .icon-flip-leave-to { opacity: 0; transform: rotate(90deg) scale(0.7); }
 
-/* Responsive móvil */
 @media (max-width: 480px) {
   .coach-modal {
     right: 12px;

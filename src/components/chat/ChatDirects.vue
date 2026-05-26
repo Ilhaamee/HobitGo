@@ -79,9 +79,7 @@ const replyPreviewText = computed(() => {
   return replyingTo.value.content?.slice(0, 40) || '📷 Imagen'
 })
 
-/* ════════════════════════════════════════════════════════
-   CONVERSATIONS
-   ════════════════════════════════════════════════════════ */
+// CONVERSATIONS
 async function loadConversations() {
   const { data } = await supabase
     .from('private_messages')
@@ -179,9 +177,7 @@ async function loadPrivateMessages(otherId) {
   }
 }
 
-/* ════════════════════════════════════════════════════════
-   IMAGE UPLOAD
-   ════════════════════════════════════════════════════════ */
+//IMAGE UPLOAD
 function onFileChange(e) {
   const file = e.target.files[0]
   if (!file) return
@@ -205,9 +201,7 @@ async function uploadImage(file) {
   return data.publicUrl
 }
 
-/* ════════════════════════════════════════════════════════
-   MESSAGE ACTIONS
-   ════════════════════════════════════════════════════════ */
+//MESSAGE ACTIONS
 function startEdit(msg) {
   editingMsg.value = msg
   editText.value = msg.content || ''
@@ -241,9 +235,7 @@ function cancelReply() {
   replyingTo.value = null
 }
 
-/* ════════════════════════════════════════════════════════
-   REACTIONS
-   ════════════════════════════════════════════════════════ */
+// REACTIONS
 async function addReaction(msg, emoji) {
   if (!msg) return
   const liveMsg = privateMessages.value.find(m => m.id === msg.id)
@@ -274,9 +266,6 @@ async function addReaction(msg, emoji) {
   }
 }
 
-/* ════════════════════════════════════════════════════════
-   TYPING
-   ════════════════════════════════════════════════════════ */
 async function notifyTyping() {
   if (!activeConv.value) return
   await supabase.from('typing_indicators').insert({
@@ -313,9 +302,7 @@ function subscribeTyping(otherId) {
     .subscribe()
 }
 
-/* ════════════════════════════════════════════════════════
-   SEND MESSAGE
-   ════════════════════════════════════════════════════════ */
+//SEND MESSAGE
 async function sendMessage() {
   if (!activeConv.value) return
   const hasText  = newMessage.value.trim().length > 0
@@ -369,9 +356,7 @@ async function sendMessage() {
   }
 }
 
-/* ════════════════════════════════════════════════════════
-   REALTIME
-   ════════════════════════════════════════════════════════ */
+// REALTIME
 function subscribe(otherId) {
   if (privateSub) supabase.removeChannel(privateSub)
   privateSub = supabase.channel('private-directs')
@@ -430,9 +415,7 @@ async function confirmDelete() {
   msgToDelete.value = null
 }
 
-/* ════════════════════════════════════════════════════════
-   LIFECYCLE
-   ════════════════════════════════════════════════════════ */
+//LIFECYCLE
 onMounted(async () => { await loadConversations() })
 onUnmounted(() => {
   if (privateSub) supabase.removeChannel(privateSub)
@@ -447,7 +430,7 @@ watch(newMessage, (val) => {
 <template>
   <div class="directs">
 
-    <!-- ══ PANEL IZQUIERDO ═══════════════════════════════ -->
+    <!-- PANEL IZQUIERDO -->
     <div class="conv-panel">
       <div class="conv-head">
         <span class="conv-head-title">Mensajes</span>
@@ -504,7 +487,7 @@ watch(newMessage, (val) => {
       </div>
     </div>
 
-    <!-- ══ PANEL DERECHO ═════════════════════════════════ -->
+    <!--PANEL DERECHO -->
     <div class="chat-panel" :class="{ 'has-conv': activeConv }">
 
       <!-- Estado vacío -->
@@ -537,7 +520,7 @@ watch(newMessage, (val) => {
           </div>
         </div>
 
-        <!-- Messages (componente extraído) -->
+        <!-- Messages -->
         <ChatMessageList
           ref="messagesRef"
           :messages="groupedMessages"
@@ -555,7 +538,7 @@ watch(newMessage, (val) => {
           @image-click="previewImageUrl = $event"
         />
 
-        <!-- Reply bar (componente extraído) -->
+        <!-- Reply bar-->
         <ChatReplyBar
           :replying-to="replyingTo"
           :author-name="activeConv?.username"
@@ -563,7 +546,7 @@ watch(newMessage, (val) => {
           @cancel="cancelReply"
         />
 
-        <!-- Edit bar (componente extraído) -->
+        <!-- Edit bar -->
         <ChatEditBar
           v-if="editingMsg"
           v-model="editText"
@@ -571,14 +554,14 @@ watch(newMessage, (val) => {
           @cancel="cancelEdit"
         />
 
-        <!-- Image preview (componente extraído) -->
+        <!-- Image preview -->
         <ChatImagePreview
           v-if="imagePreview"
           :src="imagePreview"
           @clear="clearImage"
         />
 
-        <!-- Input (componente extraído) -->
+        <!-- Input -->
         <ChatInputBar
           v-model="newMessage"
           :image-preview="imagePreview"
@@ -611,7 +594,7 @@ watch(newMessage, (val) => {
 </template>
 
 <style scoped>
-/* ══ LAYOUT PRINCIPAL ═══════════════════════════════ */
+/* LAYOUT PRINCIPAL */
 .directs {
   display: grid;
   grid-template-columns: 300px 1fr;
@@ -729,7 +712,7 @@ watch(newMessage, (val) => {
   padding: 0 5px;
 }
 
-/* ══ PANEL DERECHO ══════════════════════════════════ */
+/* PANEL DERECHO */
 .chat-panel {
   display: flex;
   flex-direction: column;

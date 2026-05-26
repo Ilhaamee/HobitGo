@@ -1,4 +1,3 @@
-<!-- ChatSearch.vue MEJORADO -->
 <script setup>
 import { ref, watch, onMounted } from 'vue'
 import { supabase } from '@/lib/supabase'
@@ -8,7 +7,7 @@ const props = defineProps({
   currentUserId: { type: String, required: true },
   placeholder:   { type: String, default: 'Buscar usuarios...' },
   excludeIds:    { type: Array,  default: () => [] },
-  mode:          { type: String, default: 'direct' }, // 'direct' | 'invite' | 'view'
+  mode:          { type: String, default: 'direct' }, 
   inviteLabel:   { type: String, default: 'Invitar' },
 })
 

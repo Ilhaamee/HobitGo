@@ -71,10 +71,8 @@ function onMouseMove(e) {
   targetY = e.clientY
 }
 
-// Detectar si es móvil
 const isMobile = () => window.innerWidth <= 768
 
-// Movimiento automático para móvil
 let autoAngle = 0
 function autoMove() {
   if (!isMobile()) return

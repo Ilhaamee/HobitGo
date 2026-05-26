@@ -1,7 +1,5 @@
 <template>
   <div class="cover-wrap">
-
-    <!-- Banda de color -->
     <div class="cover-band" :style="coverStyle">
       <div class="orb o1"></div>
       <div class="orb o2"></div>
@@ -12,7 +10,6 @@
     <!-- Avatar + nivel chip -->
     <div class="avatar-row">
       <div class="avatar-wrap">
-        <!-- Anillo de progreso SVG -->
         <svg class="ring-svg" viewBox="0 0 108 108">
           <circle cx="54" cy="54" r="49" class="ring-track"/>
           <circle cx="54" cy="54" r="49" class="ring-fill"
@@ -58,7 +55,6 @@
       </div>
     </div>
 
-    <!-- Mini stats en fila -->
     <div class="mini-stats">
       <div class="mstat" v-for="s in miniStats" :key="s.label">
         <span class="mstat-num">{{ s.value }}</span>
@@ -91,7 +87,7 @@ const handle   = computed(() => (props.profile.username || 'usuario').toLowerCas
 const miniStats = computed(() => [
   { value: props.stats.hobbies        || 0, label: 'hobbies'  },
   { value: props.stats.hobbySessions  || 0, label: 'sesiones' },
-  { value: props.stats.challenges     || 0, label: 'retos'    }, // ← CAMBIO: challenges en lugar de goalsCompleted
+  { value: props.stats.challenges     || 0, label: 'retos'    },
   { value: props.stats.points         || 0, label: 'puntos'   },
 ])
 
@@ -104,7 +100,6 @@ const coverStyle = computed(() => {
 </script>
 
 <style scoped>
-/* ── Wrapper ─────────────────────────────── */
 .cover-wrap {
   background: #fff;
   border-radius: 24px;
@@ -114,7 +109,6 @@ const coverStyle = computed(() => {
   margin-bottom: 16px;
 }
 
-/* ── Cover band ─────────────────────────── */
 .cover-band {
   height: 130px;
   position: relative;
@@ -142,7 +136,6 @@ const coverStyle = computed(() => {
   color: rgba(255,255,255,.2);
 }
 
-/* ── Avatar row ─────────────────────────── */
 .avatar-row {
   display: flex;
   align-items: flex-end;
@@ -213,7 +206,6 @@ const coverStyle = computed(() => {
 }
 @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.25} }
 
-/* ── Info block ─────────────────────────── */
 .info-block {
   padding: 14px 20px 0;
 }
@@ -238,7 +230,6 @@ const coverStyle = computed(() => {
   font-size: 11px; font-weight: 700; color: #fff;
 }
 
-/* ── Mini stats ─────────────────────────── */
 .mini-stats {
   display: flex;
   border-top: 1px solid rgba(34,40,78,.07);
@@ -262,7 +253,6 @@ const coverStyle = computed(() => {
   margin-top: 3px;
 }
 
-/* ── Responsive ─────────────────────────── */
 @media (max-width: 480px) {
   .cover-band   { height: 100px; }
   .username     { font-size: 18px; }

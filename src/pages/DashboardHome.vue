@@ -21,7 +21,6 @@ const sessions = ref([])
 const posts = ref([])
 const challenges = ref([])
 
-// ── Celebración ─────────────────────────────────────────
 const showCelebration = ref(false)
 const celebrationData = ref({ hobbyName: '', points: 10 })
 
@@ -50,7 +49,6 @@ async function load() {
   loading.value = false
 }
 
-// ── Helpers para calcular días activos (misma lógica que HobbyCard) ──
 function getActiveDays(hobbyId) {
   const daysSet = new Set()
   sessions.value
@@ -91,7 +89,7 @@ const stats = computed(() => {
   }
 })
 
-// ── Sesión rápida desde HobbyStack ─────────────────────
+// Sesión rápida desde HobbyStack
 async function quickSession(hobbyId, minutes) {
   if (!user.value) return
 
@@ -199,7 +197,6 @@ onMounted(load)
 
         <!-- Columna centro -->
         <div class="col-center">
-          <!-- En móvil: StreakBar aparece aquí primero -->
           <div class="mobile-streak">
             <StreakCard :streak="streak" :sessions="sessions" />
           </div>
@@ -262,7 +259,6 @@ onMounted(load)
       </div>
     </template>
 
-    <!-- Celebration Popup -->
     <CelebrationPopup
       v-if="showCelebration"
       :hobby-name="celebrationData.hobbyName"
@@ -310,7 +306,6 @@ onMounted(load)
 }
 @keyframes spin { to { transform: rotate(360deg); } }
 
-/* ═══ GRID PRINCIPAL ═══ */
 .dashboard-grid {
   display: grid;
   grid-template-columns: 260px 1fr 260px;
@@ -351,7 +346,6 @@ onMounted(load)
   border-radius: 99px;
 }
 
-/* Mobile streak: oculto en desktop */
 .mobile-streak {
   display: none;
 }
@@ -492,7 +486,6 @@ onMounted(load)
   color: #ff6b9d;
 }
 
-/* ═══ RESPONSIVE: Móvil ═══ */
 @media (max-width: 1100px) {
   .dashboard-grid {
     grid-template-columns: 1fr;

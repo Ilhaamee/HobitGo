@@ -5,11 +5,8 @@ import { computed, watch } from 'vue'
 import { useRoute } from 'vue-router'
 
 const route = useRoute()
-
-// Solo mostrar en rutas del dashboard (usuario autenticado)
 const showCoach = computed(() => route.path.startsWith('/dashboard') && !route.path.includes('/chat'))
 
-// Scroll al inicio en cada cambio de ruta
 watch(() => route.path, () => {
   window.scrollTo({ top: 0, behavior: 'instant' })
   document.documentElement.scrollTop = 0
@@ -46,7 +43,7 @@ input {
   font-family: inherit;
 }
 
-/* ── Fix zoom en iOS al enfocar inputs ── */
+/* Fix zoom en iOS al enfocar inputs */
 @media screen and (-webkit-min-device-pixel-ratio: 0) {
   input,
   textarea,

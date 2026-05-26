@@ -1,5 +1,3 @@
-// HobitGo — hobbiesData.js
-
 export const HOBBY_CATEGORIES = [
   { key: 'deportes',    name: 'Deportes',    gradient: ['#ff6b9d','#ff8fab'] },
   { key: 'creatividad', name: 'Creatividad', gradient: ['#8b5cf6','#a78bfa'] },

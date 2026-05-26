@@ -8,7 +8,6 @@ const props = defineProps({
 })
 const emit = defineEmits(['close', 'add-session'])
 
-// ── Estado ───────────────────────────────────────────
 const items = ref([])
 const loading = ref(false)
 const uploading = ref(false)
@@ -58,7 +57,6 @@ const FRAMES = [
   { key: 'shadow',     label: 'Sombra flotante', class: 'frame-shadow' },
 ]
 
-// ── Computed ─────────────────────────────────────────
 const filteredItems = computed(() => {
   if (!searchQuery.value.trim()) return items.value
   const q = searchQuery.value.toLowerCase()
@@ -70,7 +68,6 @@ const filteredItems = computed(() => {
   )
 })
 
-// ── API ──────────────────────────────────────────────
 async function loadItems() {
   loading.value = true
   const { data: { user } } = await supabase.auth.getUser()
@@ -219,7 +216,7 @@ onMounted(loadItems)
 <template>
 <div class="gallery-page">
 
-  <!-- ══ HEADER ═══════════════════════════════════════ -->
+  <!-- HEADER -->
   <div class="gp-header">
     <div class="gp-header-left">
       <button class="gp-btn-close" @click="lightboxOpen ? closeLightbox() : editingItem ? cancelEdit() : activeView === 'add' ? activeView = 'gallery' : emit('close')">
@@ -246,7 +243,7 @@ onMounted(loadItems)
     </div>
   </div>
 
-  <!-- ══ SEARCH BAR ════════════════════════════════════ -->
+  <!-- SEARCH BAR -->
   <Transition name="sd">
     <div v-if="showSearch" class="gp-search-wrap">
       <div class="gp-search-inner">
@@ -260,7 +257,7 @@ onMounted(loadItems)
     </div>
   </Transition>
 
-  <!-- ══ GALLERY VIEW ══════════════════════════════════ -->
+  <!-- GALLERY VIEW -->
   <div v-if="activeView === 'gallery' && !lightboxOpen && !editingItem" class="gp-gallery">
     <div v-if="loading" class="gp-loading">
       <div class="gp-spinner" :style="{ borderTopColor: color }"></div>
@@ -289,7 +286,7 @@ onMounted(loadItems)
     </div>
   </div>
 
-  <!-- ══ ADD VIEW ══════════════════════════════════════ -->
+  <!-- ADD VIEW -->
   <div v-if="activeView === 'add'" class="gp-add">
     <div class="gp-add-card">
       <h3 class="gp-add-title">Nueva obra para la galería</h3>
@@ -352,7 +349,7 @@ onMounted(loadItems)
     </div>
   </div>
 
-  <!-- ══ EDIT VIEW ═════════════════════════════════════ -->
+  <!-- EDIT VIEW -->
   <div v-if="editingItem" class="gp-edit">
     <div class="gp-edit-card">
       <h3 class="gp-edit-title">Editar obra</h3>
@@ -413,7 +410,7 @@ onMounted(loadItems)
     </div>
   </div>
 
-  <!-- ══ LIGHTBOX ══════════════════════════════════════ -->
+  <!-- LIGHTBOX -->
   <Transition name="sd">
     <div v-if="lightboxOpen && selectedItem" class="gp-lightbox" @click="closeLightbox">
       <button class="gp-lightbox-close" @click.stop="closeLightbox">✕</button>
@@ -449,10 +446,6 @@ onMounted(loadItems)
 </template>
 
 <style scoped>
-/* ════════════════════════════════════════════════════════════════════════
-   GALLERYMODE - MASONRY INFINITO SIN POSICIONES
-   ════════════════════════════════════════════════════════════════════════ */
-
 .gallery-page {
   background: #f5f0e8;
   min-height: 100vh;
@@ -464,7 +457,7 @@ onMounted(loadItems)
   -webkit-font-smoothing: antialiased;
 }
 
-/* ── Header ── */
+/* Header */
 .gp-header {
   display: flex;
   align-items: center;
@@ -532,7 +525,7 @@ onMounted(loadItems)
 }
 .gp-btn-search:hover { background: rgba(34,40,78,.14); }
 
-/* ── Search ── */
+/* Search */
 .gp-search-wrap {
   padding: 12px 20px;
   background: #ffffff;
@@ -587,7 +580,7 @@ onMounted(loadItems)
   color: #374151;
 }
 
-/* ── Loading / Empty ── */
+/* Loading / Empty */
 .gp-loading {
   display: flex;
   flex-direction: column;
@@ -621,9 +614,6 @@ onMounted(loadItems)
   font-weight: 500;
 }
 
-/* ═══════════════════════════════════════════════════
-   GALLERY MASONRY - INFINITO SIN LÍMITE
-   ═══════════════════════════════════════════════════ */
 .gp-gallery {
   padding: 20px;
   min-height: calc(100vh - 60px);
@@ -653,7 +643,6 @@ onMounted(loadItems)
   pointer-events: none;
 }
 
-/* Masonry layout - infinito */
 .gp-masonry {
   position: relative;
   display: grid;
@@ -720,9 +709,7 @@ onMounted(loadItems)
   opacity: 1;
 }
 
-/* ── MARCOS ── */
-
-/* Marco Clásico Dorado */
+/* MARCOS */
 .frame-classic {
   padding: 8px;
   background: linear-gradient(145deg, #d4af37, #b8941f, #d4af37, #e5c158);
@@ -736,7 +723,6 @@ onMounted(loadItems)
   border: 1px solid #8b7355;
 }
 
-/* Marco Vintage Madera */
 .frame-vintage {
   padding: 10px;
   background: linear-gradient(145deg, #8b6914, #6b4e23, #8b6914);
@@ -749,7 +735,6 @@ onMounted(loadItems)
   border: 2px solid #5c4033;
 }
 
-/* Marco Moderno Negro */
 .frame-modern {
   padding: 5px;
   background: #1a1a1a;
@@ -762,7 +747,6 @@ onMounted(loadItems)
   border: 1px solid #333;
 }
 
-/* Marco Ornamentado */
 .frame-ornate {
   padding: 10px;
   background: linear-gradient(145deg, #c9a961, #a0823a, #c9a961);
@@ -792,7 +776,6 @@ onMounted(loadItems)
   border: 1px solid #8b7355;
 }
 
-/* Marco Minimal Blanco */
 .frame-minimal {
   padding: 12px;
   background: #ffffff;
@@ -805,7 +788,6 @@ onMounted(loadItems)
   border: none;
 }
 
-/* Marco Polaroid */
 .frame-polaroid {
   padding: 8px 8px 24px 8px;
   background: #ffffff;
@@ -825,7 +807,6 @@ onMounted(loadItems)
   color: #666;
 }
 
-/* Marco Redondeado */
 .frame-rounded {
   padding: 6px;
   background: linear-gradient(145deg, #e8e0d5, #d5c8b8);
@@ -839,7 +820,6 @@ onMounted(loadItems)
   border: none;
 }
 
-/* Marco Sombra Flotante */
 .frame-shadow {
   padding: 0;
   background: transparent;
@@ -853,9 +833,6 @@ onMounted(loadItems)
   border: 2px solid #fff;
 }
 
-/* ═══════════════════════════════════════════════════
-   FRAME PICKER
-   ═══════════════════════════════════════════════════ */
 .gp-picker-section {
   margin-bottom: 20px;
 }
@@ -910,9 +887,6 @@ onMounted(loadItems)
   background: #f3f4f6;
 }
 
-/* ═══════════════════════════════════════════════════
-   ADD / EDIT / FORM STYLES
-   ═══════════════════════════════════════════════════ */
 .gp-add, .gp-edit { padding: 20px; }
 .gp-add-card, .gp-edit-card {
   background: #ffffff;
@@ -1202,7 +1176,7 @@ onMounted(loadItems)
   margin: 0;
 }
 
-/* ── Transitions ── */
+/* Transitions */
 .sd-enter-active,
 .sd-leave-active {
   transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
@@ -1213,7 +1187,7 @@ onMounted(loadItems)
   transform: translateY(-8px);
 }
 
-/* ── Responsive ── */
+/* Responsive */
 @media (max-width: 640px) {
   .gp-masonry {
     grid-template-columns: repeat(2, 1fr);

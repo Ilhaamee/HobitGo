@@ -12,8 +12,8 @@ const props = defineProps({
 const emit = defineEmits(['message', 'invite', 'close'])
 
 const profile    = ref(null)
-const allHobbies = ref([])   // TODOS los hobbies (para stats)
-const publicHobbies = ref([]) // Solo públicos (para display)
+const allHobbies = ref([])   
+const publicHobbies = ref([])
 const sessions   = ref([])
 const activities = ref([])
 const loading    = ref(true)
@@ -41,12 +41,12 @@ const levelProgress = computed(() => {
   return Math.min(100, Math.round(((stats.value.points - prev) / range) * 100))
 })
 
-// Stats calculados igual que useProfile.js + Profilestats.vue
+// Stats 
 const stats = computed(() => {
-  // Puntos: suma de activity_log.points (igual que useProfile.js loadStats)
+  // Puntos
   const totalPoints = (activities.value || []).reduce((sum, x) => sum + (x.points || 0), 0)
 
-  // Sesiones: count total de hobby_sessions (igual que useProfile.js)
+  // Sesiones
   const totalSessions = sessions.value.length
 
   // Días únicos con sesión
@@ -54,7 +54,7 @@ const stats = computed(() => {
     sessions.value.map(s => new Date(s.created_at).toISOString().split('T')[0])
   ).size
 
-  // Racha general (máxima de todos los hobbies, usando TODOS los hobbies)
+  // Racha general 
   let maxStreak = 0
   allHobbies.value.forEach(h => {
     const dates = [...new Set(
@@ -100,20 +100,20 @@ async function load() {
     if (profErr) throw profErr
     if (!profData) throw new Error('Perfil no encontrado')
 
-    // 2. TODOS los hobbies del usuario (para stats de racha)
+    // 2. TODOS los hobbies del usuario
     const { data: allHobbiesData } = await supabase
       .from('hobbies')
       .select('id, name, gradient, category, is_public')
       .eq('user_id', props.userId)
 
-    // 3. TODAS las sessions del usuario (sin filtrar por hobby)
+    // 3. TODAS las sessions del usuario
     const { data: sessionsData } = await supabase
       .from('hobby_sessions')
       .select('id, hobby_id, minutes, created_at')
       .eq('user_id', props.userId)
       .order('created_at', { ascending: false })
 
-    // 4. Activity log (puntos)
+    // 4. Activity log
     const { data: activityData } = await supabase
       .from('activity_log')
       .select('points')
@@ -272,7 +272,6 @@ watch(() => props.userId, load, { immediate: true })
               Mensaje
             </button>
 
-            <!-- Invitar: texto personalizable según contexto -->
             <button
               v-if="mode === 'invite' && userId !== currentUserId"
               class="upc-btn-primary"

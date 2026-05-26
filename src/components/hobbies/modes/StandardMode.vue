@@ -8,11 +8,11 @@ const props = defineProps({
 })
 const emit = defineEmits(['close', 'add-session'])
 
-// ── Estado ───────────────────────────────────────────
+// Estado 
 const sessions = ref([])
 const loading = ref(false)
 const saving = ref(false)
-const activeView = ref('history') // 'history' | 'timer' | 'add'
+const activeView = ref('history') 
 const showSearch = ref(false)
 const searchQuery = ref('')
 const showImageLightbox = ref(false)
@@ -40,7 +40,6 @@ const formNote = ref('')
 const fileInput = ref(null)
 const previewUrl = ref(null)
 
-// ── Computed ─────────────────────────────────────────
 const filteredSessions = computed(() => {
   if (!searchQuery.value.trim()) return sessions.value
   const q = searchQuery.value.toLowerCase()
@@ -128,7 +127,7 @@ const chartData = computed(() => {
 
 const maxChartValue = computed(() => Math.max(...chartData.value.map(d => d.minutes), 1))
 
-// ── API ──────────────────────────────────────────────
+// API
 async function loadSessions() {
   loading.value = true
   const { data: { user } } = await supabase.auth.getUser()
@@ -207,7 +206,7 @@ async function saveTimerSession() {
   }
 }
 
-// ── Editar nota inline ───────────────────────────────
+// Editar nota
 function startEditNote(session) {
   editingNoteId.value = session.id
   editingNoteText.value = session.note || ''
@@ -234,7 +233,6 @@ function cancelEditNote() {
   editingNoteText.value = ''
 }
 
-// ── Timer functions ──────────────────────────────────
 function startTimer() {
   if (isRunning.value) return
   isRunning.value = true
@@ -258,7 +256,6 @@ function resetTimer() {
   timerNote.value = ''
 }
 
-// ── Helpers ──────────────────────────────────────────
 function resetForm() {
   formDate.value = new Date().toISOString().split('T')[0]
   formDuration.value = ''
@@ -309,10 +306,10 @@ onMounted(() => { loadSessions() })
 onUnmounted(() => { if (timerInterval.value) clearInterval(timerInterval.value) })
 </script>
 
-<<template>
+<template>
 <div class="standard-page">
 
-  <!-- ══ HEADER ═══════════════════════════════════════ -->
+  <!-- HEADER -->
   <div class="sm-header">
     <div class="sm-header-left">
       <button class="sm-btn-close" @click="emit('close')">
@@ -331,7 +328,7 @@ onUnmounted(() => { if (timerInterval.value) clearInterval(timerInterval.value) 
     </div>
   </div>
 
-  <!-- ══ SEARCH BAR ════════════════════════════════════ -->
+  <!-- SEARCH BAR -->
   <Transition name="sd">
     <div v-if="showSearch && activeView === 'history'" class="sm-search-wrap">
       <div class="sm-search-inner">
@@ -342,7 +339,7 @@ onUnmounted(() => { if (timerInterval.value) clearInterval(timerInterval.value) 
     </div>
   </Transition>
 
-  <!-- ══ SESIONES VIEW ═════════════════════════════════ -->
+  <!-- SESIONES VIEW -->
   <div v-if="activeView === 'history'" class="sm-history-view">
 
     <!-- Hero Stats -->
@@ -396,7 +393,7 @@ onUnmounted(() => { if (timerInterval.value) clearInterval(timerInterval.value) 
       </div>
     </div>
 
-    <!-- Lista de sesiones (paginada) -->
+    <!-- Lista de sesiones -->
     <div class="sm-sessions-area">
       <div v-if="loading" class="sm-loading">
         <div class="sm-spinner" :style="{ borderTopColor: color }"></div>
@@ -457,7 +454,7 @@ onUnmounted(() => { if (timerInterval.value) clearInterval(timerInterval.value) 
     </div>
   </div>
 
-  <!-- ══ TIMER VIEW ════════════════════════════════════ -->
+  <!-- TIMER VIEW -->
   <div v-if="activeView === 'timer'" class="sm-timer-view">
     <div class="sm-timer-stats">
       <div class="sm-timer-stat">
@@ -514,7 +511,6 @@ onUnmounted(() => { if (timerInterval.value) clearInterval(timerInterval.value) 
     </div>
   </div>
 
-  <!-- ══ ADD VIEW ══════════════════════════════════════ -->
   <div v-if="activeView === 'add'" class="sm-add">
     <div class="sm-add-card">
       <h3 class="sm-add-title">Registrar sesión de {{ hobby.name }}</h3>
@@ -547,7 +543,6 @@ onUnmounted(() => { if (timerInterval.value) clearInterval(timerInterval.value) 
     </div>
   </div>
 
-  <!-- ══ LIGHTBOX ══════════════════════════════════════ -->
   <Transition name="sd">
     <div v-if="showImageLightbox" class="sm-lightbox" @click="showImageLightbox = false">
       <button class="sm-lightbox-close" @click.stop="showImageLightbox = false">✕</button>
@@ -559,10 +554,6 @@ onUnmounted(() => { if (timerInterval.value) clearInterval(timerInterval.value) 
 </template>
 
 <style scoped>
-/* ════════════════════════════════════════════════════════════════════════
-   STANDARDMODE — Estilo KitchenMode unificado
-   ════════════════════════════════════════════════════════════════════════ */
-
 .standard-page {
   background: #ffffff;
   min-height: 100vh;
@@ -574,7 +565,6 @@ onUnmounted(() => { if (timerInterval.value) clearInterval(timerInterval.value) 
   -webkit-font-smoothing: antialiased;
 }
 
-/* ── Header (igual que KitchenMode) ── */
 .sm-header {
   display: flex;
   align-items: center;
@@ -643,7 +633,7 @@ onUnmounted(() => { if (timerInterval.value) clearInterval(timerInterval.value) 
 }
 .sm-btn-search:hover { background: rgba(34,40,78,.14); }
 
-/* ── Search ── */
+/* Search */
 .sm-search-wrap {
   padding: 12px 20px;
   background: #ffffff;
@@ -698,9 +688,6 @@ onUnmounted(() => { if (timerInterval.value) clearInterval(timerInterval.value) 
   color: #374151;
 }
 
-/* ════════════════════════════════════════════════════════════════════════
-   HERO STATS — Premium como KitchenMode
-   ════════════════════════════════════════════════════════════════════════ */
 .sm-hero-stats {
   padding: 20px 0;
 }
@@ -801,9 +788,6 @@ onUnmounted(() => { if (timerInterval.value) clearInterval(timerInterval.value) 
   margin-top: 4px;
 }
 
-/* ════════════════════════════════════════════════════════════════════════
-   GRÁFICA DE BARRAS
-   ════════════════════════════════════════════════════════════════════════ */
 .sm-chart-section {
   padding: 0 0 20px;
 }
@@ -878,7 +862,7 @@ onUnmounted(() => { if (timerInterval.value) clearInterval(timerInterval.value) 
   color: v-bind(color);
 }
 
-/* ── Sessions Area ── */
+/* Sessions Area */
 .sm-sessions-area {
   padding: 0 0 20px;
 }
@@ -1103,7 +1087,6 @@ onUnmounted(() => { if (timerInterval.value) clearInterval(timerInterval.value) 
   transform: scale(1.05);
 }
 
-/* Ver más */
 .sm-load-more {
   width: 100%;
   padding: 14px;
@@ -1123,9 +1106,6 @@ onUnmounted(() => { if (timerInterval.value) clearInterval(timerInterval.value) 
   background: v-bind(color + '05');
 }
 
-/* ════════════════════════════════════════════════════════════════════════
-   TIMER VIEW
-   ════════════════════════════════════════════════════════════════════════ */
 .sm-timer-view {
   padding: 24px 0;
 }
@@ -1318,9 +1298,6 @@ onUnmounted(() => { if (timerInterval.value) clearInterval(timerInterval.value) 
   box-shadow: 0 8px 24px v-bind(color + '40');
 }
 
-/* ════════════════════════════════════════════════════════════════════════
-   ADD VIEW
-   ════════════════════════════════════════════════════════════════════════ */
 .sm-add {
   padding: 20px 0;
 }
@@ -1479,7 +1456,6 @@ onUnmounted(() => { if (timerInterval.value) clearInterval(timerInterval.value) 
   animation: spin 0.8s linear infinite;
 }
 
-/* ── Lightbox ── */
 .sm-lightbox {
   position: fixed;
   inset: 0;
@@ -1520,7 +1496,6 @@ onUnmounted(() => { if (timerInterval.value) clearInterval(timerInterval.value) 
   background: rgba(255,255,255,.3);
 }
 
-/* ── Transitions ── */
 .sd-enter-active,
 .sd-leave-active {
   transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
@@ -1531,11 +1506,6 @@ onUnmounted(() => { if (timerInterval.value) clearInterval(timerInterval.value) 
   transform: translateY(-8px);
 }
 
-/* ════════════════════════════════════════════════════════════════════════
-   RESPONSIVE — Móvil primero, Desktop ocupa todo
-   ════════════════════════════════════════════════════════════════════════ */
-
-/* Móvil pequeño */
 @media (max-width: 640px) {
   .sm-header,
   .sm-search-wrap,
@@ -1549,7 +1519,6 @@ onUnmounted(() => { if (timerInterval.value) clearInterval(timerInterval.value) 
   }
 }
 
-/* Tablet / Desktop pequeño — ocupa todo el ancho disponible */
 @media (min-width: 641px) {
   .sm-add {
     padding: 24px 32px;
@@ -1577,7 +1546,6 @@ onUnmounted(() => { if (timerInterval.value) clearInterval(timerInterval.value) 
   }
 }
 
-/* Desktop grande — contenido ancho pero sin espacios vacíos laterales */
 @media (min-width: 769px) {
   .sm-header {
     padding: 12px 40px;
@@ -1597,7 +1565,6 @@ onUnmounted(() => { if (timerInterval.value) clearInterval(timerInterval.value) 
   }
 }
 
-/* Desktop muy grande — limitar ancho máximo para no estirar demasiado */
 @media (min-width: 1024px) {
   .sm-hero-stats,
   .sm-chart-section,

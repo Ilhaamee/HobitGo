@@ -8,7 +8,7 @@ const props = defineProps({
   isOwn:           { type: Function, required: true },
   typingText:      { type: String, default: '' },
   showAuthor:      { type: Boolean, default: true },
-  avatarSource:    { type: String, default: 'profile' }, // 'profile' = item.profiles.avatar_url, 'active' = active avatar
+  avatarSource:    { type: String, default: 'profile' },
   activeAvatar:    { type: String, default: null },
   enableImageClick:{ type: Boolean, default: false },
 })
@@ -27,7 +27,7 @@ const messagesContainerRef = ref(null)
 
 const EMOJIS = ['❤️', '👍', '😂', '😮', '😢', '🎉', '🔥', '👏']
 
-// ── Longpress para móvil ──────────────────
+// Longpress para móvil 
 let longPressTimer = null
 const LONG_PRESS_MS = 250
 

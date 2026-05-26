@@ -11,7 +11,6 @@
       <span class="tab-label">{{ tab.label }}</span>
     </button>
 
-    <!-- Indicador deslizante -->
     <div class="tab-ink" :style="inkStyle"></div>
   </div>
 </template>
@@ -84,7 +83,6 @@ onMounted(moveInk)
 .tab-icon  { font-size: 15px; line-height: 1; }
 .tab-label { font-size: 13px; }
 
-/* Slider bajo la tab activa */
 .tab-ink {
   position: absolute;
   top: 6px;
@@ -97,7 +95,6 @@ onMounted(moveInk)
   z-index: 1;
 }
 
-/* Móvil pequeño: solo icono */
 @media (max-width: 380px) {
   .tab-label { display: none; }
   .tab-icon  { font-size: 18px; }

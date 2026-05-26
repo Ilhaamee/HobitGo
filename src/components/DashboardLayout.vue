@@ -1,7 +1,5 @@
 <template>
   <div class="dash-root">
-
-    <!-- ══ SIDEBAR — escritorio vertical ══════════════ -->
     <aside class="sidebar" :class="{ collapsed: !sidebarOpen }">
 
       <!-- Logo -->
@@ -20,7 +18,6 @@
           </button>
         </template>
 
-        <!-- Colapsado: solo botón centrado con flecha derecha -->
         <template v-else>
           <button class="sb-toggle sb-toggle-center" @click="sidebarOpen = true" title="Expandir">
             <svg viewBox="0 0 16 16" fill="none" width="14">
@@ -41,18 +38,15 @@
           :title="!sidebarOpen ? item.name : ''"
         >
           <div class="sb-icon-wrap">
-            <!-- Iconos SVG propios — sin FontAwesome -->
             <svg viewBox="0 0 20 20" fill="none" width="18" v-html="item.svg"></svg>
             <span v-if="item.path === '/dashboard/chat' && unreadCount > 0" class="sb-badge">{{ unreadCount }}</span>
           </div>
           <span v-if="sidebarOpen" class="sb-label">{{ item.name }}</span>
 
-          <!-- Indicador activo lateral -->
           <div v-if="route.path === item.path" class="sb-active-dot"></div>
         </router-link>
       </nav>
 
-      <!-- Footer sidebar -->
       <div class="sb-footer">
         <button class="sb-logout" @click="handleLogout" :title="!sidebarOpen ? 'Cerrar sesión' : ''">
           <svg viewBox="0 0 20 20" fill="none" width="16">
@@ -61,15 +55,12 @@
           <span v-if="sidebarOpen">Cerrar sesión</span>
         </button>
       </div>
-
     </aside>
 
-    <!-- ══ CONTENIDO ════════════════════════════════ -->
     <main class="dash-main" :class="{ expanded: !sidebarOpen }">
       <router-view />
     </main>
 
-    <!-- ══ BOTTOMBAR — móvil horizontal ════════════ -->
     <nav class="bottombar">
       <router-link
         v-for="item in menuItems" :key="item.path + '-m'"
@@ -85,7 +76,6 @@
       </router-link>
     </nav>
 
-    <!-- ══ TOAST notificación ════════════════════════ -->
     <Transition name="toast-slide">
       <div v-if="notification" class="toast" @click="goToChat">
         <div class="toast-av">
@@ -122,7 +112,6 @@ const currentUserId = ref(null)
 let notifSubscription = null
 let notifTimeout = null
 
-// Iconos SVG inline — sin FontAwesome
 const menuItems = [
   {
     name: 'Inicio', path: '/dashboard',
@@ -207,7 +196,6 @@ onUnmounted(() => {
   font-family: inherit;
 }
 
-/* ══ SIDEBAR ════════════════════════════════════════ */
 .sidebar {
   width: 260px;
   background: linear-gradient(180deg, #22284E 0%, #1a1f3a 100%);
@@ -220,7 +208,6 @@ onUnmounted(() => {
 }
 .sidebar.collapsed { width: 72px; }
 
-/* Header */
 .sb-header {
   display: flex; align-items: center;
   justify-content: space-between;
@@ -229,7 +216,7 @@ onUnmounted(() => {
   flex-shrink: 0;
   min-height: 68px;
 }
-/* Colapsado: centrar el botón */
+
 .sb-header-collapsed {
   justify-content: center;
   padding: 20px 0 16px;
@@ -242,7 +229,7 @@ onUnmounted(() => {
   background: #fff;
   padding: 2px;
 }
-/* Botón centrado cuando está colapsado */
+
 .sb-toggle-center {
   margin: 0 auto;
 }
@@ -267,7 +254,6 @@ onUnmounted(() => {
 }
 .sb-toggle:hover { background: rgba(255,255,255,.14); color: #fff; }
 
-/* Nav */
 .sb-nav {
   flex: 1; padding: 16px 10px;
   display: flex; flex-direction: column; gap: 4px;
@@ -282,7 +268,7 @@ onUnmounted(() => {
   transition: background .2s, color .2s;
   overflow: hidden;
 }
-/* Línea lateral que crece en hover/active — del estilo del documento */
+
 .sb-item::before {
   content: '';
   position: absolute;
@@ -323,7 +309,6 @@ onUnmounted(() => {
   background: #ff6b9d;
 }
 
-/* Footer sidebar */
 .sb-footer {
   padding: 12px 10px 20px;
   border-top: 1px solid rgba(255,255,255,.07);
@@ -340,7 +325,6 @@ onUnmounted(() => {
 }
 .sb-logout:hover { background: rgba(255,107,157,.15); color: #ffb3c6; }
 
-/* ══ MAIN ═══════════════════════════════════════════ */
 .dash-main {
   flex: 1;
   margin-left: 240px;
@@ -354,7 +338,6 @@ onUnmounted(() => {
 }
 .dash-main.expanded { margin-left: 68px; }
 
-/* ══ BOTTOMBAR — solo móvil ════════════════════════ */
 .bottombar {
   display: none;
   position: fixed; bottom: 0; left: 0; right: 0;
@@ -363,7 +346,6 @@ onUnmounted(() => {
   padding: 8px 4px env(safe-area-inset-bottom);
   padding-bottom: max(8px, env(safe-area-inset-bottom));
   border-top: 1px solid rgba(255,255,255,.08);
-  /* Asegura que el menú no quede detrás de la barra del navegador Safari */
   height: calc(64px + env(safe-area-inset-bottom));
 }
 
@@ -395,7 +377,6 @@ onUnmounted(() => {
 }
 .bb-label { font-size: 9px; font-weight: 600; letter-spacing: .02em; }
 
-/* ══ TOAST ══════════════════════════════════════════ */
 .toast {
   position: fixed; bottom: 24px; right: 24px;
   background: #fff; border-radius: 16px;

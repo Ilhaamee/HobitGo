@@ -161,9 +161,6 @@ export function useCreateCommunity({ currentUserId, onCreated }) {
   return { showCreate, creating, formError, form, createCommunity }
 }
 
-// ═══════════════════════════════════════════════════════════════════
-// FIX: useCommunityMembers - Carga miembros en 2 pasos (sin relaciones automáticas)
-// ═══════════════════════════════════════════════════════════════════
 export function useCommunityMembers({ currentUserId }) {
   const members = ref([])
 
@@ -275,7 +272,7 @@ export function useCommunityMessages({ currentUserId, profile, emitUnread }) {
           messages.value.push({
             ...data[0],
             profiles: { id: currentUserId, username: profile?.username, avatar_url: profile?.avatar_url },
-            reactions: {}  // Inicializar reactions para mensajes nuevos
+            reactions: {}  
           })
         }
       }
@@ -319,11 +316,10 @@ export function useCommunityMessages({ currentUserId, profile, emitUnread }) {
         const idx = messages.value.findIndex(m => m.id === msg.id)
         if (idx !== -1) {
           const existing = messages.value[idx]
-          // Merge inteligente: preservar profiles local y reactions si el payload no los trae
           const merged = {
             ...existing,
             ...msg,
-            profiles: existing.profiles || msg.profiles,  // Mantener profiles cargado localmente
+            profiles: existing.profiles || msg.profiles, 
             reactions: msg.reactions !== undefined ? msg.reactions : (existing.reactions || {})
           }
           messages.value[idx] = merged
@@ -423,7 +419,6 @@ export function useCommunityInvites({ currentUserId }) {
         console.warn('Ya existe una invitación pendiente para este usuario')
         return false
       }
-      // Si fue rechazada, podríamos actualizarla a pending, pero por ahora bloqueamos
       if (existing.status === 'rejected') {
         console.warn('Este usuario rechazó una invitación anterior')
         return false
@@ -454,7 +449,7 @@ export function useCommunityInvites({ currentUserId }) {
 }
 
 export function useCommunityUnread({ currentUserId }) {
-  const unreadCounts = ref({}) // { groupId: count }
+  const unreadCounts = ref({}) // 
 
   async function loadUnread(groupId) {
     // Paso 1: Obtener IDs de mensajes ya leídos por este usuario en este grupo
@@ -465,7 +460,7 @@ export function useCommunityUnread({ currentUserId }) {
 
     const readIds = (readMsgs || []).map(r => r.message_id)
 
-    // Paso 2: Contar mensajes no leídos (no de mí, no en la lista de leídos)
+    // Paso 2: Contar mensajes no leídos 
     let query = supabase
       .from('chat_group_messages')
       .select('id', { count: 'exact', head: true })

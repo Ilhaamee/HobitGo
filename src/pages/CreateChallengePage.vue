@@ -49,14 +49,11 @@ async function handleGoogle() {
           </svg>
         </button>
 
-        <!-- ══ COLUMNA IZQUIERDA ══════════════════════════ -->
         <div class="modal-left">
 
-          <!-- Decoración fondo izquierda -->
           <div class="left-glow g1" aria-hidden="true"></div>
           <div class="left-glow g2" aria-hidden="true"></div>
 
-          <!-- Tag -->
           <div class="modal-tag">
             <span class="tag-dot"></span>
             100% gratuito
@@ -68,7 +65,6 @@ async function handleGoogle() {
             Organiza tu día, crea hábitos y empieza tu reto de 30 días con HobitGo.
           </p>
 
-          <!-- Progreso animado -->
           <div class="mini-card">
             <div class="mc-row">
               <span class="mc-label">Racha actual</span>
@@ -77,7 +73,6 @@ async function handleGoogle() {
             <div class="mc-bar">
               <div class="mc-fill"></div>
             </div>
-            <!-- Pills de hábitos con color en vez de emojis -->
             <div class="mc-habits">
               <span
                 v-for="(h, i) in habits"
@@ -88,14 +83,12 @@ async function handleGoogle() {
             </div>
           </div>
 
-          <!-- Imagen app — transparente con máscara gradiente -->
           <div class="app-img-wrap">
             <img :src="inicioImage" alt="HobitGo app" class="app-img" />
           </div>
 
         </div>
 
-        <!-- ══ COLUMNA DERECHA ════════════════════════════ -->
         <div class="modal-right">
 
           <div class="right-header">
@@ -103,7 +96,6 @@ async function handleGoogle() {
             <p>Elige cómo quieres acceder</p>
           </div>
 
-          <!-- Tabs -->
           <div class="tabs">
             <button class="tab" :class="{ active: activeTab === 'browser' }" @click="activeTab = 'browser'">
               <svg viewBox="0 0 20 20" fill="none" width="14">
@@ -121,11 +113,10 @@ async function handleGoogle() {
             </button>
           </div>
 
-          <!-- ── Tab Web ── -->
+          <!-- Tab Web -->
           <div v-if="activeTab === 'browser'" class="tab-content">
 
             <button class="btn-primary" @click="$emit('signin', 'signin')">
-              <!-- Icono persona -->
               <svg viewBox="0 0 20 20" fill="none" width="18" style="flex-shrink:0">
                 <path d="M10 10a4 4 0 100-8 4 4 0 000 8zM3 18a7 7 0 0114 0" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
               </svg>
@@ -139,7 +130,7 @@ async function handleGoogle() {
             <div class="or-line"><span>o continúa con</span></div>
 
             <button class="btn-google" @click="handleGoogle">
-              <!-- Logo Google real en SVG -->
+              <!-- Logo Google -->
               <svg viewBox="0 0 24 24" width="18" height="18">
                 <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
                 <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
@@ -151,7 +142,7 @@ async function handleGoogle() {
 
           </div>
 
-          <!-- ── Tab Móvil ── -->
+          <!-- Tab Móvil -->
           <div v-if="activeTab === 'mobile'" class="tab-content">
 
             <div class="store-row">
@@ -163,7 +154,6 @@ async function handleGoogle() {
                 App Store
               </button>
               <button class="btn-store">
-                <!-- Play icon -->
                 <svg viewBox="0 0 24 24" fill="currentColor" width="18">
                   <path d="M3.18 23.76c.3.17.64.24.99.19l12.6-7.27-2.7-2.7-10.89 9.78zM20.49 10.34L17.6 8.68l-3.03 3.03 3.03 3.03 2.91-1.68c.83-.48.83-1.73-.02-2.72zM2.01 1.05C1.68 1.36 1.5 1.84 1.5 2.48v19.04c0 .64.18 1.12.52 1.43l.08.07 10.66-10.66v-.25L2.09.98l-.08.07zM8.45 14.37l2.98-2.98 2.98 2.98-2.98 2.98-2.98-2.98z"/>
                 </svg>
@@ -187,7 +177,6 @@ async function handleGoogle() {
 
           </div>
 
-          <!-- Garantía -->
           <p class="guarantee">
             <svg viewBox="0 0 16 16" fill="none" width="14" style="flex-shrink:0">
               <path d="M8 1l1.8 3.6L14 5.2l-3 2.9.7 4.1L8 10.3l-3.7 1.9.7-4.1-3-2.9 4.2-.6L8 1z" stroke="#22c55e" stroke-width="1.3" stroke-linejoin="round"/>
@@ -203,7 +192,6 @@ async function handleGoogle() {
 </template>
 
 <style scoped>
-/* ─── Transición ─────────────────────────────────────── */
 .modal-fade-enter-active,
 .modal-fade-leave-active { transition: opacity .28s ease; }
 .modal-fade-enter-active .modal,
@@ -212,7 +200,6 @@ async function handleGoogle() {
 .modal-fade-enter-from .modal,
 .modal-fade-leave-to .modal { transform: scale(.96) translateY(16px); opacity: 0; }
 
-/* ─── Overlay ────────────────────────────────────────── */
 .overlay {
   position: fixed; inset: 0;
   background: rgba(34,40,78,.5);
@@ -221,7 +208,6 @@ async function handleGoogle() {
   z-index: 1000; padding: 20px;
 }
 
-/* ─── Modal ──────────────────────────────────────────── */
 .modal {
   background: #fff;
   border-radius: 28px;
@@ -232,7 +218,6 @@ async function handleGoogle() {
   max-height: 92vh;
 }
 
-/* ─── Botón cerrar ───────────────────────────────────── */
 .close-btn {
   position: absolute; top: 14px; right: 14px; z-index: 20;
   width: 30px; height: 30px; border-radius: 50%;
@@ -243,7 +228,6 @@ async function handleGoogle() {
 }
 .close-btn:hover { background: #ffb3c6;  color: #fff;}
 
-/* ─── IZQUIERDA ──────────────────────────────────────── */
 .modal-left {
   background: #22284E;
   padding: 40px 32px 32px;
@@ -251,7 +235,6 @@ async function handleGoogle() {
   position: relative; overflow: hidden;
 }
 
-/* Glows decorativos fondo izq */
 .left-glow {
   position: absolute; border-radius: 50%;
   filter: blur(60px); pointer-events: none;
@@ -273,7 +256,6 @@ async function handleGoogle() {
   50%      { transform: translate(20px,-15px); }
 }
 
-/* Tag */
 .modal-tag {
   display: inline-flex; align-items: center; gap: 7px;
   background: rgba(255,245,158,.1);
@@ -284,7 +266,6 @@ async function handleGoogle() {
 }
 .tag-dot { width: 5px; height: 5px; border-radius: 50%; background: #ff6b9d; }
 
-/* Título izq */
 .modal-left h2 {
   font-size: clamp(20px, 2.2vw, 28px); font-weight: 900;
   letter-spacing: -.8px; color: #fff; line-height: 1.15; margin: 0;
@@ -300,7 +281,6 @@ async function handleGoogle() {
   line-height: 1.7; margin: 0;
 }
 
-/* Mini card progreso */
 .mini-card {
   background: rgba(255,255,255,.07);
   border: 1px solid rgba(255,255,255,.1);
@@ -337,10 +317,8 @@ async function handleGoogle() {
   to   { opacity: 1; transform: scale(1); }
 }
 
-/* Imagen app con máscara gradiente — no cubre nada */
 .app-img-wrap {
   position: relative; margin-top: auto;
-  /* La máscara hace que la imagen se desvanezca abajo */
   mask-image: linear-gradient(to bottom, black 0%, black 55%, transparent 100%);
   -webkit-mask-image: linear-gradient(to bottom, black 0%, black 55%, transparent 100%);
 }
@@ -351,7 +329,6 @@ async function handleGoogle() {
   transform: rotate(-5deg) translateX(20px);
 }
 
-/* ─── DERECHA ────────────────────────────────────────── */
 .modal-right {
   padding: 40px 32px 32px;
   display: flex; flex-direction: column; gap: 18px;
@@ -363,7 +340,6 @@ async function handleGoogle() {
 }
 .right-header p { font-size: 13px; color: rgba(34,40,78,.45); margin: 0; }
 
-/* Tabs */
 .tabs {
   display: flex;
   background: rgba(34,40,78,.05);
@@ -382,7 +358,6 @@ async function handleGoogle() {
   box-shadow: 0 2px 8px rgba(34,40,78,.1);
 }
 
-/* Contenido tab */
 .tab-content { display: flex; flex-direction: column; gap: 10px; }
 
 .btn-primary {
@@ -426,7 +401,6 @@ async function handleGoogle() {
 }
 .btn-google:hover { box-shadow: 0 4px 16px rgba(0,0,0,.1); border-color: rgba(34,40,78,.2); }
 
-/* Stores */
 .store-row { display: flex; gap: 10px; }
 .btn-store {
   flex: 1; display: flex; align-items: center; justify-content: center; gap: 8px;
@@ -437,7 +411,6 @@ async function handleGoogle() {
 }
 .btn-store:hover { opacity: .88; }
 
-/* QR card */
 .qr-card {
   display: flex; align-items: center; gap: 14px;
   background: rgba(34,40,78,.04);
@@ -452,14 +425,12 @@ async function handleGoogle() {
 .qr-text strong { font-size: 13px; color: #22284E; display: block; margin-bottom: 3px; }
 .qr-text p { font-size: 12px; color: rgba(34,40,78,.45); margin: 0; line-height: 1.5; }
 
-/* Garantía */
 .guarantee {
   display: flex; align-items: center; justify-content: center; gap: 6px;
   font-size: 12px; color: rgba(34,40,78,.4);
   margin-top: auto; padding-top: 4px;
 }
 
-/* ─── Responsive ─────────────────────────────────────── */
 @media (max-width: 620px) {
   .modal { grid-template-columns: 1fr; max-height: 90vh; overflow-y: auto; }
   .modal-left { padding: 28px 24px 20px; }

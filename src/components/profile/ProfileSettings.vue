@@ -1,7 +1,6 @@
 <template>
   <div class="settings-wrap">
-
-    <!-- ── Identidad ──────────────────────── -->
+    <!-- Identidad -->
     <div class="card">
       <div class="card-head">
         <div class="head-icon pink">
@@ -64,7 +63,7 @@
       </button>
     </div>
 
-    <!-- ── Privacidad ─────────────────────── -->
+    <!-- Privacidad -->
       <div class="card">
         <div class="card-head">
           <div class="head-icon pink">
@@ -95,7 +94,7 @@
         </div>
       </div>
 
-    <!-- ── Contraseña ─────────────────────── -->
+    <!-- Contraseña -->
     <div class="card">
       <div class="card-head">
         <div class="head-icon navy">
@@ -181,7 +180,7 @@
       </template>
     </div>
 
-    <!-- ── Cerrar sesión ───────────────────── -->
+    <!-- Cerrar sesión -->
     <div class="card card-danger">
       <div class="card-head">
         <div class="head-icon red">
@@ -220,7 +219,7 @@ const props = defineProps({
 
 const emit = defineEmits(['save-profile', 'save-password', 'logout', 'toggle-privacy'])
 
-/* ── Identidad ──────────────────────────── */
+/* Identidad */
 const localUsername = ref(props.username)
 const localBio      = ref(props.bio)
 const nameError     = ref('')
@@ -233,7 +232,7 @@ function handleSaveProfile() {
   emit('save-profile', { username: localUsername.value.trim(), bio: localBio.value.trim() })
 }
 
-/* ── Contraseña ─────────────────────────── */
+/* Contraseña */
 const showPwdForm = ref(false)
 const showPwd     = ref(false)
 const pwd         = ref('')

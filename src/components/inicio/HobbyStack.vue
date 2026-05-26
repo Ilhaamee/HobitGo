@@ -10,15 +10,7 @@ const emit = defineEmits(['quick-session'])
 
 const confirmingId = ref(null)
 
-// ═══════════════════════════════════════════════════════════════
-// HELPERS
-// ═══════════════════════════════════════════════════════════════
-
 const todayStr = computed(() => new Date().toDateString())
-
-// ═══════════════════════════════════════════════════════════════
-// FILTRO: solo hobbies donde hay algo que hacer HOY
-// ═══════════════════════════════════════════════════════════════
 
 const activeHobbies = computed(() => {
   return props.hobbies.filter(hobby => {
@@ -81,9 +73,9 @@ function completedDays(hobbyId) {
     const dayTotal = props.sessions
       .filter(x => x.hobby_id === hobbyId && new Date(x.created_at).toDateString() === day)
       .reduce((sum, x) => sum + (x.minutes || 0), 0)
-    if (dayTotal >= goal) count++  // solo cuenta si alcanzó el objetivo
+    if (dayTotal >= goal) count++  
   })
-  // Deduplica (puede haber múltiples sesiones el mismo día)
+  
   const daysDone = new Set()
   props.sessions.forEach(s => {
     if (s.hobby_id !== hobbyId) return
@@ -137,8 +129,6 @@ function getStatusColor(hobby) {
   return '#ff6b9d'
 }
 
-
-
 async function confirmQuick(hobby) {
   confirmingId.value = hobby.id
 
@@ -147,7 +137,7 @@ async function confirmQuick(hobby) {
 
   let minsToAdd
   if (todayMins >= dailyGoal) {
-    // Ya cumplió: añade los minutos objetivo del hobby (sesión extra)
+    // Ya cumplió: añade los minutos objetivo del hobby
     minsToAdd = dailyGoal
   } else {
     // Añade lo que falta para cumplir el objetivo
@@ -553,7 +543,6 @@ async function confirmQuick(hobby) {
   transition: width 0.5s ease;
 }
 
-/* ═══ MÓVIL ═══ */
 @media (max-width: 768px) {
   .hobby-stack-section {
     padding: 14px 12px;

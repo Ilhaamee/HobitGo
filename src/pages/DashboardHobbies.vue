@@ -26,17 +26,14 @@ async function onCelebrate({ hobbyId, hobbyName }) {
   celebrationData.value = { hobbyName, points: 10 }
   showCelebration.value = true
   
-  // Marcar como celebrado en BD (evita que vuelva a salir)
   await supabase
     .from('hobbies')
     .update({ completed_at: new Date().toISOString() })
     .eq('id', hobbyId)
   
-  // Actualizar local
   const hobby = hobbies.value.find(h => h.id === hobbyId)
   if (hobby) hobby.completed_at = new Date().toISOString()
   
-  // Guardar puntos
   await supabase.from('activity_log').insert({
     user_id: currentUser.value.id,
     type: 'achievement',
@@ -126,7 +123,7 @@ async function onModalConfirm(value) {
       }
     }
   } catch (e) {
-    error.value = 'Error: ' + e.message  // ← AÑADIDO: mostrar error al usuario
+    error.value = 'Error: ' + e.message  
     console.error(e)
   }
   
@@ -134,7 +131,7 @@ async function onModalConfirm(value) {
   pendingAction.value = null
 }
 
-// ── Crear nuevo hobby ──────────────────────────────────
+// Crear nuevo hobby
 async function onHobbySelected(hobbyData) {
   showPicker.value = false
   error.value = ''
@@ -203,9 +200,8 @@ async function onHobbySelected(hobbyData) {
   loading.value = false
 }
 
-// ── Abrir edición ──────────────────────────────────────
+// Abrir edición 
 function openEdit(hobby) {
-  // Convertir el hobby de BD al formato que espera HobbySetup
   editingHobby.value = {
     id:          hobby.hobby_id || 'custom',
     name:        hobby.name,
@@ -213,8 +209,7 @@ function openEdit(hobby) {
     gradient:    hobby.gradient,
     img:         hobby.image_url,
     custom:      hobby.hobby_id === 'custom',
-    // Campos de configuración
-    _dbId:       hobby.id,   // ID real en BD para el UPDATE
+    _dbId:       hobby.id,   
     totalDays:   hobby.total_days,
     dailyMinutes:hobby.daily_minutes,
     difficulty:  hobby.difficulty,
@@ -254,7 +249,6 @@ function restartHobby(hobbyId) {
   showModal.value = true
 }
 
-// ── Guardar edición ────────────────────────────────────
 async function onEditConfirm(hobbyData) {
   const dbId = editingHobby.value._dbId
   editingHobby.value = null
@@ -292,7 +286,6 @@ async function onEditConfirm(hobbyData) {
   if (updateErr) {
     error.value = 'Error al guardar: ' + updateErr.message
   } else {
-    // Actualizar en local sin recargar todo
     const idx = hobbies.value.findIndex(h => h.id === dbId)
     if (idx !== -1) {
       hobbies.value[idx] = {
@@ -313,7 +306,6 @@ async function onEditConfirm(hobbyData) {
   loading.value = false
 }
 
-// ── Sesión ─────────────────────────────────────────────
 async function onAddSession({ hobbyId, minutes, note }) {
   const { data, error: err } = await supabase
     .from('hobby_sessions')
@@ -327,7 +319,6 @@ async function onAddSession({ hobbyId, minutes, note }) {
     
     const hobby = hobbies.value.find(h => h.id === hobbyId)
     if (hobby) {
-      // Calcular nuevo total desde TODAS las sesiones (no solo sumar)
       const newTotal = sessions.value
         .filter(s => s.hobby_id === hobbyId)
         .reduce((sum, s) => sum + s.minutes, 0)
@@ -340,7 +331,7 @@ async function onAddSession({ hobbyId, minutes, note }) {
         .eq('id', hobbyId)
     }
     
-    // Puntos...
+    // Puntos
     await supabase.from('activity_log').insert({
       user_id: currentUser.value.id, 
       type: 'hobby',
@@ -351,7 +342,7 @@ async function onAddSession({ hobbyId, minutes, note }) {
   }
 }
 
-// ── Eliminar ───────────────────────────────────────────
+// Eliminar
 async function deleteHobby(id) {
   await supabase.from('hobby_sessions').delete().eq('hobby_id', id)
   await supabase.from('hobbies').delete().eq('id', id)
@@ -424,10 +415,8 @@ onMounted(async () => {
       <p>Guardando...</p>
     </div>
 
-    <!-- Picker -->
     <HobbyPicker v-if="showPicker" @select="onHobbySelected" @close="showPicker = false" />
 
-    <!-- Editor — HobbySetup reutilizado -->
     <Transition name="fade">
       <div v-if="editingHobby" class="edit-overlay" @click.self="editingHobby = null">
         <HobbySetup
@@ -513,8 +502,6 @@ onMounted(async () => {
 @keyframes spin { to { transform: rotate(360deg); } }
 .loading-overlay p { font-size: 14px; color: rgba(34,40,78,.5); margin: 0; }
 
-/* Edit overlay — el HobbySetup ya tiene su propio overlay interno,
-   aquí solo añadimos el backdrop por encima del picker */
 .edit-overlay {
   position: fixed; inset: 0; z-index: 1000;
   display: flex; align-items: flex-end; justify-content: center;

@@ -70,7 +70,6 @@ const streakMessage = computed(() => {
       <p class="streak-msg">{{ streakMessage }}</p>
     </div>
 
-    <!-- Versión Móvil: Barra horizontal compacta -->
     <div class="streak-bar mobile">
       <div class="streak-bar-left">
         <div class="streak-bar-icon">
@@ -103,12 +102,10 @@ const streakMessage = computed(() => {
 </template>
 
 <style scoped>
-/* ═══ BASE ═══ */
 .streak-section {
   margin-bottom: 0;
 }
 
-/* ═══ DESKTOP: Card grande vertical ═══ */
 .streak-card.desktop {
   background: #fff;
   border-radius: 20px;
@@ -208,12 +205,11 @@ const streakMessage = computed(() => {
   font-weight: 500;
   width: 100%;
 }
-/* ═══ MÓVIL: Barra horizontal compacta ═══ */
+
 .streak-bar.mobile {
   display: none;
 }
 
-/* ═══ RESPONSIVE ═══ */
 @media (max-width: 1100px) {
   .streak-card.desktop {
     display: none;

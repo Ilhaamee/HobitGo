@@ -6,7 +6,6 @@ import CalendarDayPanel from '../components/calendar/CalendarDayPanel.vue'
 import CalendarFilter   from '../components/calendar/CalendarFilter.vue'
 import HabitUniverse    from '../components/calendar/Habituniverse.vue'
 
-/* ── state ─────────────────────────────────────────── */
 const today        = new Date()
 const currentMonth = ref(today.getMonth())
 const currentYear  = ref(today.getFullYear())
@@ -18,7 +17,6 @@ const hobbies  = ref([])
 const sessions = ref([])
 const events   = ref([])
 
-/* ── cargar datos ───────────────────────────────────── */
 async function load() {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return
@@ -34,7 +32,6 @@ async function load() {
   if (eData) events.value   = eData
 }
 
-/* ── sesiones del día seleccionado ─────────────────── */
 const daySessions = computed(() => {
   if (!selectedDate.value) return []
   return sessions.value.filter(s =>
@@ -42,13 +39,11 @@ const daySessions = computed(() => {
   )
 })
 
-/* ── eventos del día seleccionado ───────────────────── */
 const dayEvents = computed(() => {
   if (!selectedDate.value) return []
   return events.value.filter(e => e.date === selectedDate.value)
 })
 
-/* ── dots por día (para el grid) ────────────────────── */
 const sessionsByDate = computed(() => {
   const map = {}
   sessions.value.forEach(s => {
@@ -69,7 +64,6 @@ const eventsByDate = computed(() => {
   return map
 })
 
-/* ── navegación ─────────────────────────────────────── */
 function prevMonth() {
   if (currentMonth.value === 0) { currentMonth.value = 11; currentYear.value-- }
   else currentMonth.value--
@@ -79,7 +73,6 @@ function nextMonth() {
   else currentMonth.value++
 }
 
-/* ── handlers ───────────────────────────────────────── */
 function onDayClick(dateStr) {
   selectedDate.value = selectedDate.value === dateStr ? null : dateStr
 }
@@ -105,10 +98,8 @@ async function onToggleSession(sessionId, done) {
 onMounted(load)
 </script>
 
-<<template>
+<template>
   <div class="cal-page">
-
-    <!-- ══ HEADER ESTILO CHAT ═══════════════════════════ -->
     <div class="cal-header">
       <div class="cal-title">
         <h1>Calendario <HabitUniverse :hobbies="hobbies" :sessions="sessions" inline /></h1>
@@ -123,7 +114,6 @@ onMounted(load)
       @change="filterHobby = $event"
     />
 
-    <!-- ══ CONTENIDO ORIGINAL (una columna) ══════════════ -->
     <div class="cal-body">
       <!-- Grid del mes -->
       <CalendarGrid
@@ -157,14 +147,12 @@ onMounted(load)
 </template>
 
 <style scoped>
-/* ══ LAYOUT PRINCIPAL ═════════════════════════════════ */
 .cal-page {
   max-width: 700px;
   margin: 0 auto;
   width: 100%;
 }
 
-/* ── HEADER (igual que Chat) ── */
 .cal-header {
   display: flex;
   align-items: flex-start;
@@ -192,13 +180,11 @@ onMounted(load)
   margin: 0;
 }
 
-/* ── BODY (original, una columna) ── */
 .cal-body {
   overflow-x: hidden;
   width: 100%;
 }
 
-/* Transición del panel */
 .slide-up-enter-active,
 .slide-up-leave-active {
   transition: all 0.25s ease;
@@ -210,7 +196,6 @@ onMounted(load)
   transform: translateY(10px);
 }
 
-/* Responsive */
 @media (max-width: 768px) {
   .cal-page {
     padding: 0 12px 12px;

@@ -8,17 +8,17 @@ import { HOBBIES_LIST } from '../data/hobbiesData.js'
 const router = useRouter()
 const saving = ref(false)
 const checking = ref(true)
-const errorMsg = ref('')    // ← mensaje de error visible
+const errorMsg = ref('')   
 
-// ── Estado global ─────────────────────────────────────
+// Estado global
 const current   = ref(0)
-const animDir   = ref('next')   // 'next' | 'prev'
+const animDir   = ref('next')   
 const isAnimating = ref(false)
 const answers   = ref({ goal: null, hobbies: [], time: null })
 
 const TOTAL = 5
 
-// ── Opciones ──────────────────────────────────────────
+// Opciones 
 const goals = [
   { id: 'new',    icon: '✦', label: 'Crear hábitos nuevos',       desc: 'Añadir rutinas positivas a mi día' },
   { id: 'quit',   icon: '◈', label: 'Eliminar hábitos malos',     desc: 'Reemplazar lo negativo por algo mejor' },
@@ -48,7 +48,6 @@ const times = [
   { id: '60+', label: 'Más de 1h',desc: 'Toda mi energía' },
 ]
 
-// ── Computed: puede avanzar ───────────────────────────
 const canContinue = computed(() => {
   if (current.value === 1) return !!answers.value.goal
   if (current.value === 2) return answers.value.hobbies.length > 0
@@ -56,7 +55,7 @@ const canContinue = computed(() => {
   return true
 })
 
-// ── Navegación ────────────────────────────────────────
+// Navegación
 function go(dir) {
   if (isAnimating.value) return
   isAnimating.value = true
@@ -90,7 +89,7 @@ async function finish() {
       return
     }
 
-    // ── 1. Guardar perfil ──────────────────────────────
+    // Guardar perfil
     const rawUsername = user.email.split('@')[0]
     const username = rawUsername.replace(/[^a-zA-Z0-9_-]/g, '').slice(0, 20) || 'usuario'
 
@@ -116,7 +115,6 @@ async function finish() {
       return
     }
 
-    // ── 2. Crear hobbies reales ────────────────────────
     const selectedHobbyIds = answers.value.hobbies || []
     const dailyMinutes = parseInt(answers.value.time) || 20
 
@@ -127,7 +125,6 @@ async function finish() {
         continue
       }
 
-      // Verificar si ya existe este hobby para el usuario
       const { data: existing } = await supabase
         .from('hobbies')
         .select('id')
@@ -162,7 +159,6 @@ async function finish() {
 
       if (hobbyError) {
         console.warn(`Error creando hobby ${hobbyDef.name}:`, hobbyError)
-        // No bloqueamos el flujo si un hobby falla
       } else {
         console.log(`Hobby creado: ${hobbyDef.name}`)
       }
@@ -181,7 +177,6 @@ async function finish() {
   router.push('/dashboard')
 }
 
-// ── Entrada inicial ───────────────────────────────────
 onMounted(async () => {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) { router.push('/'); return }
@@ -204,16 +199,12 @@ onMounted(async () => {
 
 <template>
   <div v-if="!checking" class="ob-root">
-
-    <!-- ══ FONDO ════════════════════════════════════════ -->
     <div class="ob-bg" aria-hidden="true">
       <div class="bg-blob bb1"></div>
       <div class="bg-blob bb2"></div>
       <div class="bg-blob bb3"></div>
       <div class="bg-grid"></div>
     </div>
-
-    <!-- ══ CONTENEDOR ══════════════════════════════════ -->
     <div class="ob-wrap">
 
       <!-- Header: logo + skip -->
@@ -242,11 +233,11 @@ onMounted(async () => {
         </div>
       </div>
 
-      <!-- ══ PANTALLAS ════════════════════════════════ -->
+      <!-- PANTALLAS -->
       <div class="ob-stage">
         <Transition :name="'slide-' + animDir" mode="out-in">
 
-          <!-- ── 0: Bienvenida ────────────────────────── -->
+          <!-- 0: Bienvenida -->
           <div v-if="current === 0" key="s0" class="screen s-welcome">
             <div class="welcome-icon">
               <div class="wi-ring r1"></div>
@@ -266,7 +257,7 @@ onMounted(async () => {
             </div>
           </div>
 
-          <!-- ── 1: Objetivo ──────────────────────────── -->
+          <!-- 1: Objetivo -->
           <div v-else-if="current === 1" key="s1" class="screen">
             <div class="screen-tag">Pregunta 1 de 3</div>
             <h2 class="screen-title">¿Para qué estás aquí?</h2>
@@ -290,7 +281,7 @@ onMounted(async () => {
             </div>
           </div>
 
-          <!-- ── 2: Hobbies ───────────────────────────── -->
+          <!-- 2: Hobbies -->
           <div v-else-if="current === 2" key="s2" class="screen">
             <div class="screen-tag">Pregunta 2 de 3</div>
             <h2 class="screen-title">¿Qué te interesa?</h2>
@@ -314,7 +305,7 @@ onMounted(async () => {
             <p class="hobby-hint selected-hint" v-else>{{ answers.hobbies.length }} seleccionado{{ answers.hobbies.length > 1 ? 's' : '' }}</p>
           </div>
 
-          <!-- ── 3: Tiempo ────────────────────────────── -->
+          <!-- 3: Tiempo -->
           <div v-else-if="current === 3" key="s3" class="screen">
             <div class="screen-tag">Pregunta 3 de 3</div>
             <h2 class="screen-title">¿Cuánto tiempo tienes al día?</h2>
@@ -337,7 +328,7 @@ onMounted(async () => {
             </div>
           </div>
 
-          <!-- ── 4: Listo ─────────────────────────────── -->
+          <!-- 4: Listo  -->
           <div v-else-if="current === 4" key="s4" class="screen s-done">
             <div class="done-ring">
               <svg viewBox="0 0 80 80" fill="none" width="80">
@@ -376,7 +367,7 @@ onMounted(async () => {
         {{ errorMsg }}
       </div>
 
-      <!-- ══ BOTONES NAV ══════════════════════════════ -->
+      <!-- BOTONES NAV -->
       <div class="ob-nav">
         <button
           v-if="current > 0"
@@ -423,14 +414,6 @@ onMounted(async () => {
 </template>
 
 <style scoped>
-/* ─── Colores ─────────────────────────────────────────
-   navy:       #22284E
-   pink:       #ff6b9d
-   pink-light: #ffb3c6
-   yellow:     #fff59e
-────────────────────────────────────────────────────── */
-
-/* ─── Root ───────────────────────────────────────────── */
 .ob-root {
   min-height: 100svh;
   display: flex; align-items: center; justify-content: center;
@@ -439,7 +422,6 @@ onMounted(async () => {
   font-family: inherit;
 }
 
-/* ─── Fondo ──────────────────────────────────────────── */
 .ob-bg { position: absolute; inset: 0; pointer-events: none; z-index: 0; }
 
 .bg-blob {
@@ -477,7 +459,6 @@ onMounted(async () => {
   -webkit-mask-image: radial-gradient(ellipse 70% 70% at 50% 50%, black 20%, transparent 100%);
 }
 
-/* ─── Wrap ───────────────────────────────────────────── */
 .ob-wrap {
   position: relative; z-index: 10;
   width: 100%; max-width: 480px;
@@ -487,7 +468,6 @@ onMounted(async () => {
   min-height: 100svh;
 }
 
-/* ─── Header ─────────────────────────────────────────── */
 .ob-header {
   display: flex; align-items: center;
   justify-content: space-between;
@@ -504,7 +484,6 @@ onMounted(async () => {
 }
 .skip-btn:hover { color: #22284E; background: rgba(34,40,78,.06); }
 
-/* ─── Línea de progreso ──────────────────────────────── */
 .ob-progress {
   display: flex; gap: 6px; align-items: center;
 }
@@ -523,12 +502,9 @@ onMounted(async () => {
   transform-origin: left;
   transition: transform .5s cubic-bezier(.4,0,.2,1);
 }
-
-/* Segmento completado — fill visible */
 .prog-seg.done .prog-fill {
   transform: scaleX(1);
 }
-/* Segmento activo — fill con animación de shimmer */
 .prog-seg.active .prog-fill {
   transform: scaleX(1);
   animation: shimmer 2s linear infinite;
@@ -540,7 +516,6 @@ onMounted(async () => {
   100% { background-position: -200% 0; }
 }
 
-/* ─── Stage (área de pantallas) ──────────────────────── */
 .ob-stage {
   flex: 1;
   display: flex; align-items: center;
@@ -548,7 +523,6 @@ onMounted(async () => {
   position: relative;
 }
 
-/* ─── Transiciones slide ─────────────────────────────── */
 .slide-next-enter-active,
 .slide-next-leave-active,
 .slide-prev-enter-active,
@@ -562,7 +536,6 @@ onMounted(async () => {
 .slide-prev-enter-from { opacity: 0; transform: translateX(-48px); }
 .slide-prev-leave-to   { opacity: 0; transform: translateX(48px); }
 
-/* ─── Screen base ────────────────────────────────────── */
 .screen {
   width: 100%;
   display: flex; flex-direction: column; gap: 16px;
@@ -593,7 +566,6 @@ onMounted(async () => {
   line-height: 1.7; margin: 0;
 }
 
-/* ─── BIENVENIDA ─────────────────────────────────────── */
 .s-welcome { text-align: center; align-items: center; }
 
 .welcome-icon {
@@ -631,7 +603,6 @@ onMounted(async () => {
   letter-spacing: .04em;
 }
 
-/* ─── OBJETIVO (grid 2x2) ────────────────────────────── */
 .goal-grid {
   display: grid; grid-template-columns: 1fr 1fr;
   gap: 10px;
@@ -668,7 +639,6 @@ onMounted(async () => {
 }
 .goal-card.selected .goal-check { opacity: 1; transform: scale(1); }
 
-/* ─── HOBBIES (pills wrap) ───────────────────────────── */
 .hobby-grid {
   display: flex; flex-wrap: wrap; gap: 8px;
 }
@@ -702,7 +672,6 @@ onMounted(async () => {
 }
 .selected-hint { color: #ff6b9d; font-weight: 600; }
 
-/* ─── TIEMPO ─────────────────────────────────────────── */
 .time-grid {
   display: grid; grid-template-columns: 1fr 1fr;
   gap: 10px;
@@ -738,7 +707,6 @@ onMounted(async () => {
 }
 .time-card.selected .time-check { opacity: 1; transform: scale(1); }
 
-/* ─── LISTO ──────────────────────────────────────────── */
 .s-done { text-align: center; align-items: center; }
 
 .done-ring {
@@ -776,7 +744,6 @@ onMounted(async () => {
 }
 .sum-val { font-size: 13px; font-weight: 600; color: #22284E; }
 
-/* ─── Botones nav ────────────────────────────────────── */
 .ob-nav {
   display: flex; align-items: center;
   justify-content: space-between; gap: 12px;
@@ -813,7 +780,6 @@ onMounted(async () => {
 }
 .finish-btn:hover { box-shadow: 0 10px 28px rgba(255,107,157,.45); }
 
-/* ─── Error banner ─────────────────────────────────────── */
 .error-banner {
   display: flex;
   align-items: center;
@@ -832,7 +798,6 @@ onMounted(async () => {
   to { opacity: 1; transform: translateY(0); }
 }
 
-/* ─── Responsive web ─────────────────────────────────── */
 @media (min-width: 768px) {
   .ob-root { padding: 0; }
   .ob-wrap {

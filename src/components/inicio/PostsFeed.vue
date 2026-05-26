@@ -14,8 +14,6 @@ const loading = ref(false)
 const page    = ref(0)
 const hasMore = ref(true)
 const PAGE_SIZE = 10
-
-// ── Estado comentarios ────────────────────
 const openComments      = ref({})
 const commentsData      = ref({})
 const commentsLoading   = ref({})
@@ -23,7 +21,7 @@ const newComment        = ref({})
 const submittingComment = ref({})
 
 
-// ── Perfil propio (para avatar en input) ──
+// ── Perfil propio
 const myProfile = ref(null)
 
 async function loadMyProfile() {
@@ -36,7 +34,6 @@ async function loadMyProfile() {
   if (data) myProfile.value = data
 }
 
-// ── Helpers ───────────────────────────────
 function initials(name) {
   return (name || '?')[0].toUpperCase()
 }
@@ -49,7 +46,7 @@ function timeAgo(ts) {
   return `${Math.floor(h / 24)}d`
 }
 
-// ── Cargar feed ───────────────────────────
+// Cargar feed
 async function loadFeed(reset = false) {
   if (loading.value) return
   if (reset) { page.value = 0; posts.value = []; hasMore.value = true }
@@ -90,7 +87,7 @@ async function loadFeed(reset = false) {
   loading.value = false
 }
 
-// ── Likes ─────────────────────────────────
+// Likes
 async function loadLikesForPosts(targetPosts) {
   if (!targetPosts.length) return
   const postIds = targetPosts.map(p => p.id)
@@ -130,7 +127,7 @@ async function toggleLike(postId) {
   }
 }
 
-// ── Comentarios: conteo inicial ───────────
+// Comentarios: conteo inicial 
 async function loadCommentsCount(targetPosts) {
   if (!targetPosts.length) return
   const { data } = await supabase.from('post_comments').select('post_id').in('post_id', targetPosts.map(p => p.id))
@@ -140,7 +137,7 @@ async function loadCommentsCount(targetPosts) {
   targetPosts.forEach(post => { post.comments = countMap[post.id] || 0 })
 }
 
-// ── Comentarios: abrir/cerrar ─────────────
+// Comentarios: abrir/cerrar
 async function toggleComments(postId) {
   if (openComments.value[postId]) { openComments.value[postId] = false; return }
   openComments.value[postId] = true
@@ -159,7 +156,7 @@ async function fetchComments(postId) {
   commentsLoading.value[postId] = false
 }
 
-// ── Comentarios: enviar ───────────────────
+// Comentarios: enviar 
 async function submitComment(postId) {
   if (!props.currentUser) { router.push('/login'); return }
   const text = (newComment.value[postId] || '').trim()
@@ -183,7 +180,7 @@ async function submitComment(postId) {
   submittingComment.value[postId] = false
 }
 
-// ── Comentarios: borrar ───────────────────
+// Comentarios: borrar
 async function deleteComment(postId, commentId) {
   const { error } = await supabase.from('post_comments').delete().eq('id', commentId)
   if (!error) {
@@ -193,15 +190,12 @@ async function deleteComment(postId, commentId) {
   }
 }
 
-
-
-// ── Navegar ───────────────────────────────
 function goToProfile(username) {
   if (!username) return
   router.push(`/dashboard/profile/${username}`)
 }
 
-// ── Infinite scroll ───────────────────────
+// Infinite scroll
 function onScroll(e) {
   const c = e.target
   if (c.scrollHeight - c.scrollTop - c.clientHeight < 200 && !loading.value && hasMore.value) loadFeed()

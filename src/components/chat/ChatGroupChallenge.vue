@@ -35,9 +35,7 @@ const props = defineProps({
 })
 const emit = defineEmits(['unread'])
 
-// ═══════════════════════════════════════════════════════
 // COMPOSABLES
-// ═══════════════════════════════════════════════════════
 const { initials, formatDate } = useFormatters()
 const { CHALLENGE_CATEGORIES, categoryColor, categoryLabel } = useChallengeCategories()
 
@@ -92,9 +90,7 @@ const {
   tableName: 'chat_group_messages'
 })
 
-// ═══════════════════════════════════════════════════════
 // ESTADO LOCAL
-// ═══════════════════════════════════════════════════════
 const activeChallenge = ref(null)
 const showLeftPanel   = ref(true)
 const showInvites     = ref(false)
@@ -113,9 +109,7 @@ const challengesToDelete = ref(null)
 
 const { grouped: groupedMessages } = useGroupedMessages(messages, formatDate)
 
-// ═══════════════════════════════════════════════════════
 // COMPUTED
-// ═══════════════════════════════════════════════════════
 const myMembership = computed(() =>
   members.value.find(m => m.id === props.currentUser?.id) || null
 )
@@ -142,9 +136,7 @@ function progressPct(member, totalDays) {
   return Math.min(100, Math.round(((member?.days_done || 0) / totalDays) * 100))
 }
 
-// ═══════════════════════════════════════════════════════
 // FUNCIONES
-// ═══════════════════════════════════════════════════════
 async function openChallenge(c) {
   activeChallenge.value = c
   showLeftPanel.value = false
@@ -258,7 +250,7 @@ function isOwn(msg) {
   return msg.user_id === props.currentUser?.id
 }
 
-// ── Invitar miembros ──────────────────────────────────
+// Invitar miembros
 async function doInviteUser(user) {
   if (!activeChallenge.value) return
   const ok = await inviteUser({ 
@@ -298,10 +290,10 @@ function openDeleteMsgModal(msg) {
   showDeleteMsgModal.value = true
 }
 
-// Confirmar eliminación de mensaje (llama al composable)
+// Confirmar eliminación de mensaje 
 async function confirmDeleteMessage() {
   if (!msgToDelete.value) return
-  await deleteMsgAction(msgToDelete.value) // ← usa la función del composable
+  await deleteMsgAction(msgToDelete.value) 
   showDeleteMsgModal.value = false
   msgToDelete.value = null
 }
@@ -329,7 +321,7 @@ function locationLabel(key) {
   return POPULAR_LOCATIONS.find(l => l.key === key)?.label || key
 }
 
-// ── Lifecycle ─────────────────────────────────────────
+// Lifecycle 
 onMounted(async () => {
   await loadChallenges()
   await loadPendingInvites()
@@ -345,10 +337,10 @@ onUnmounted(() => {
 })
 </script>
 
-<<template>
+<template>
   <div class="cgc">
 
-    <!-- ══ PANEL IZQUIERDO ════════════════════════════ -->
+    <!--PANEL IZQUIERDO -->
     <div class="left-panel" :class="{ 'hidden-mobile': !showLeftPanel }">
 
       <div class="panel-head">
@@ -521,7 +513,7 @@ onUnmounted(() => {
       </div>
     </div>
 
-    <!-- ══ PANEL DERECHO ══════════════════════════════ -->
+    <!-- PANEL DERECHO -->
     <div class="right-panel" :class="{ 'hidden-mobile': showLeftPanel, 'has-challenge': activeChallenge }">
 
       <!-- Estado vacío -->
@@ -718,7 +710,7 @@ onUnmounted(() => {
           </Transition>
         </div>
 
-        <!-- Messages (componente extraído) -->
+        <!-- Messages -->
         <ChatMessageList
           ref="messagesRef"
           :messages="groupedMessages"
@@ -735,7 +727,7 @@ onUnmounted(() => {
           @image-click="previewImageUrl = $event"
         />
 
-        <!-- Reply bar (componente extraído) -->
+        <!-- Reply bar -->
         <ChatReplyBar
           :replying-to="replyingTo"
           :author-name="activeChallenge?.title"
@@ -743,7 +735,7 @@ onUnmounted(() => {
           @cancel="cancelReply"
         />
 
-        <!-- Edit bar (componente extraído) -->
+        <!-- Edit bar -->
         <ChatEditBar
           v-if="editingMsg"
           v-model="editText"
@@ -751,14 +743,14 @@ onUnmounted(() => {
           @cancel="cancelEdit"
         />
 
-        <!-- Image preview (componente extraído) -->
+        <!-- Image preview -->
         <ChatImagePreview
           v-if="imagePreview"
           :src="imagePreview"
           @clear="clearImage"
         />
 
-        <!-- Input (componente extraído) -->
+        <!-- Input -->
         <ChatInputBar
           v-if="isMember(activeChallenge.id)"
           v-model="newMessage"
@@ -829,7 +821,7 @@ onUnmounted(() => {
   border: 1px solid rgba(34,40,78,.06);
 }
 
-/* ══ PANEL IZQUIERDO ════════════════════════════════ */
+/* PANEL IZQUIERDO */
 .left-panel {
   display: flex;
   flex-direction: column;
@@ -988,7 +980,7 @@ onUnmounted(() => {
 .ci-badge.member { color: #fff; }
 .ci-badge svg { display: block; }
 
-/* ══ PANEL DERECHO ══════════════════════════════════ */
+/* PANEL DERECHO */
 .right-panel {
   display: flex; flex-direction: column;
   overflow: hidden; background: #fff;
@@ -1290,7 +1282,7 @@ onUnmounted(() => {
   animation: spin .7s linear infinite; display: block;
 }
 
-/* ══ RESPONSIVE MÓVIL ═══════════════════════════════ */
+/* RESPONSIVE MÓVIL */
 @media (max-width: 768px) {
   .cgc {
     grid-template-columns: 1fr;

@@ -75,11 +75,8 @@ const totalSessions = computed(() => props.sessions.length)
 const weeks = computed(() => {
   const today    = new Date()
   const todayStr = today.toISOString().split('T')[0]
-
-  // Empezar el 1 de enero del año actual, en lunes
   const jan1  = new Date(today.getFullYear(), 0, 1)
   const start = new Date(jan1)
-  // Retroceder al lunes anterior al 1 de enero
   const dow = jan1.getDay() // 0=Dom
   const diff = dow === 0 ? 6 : dow - 1
   start.setDate(jan1.getDate() - diff)
@@ -95,7 +92,6 @@ const weeks = computed(() => {
       const date    = new Date(cur)
       const dateStr = date.toISOString().split('T')[0]
 
-      // Celdas fuera del año actual o futuras = null
       if (date.getFullYear() !== today.getFullYear() || date > today) {
         week.push(null)
       } else {
@@ -118,13 +114,10 @@ const monthLabels = computed(() => {
   const today   = new Date()
 
   weeks.value.forEach((week, wi) => {
-    // Usar la primera celda real O calcular la fecha del inicio de la semana
     const first = week.find(d => d !== null)
-    // Si todas son null (semanas futuras), calcular fecha manualmente
     const refDate = first
       ? new Date(first.date)
       : (() => {
-          // Reconstruir fecha del inicio de la semana
           const jan1 = new Date(today.getFullYear(), 0, 1)
           const dow  = jan1.getDay()
           const diff = dow === 0 ? 6 : dow - 1
@@ -133,7 +126,6 @@ const monthLabels = computed(() => {
           return start
         })()
 
-    // Solo mostrar meses del año actual
     if (refDate.getFullYear() !== today.getFullYear()) return
 
     const m = refDate.getMonth()
@@ -145,7 +137,6 @@ const monthLabels = computed(() => {
   return labels
 }) 
 
-// Color directo sin CSS vars
 const OPACITIES = [0, 0.25, 0.50, 0.75, 1]
 
 function hexToRgb(hex) {
@@ -184,7 +175,6 @@ function cellStyle(day) {
 .month-labels span {
   position: absolute; font-size: 9px; color: rgba(34,40,78,.4); font-weight: 600;
 }
-/* Sin scroll — todo cabe en el ancho del contenedor */
 .hm-scroll { overflow: hidden; width: 100%; }
 .hm-grid   { display: flex; gap: 2px; width: 100%; }
 
@@ -198,7 +188,6 @@ function cellStyle(day) {
 .weeks { display: flex; gap: 2px; flex: 1; justify-content: space-between; }
 .week  { display: flex; flex-direction: column; gap: 2px; flex: 1; }
 
-/* Celdas cuadradas que se adaptan al ancho */
 .cell {
   width: 100%;
   height: 10px;

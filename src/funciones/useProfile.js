@@ -8,7 +8,6 @@ const LEVEL_NAMES = ['Semilla','Brote','Explorador','Constante','Dedicado','Expe
 export function useProfile() {
   const router = useRouter()
 
-  /* ── State ────────────────────────────── */
   const loading        = ref(true)
   const currentUser    = ref(null)
   const profile        = ref({})
@@ -29,7 +28,6 @@ export function useProfile() {
   const passwordSuccess = ref(false)
   const passwordError   = ref('')
 
-  /* ── Computed ─────────────────────────── */
   const isOwner = computed(() => {
     if (!targetUserId.value) return true
     return targetUserId.value === currentUser.value?.id
@@ -57,7 +55,6 @@ export function useProfile() {
     THRESHOLDS[userLevel.value] ?? THRESHOLDS[THRESHOLDS.length - 1]
   )
 
-  /* ── Load ─────────────────────────────── */
   async function load(username = null) {
     loading.value = true
     
@@ -67,7 +64,6 @@ export function useProfile() {
 
     let profileId = user.id
     
-    // Si hay username, buscar el ID de ese usuario
     if (username) {
       const { data: userData } = await supabase
         .from('profiles')
@@ -93,7 +89,6 @@ export function useProfile() {
       targetUserId.value = null
     }
 
-    // Query de hobbies: externo = solo públicos, propio = todos
     const hobbiesQuery = username 
       ? supabase.from('hobbies').select('id,name,gradient,is_public').eq('user_id', profileId).eq('is_public', true)
       : supabase.from('hobbies').select('id,name,gradient,is_public').eq('user_id', profileId)
@@ -132,7 +127,6 @@ async function loadStats(userId) {
   }
 }
 
-  /* ── Actions ──────────────────────────── */
   async function uploadAvatar(e) {
     const file = e.target.files[0]
     if (!file) return
