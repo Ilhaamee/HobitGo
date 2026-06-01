@@ -67,6 +67,7 @@ async function loadFeed(reset = false) {
       const newPosts = publicPosts.map(s => ({
         id:          s.id,
         user_id:     s.user_id,
+        hobby_id:    s.hobby_id,
         text:        s.note,
         image_url:   s.image_url,
         minutes:     s.minutes,
@@ -75,6 +76,7 @@ async function loadFeed(reset = false) {
         hobby_color: s.hobbies?.gradient?.[0] || '#ff6b9d',
         username:    s.profiles?.username || null,
         avatar_url:  s.profiles?.avatar_url || null,
+        streak:      0,
         likes: 0, liked: false, likedBy: [], comments: 0,
       }))
       posts.value.push(...newPosts)
@@ -82,6 +84,7 @@ async function loadFeed(reset = false) {
       page.value++
       await loadLikesForPosts(newPosts)
       await loadCommentsCount(newPosts)
+      await loadStreaksForPosts(newPosts)
     }
   } catch (err) { console.error('Error inesperado:', err) }
   loading.value = false
@@ -109,6 +112,61 @@ async function loadLikesForPosts(targetPosts) {
     post.likes   = postLikes.length
     post.likedBy = postLikes
     post.liked   = props.currentUser ? postLikes.some(l => l.userId === props.currentUser.id) : false
+  })
+}
+
+// Rachas: calcula la racha por hobby para cada post del feed
+async function loadStreaksForPosts(targetPosts) {
+  if (!targetPosts.length) return
+
+  // Recopila pares únicos (user_id, hobby_id) que necesitamos
+  const pairs = targetPosts
+    .filter(p => p.hobby_id)
+    .map(p => ({ user_id: p.user_id, hobby_id: p.hobby_id }))
+  if (!pairs.length) return
+
+  const userIds  = [...new Set(pairs.map(p => p.user_id))]
+  const hobbyIds = [...new Set(pairs.map(p => p.hobby_id))]
+
+  // Una sola query: sesiones de esos usuarios y hobbies
+  const { data } = await supabase
+    .from('hobby_sessions')
+    .select('user_id, hobby_id, created_at')
+    .in('user_id', userIds)
+    .in('hobby_id', hobbyIds)
+
+  if (!data) return
+
+  // Calcula racha para un conjunto de fechas de sesión
+  function calcStreak(sessionDates) {
+    if (!sessionDates.length) return 0
+    const today = new Date(); today.setHours(0, 0, 0, 0)
+    const unique = [...new Set(sessionDates.map(d => {
+      const dt = new Date(d); dt.setHours(0, 0, 0, 0); return dt.getTime()
+    }))].sort((a, b) => b - a)
+
+    let streak = 0
+    let check  = today.getTime()
+    for (const ts of unique) {
+      const diff = Math.round((check - ts) / 86400000)
+      if (diff <= 1) { streak++; check = ts } else break
+    }
+    return streak
+  }
+
+  // Agrupa sesiones por "userId|hobbyId"
+  const sessionMap = {}
+  data.forEach(s => {
+    const key = `${s.user_id}|${s.hobby_id}`
+    if (!sessionMap[key]) sessionMap[key] = []
+    sessionMap[key].push(s.created_at)
+  })
+
+  // Asigna la racha calculada a cada post
+  targetPosts.forEach(post => {
+    if (!post.hobby_id) return
+    const key = `${post.user_id}|${post.hobby_id}`
+    post.streak = calcStreak(sessionMap[key] || [])
   })
 }
 
@@ -259,12 +317,15 @@ watch(() => props.currentUser?.id, (newId, oldId) => { if (newId !== oldId) { lo
         </div>
 
         <!-- Stats -->
-        <div v-if="post.minutes" class="post-stats">
-          <span class="stat-badge mins">
+        <div v-if="post.minutes || (post.streak && post.hobby_id)" class="post-stats">
+          <span v-if="post.minutes" class="stat-badge mins">
             <svg viewBox="0 0 16 16" fill="none" width="12" stroke="currentColor" stroke-width="2">
               <circle cx="8" cy="8" r="6"/><path d="M8 4v4l2 2" stroke-linecap="round"/>
             </svg>
             {{ post.minutes }} min
+          </span>
+          <span v-if="post.streak && post.hobby_id" class="stat-badge streak">
+            🔥 {{ post.streak }}d
           </span>
         </div>
 
@@ -401,7 +462,8 @@ watch(() => props.currentUser?.id, (newId, oldId) => { if (newId !== oldId) { lo
 
 .post-stats { display: flex; gap: 8px; margin-bottom: 14px; }
 .stat-badge { display: flex; align-items: center; gap: 6px; padding: 6px 12px; border-radius: 99px; font-size: 12px; font-weight: 600; }
-.stat-badge.mins { background: #e3f2fd; color: #2196f3; }
+.stat-badge.mins    { background: #e3f2fd; color: #2196f3; }
+.stat-badge.streak  { background: rgba(255,107,157,.1); color: #ff6b9d; font-weight: 700; }
 
 .post-actions { display: flex; gap: 8px; padding-top: 4px; border-top: 1px solid rgba(34,40,78,.06); }
 .action-btn { display: flex; align-items: center; gap: 6px; padding: 8px 14px; border-radius: 12px; border: none; background: transparent; color: rgba(34,40,78,.5); font-size: 13px; font-weight: 600; cursor: pointer; transition: all .2s; }
